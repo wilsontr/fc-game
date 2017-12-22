@@ -61,14 +61,14 @@ const unsigned char palBG[4]={
 };
 
 void four_Sides (void){
-	if (player_x < (255)){	// find the left side
+	if (player_x < (255 - 1)){	// find the left side
 		X1_Left_Side = player_x + 1;
 	}
 	else {
 		X1_Left_Side = 255;
 	}
-	if (player_x < (255 - 2)){	// find the right side
-		X1_Right_Side = player_x + 15;
+	if (player_x < (255 - 13)){	// find the right side
+		X1_Right_Side = player_x + 13;
 	}
 	else {
 		X1_Right_Side = 255;

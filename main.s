@@ -1305,10 +1305,10 @@ _corner:
 .segment	"CODE"
 
 ;
-; if (player_x < (255)){ // find the left side
+; if (player_x < (255 - 1)){ // find the left side
 ;
 	lda     _player_x
-	cmp     #$FF
+	cmp     #$FE
 	bcs     L059E
 ;
 ; X1_Left_Side = player_x + 1;
@@ -1325,16 +1325,16 @@ _corner:
 L059E:	lda     #$FF
 L059B:	sta     _X1_Left_Side
 ;
-; if (player_x < (255 - 2)){ // find the right side
+; if (player_x < (255 - 13)){ // find the right side
 ;
 	lda     _player_x
-	cmp     #$FD
+	cmp     #$F2
 	bcs     L059F
 ;
-; X1_Right_Side = player_x + 15;
+; X1_Right_Side = player_x + 13;
 ;
 	clc
-	adc     #$0F
+	adc     #$0D
 ;
 ; else {
 ;
