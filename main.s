@@ -11,25 +11,277 @@
 	.importzp	tmp1, tmp2, tmp3, tmp4, ptr1, ptr2, ptr3, ptr4
 	.macpack	longbranch
 	.forceimport	__STARTUP__
-	.import		_pal_col
+	.import		_pal_bg
+	.import		_pal_spr
 	.import		_ppu_wait_frame
 	.import		_ppu_on_all
 	.import		_oam_meta_spr
 	.import		_pad_poll
+	.import		_vram_adr
+	.import		_vram_unrle
+	.export		_test_nam
 	.export		_testSprite
+	.export		_palSprites
+	.export		_palBG
 	.export		_main
 
 .segment	"RODATA"
 
+_test_nam:
+	.byte	$01
+	.byte	$40
+	.byte	$01
+	.byte	$40
+	.byte	$00
+	.byte	$01
+	.byte	$0A
+	.byte	$41
+	.byte	$01
+	.byte	$02
+	.byte	$00
+	.byte	$01
+	.byte	$0F
+	.byte	$40
+	.byte	$40
+	.byte	$00
+	.byte	$01
+	.byte	$0D
+	.byte	$41
+	.byte	$00
+	.byte	$01
+	.byte	$0E
+	.byte	$40
+	.byte	$40
+	.byte	$00
+	.byte	$01
+	.byte	$0E
+	.byte	$41
+	.byte	$00
+	.byte	$01
+	.byte	$0D
+	.byte	$40
+	.byte	$40
+	.byte	$00
+	.byte	$01
+	.byte	$1D
+	.byte	$40
+	.byte	$40
+	.byte	$00
+	.byte	$01
+	.byte	$10
+	.byte	$41
+	.byte	$00
+	.byte	$01
+	.byte	$0B
+	.byte	$40
+	.byte	$40
+	.byte	$00
+	.byte	$01
+	.byte	$1D
+	.byte	$40
+	.byte	$40
+	.byte	$00
+	.byte	$01
+	.byte	$12
+	.byte	$41
+	.byte	$00
+	.byte	$01
+	.byte	$09
+	.byte	$40
+	.byte	$40
+	.byte	$00
+	.byte	$01
+	.byte	$1D
+	.byte	$40
+	.byte	$40
+	.byte	$50
+	.byte	$00
+	.byte	$01
+	.byte	$13
+	.byte	$41
+	.byte	$00
+	.byte	$01
+	.byte	$07
+	.byte	$40
+	.byte	$40
+	.byte	$50
+	.byte	$00
+	.byte	$01
+	.byte	$1C
+	.byte	$40
+	.byte	$40
+	.byte	$50
+	.byte	$00
+	.byte	$01
+	.byte	$1C
+	.byte	$40
+	.byte	$40
+	.byte	$50
+	.byte	$00
+	.byte	$01
+	.byte	$1C
+	.byte	$40
+	.byte	$40
+	.byte	$50
+	.byte	$00
+	.byte	$01
+	.byte	$1C
+	.byte	$40
+	.byte	$40
+	.byte	$00
+	.byte	$01
+	.byte	$1D
+	.byte	$40
+	.byte	$40
+	.byte	$00
+	.byte	$01
+	.byte	$1D
+	.byte	$40
+	.byte	$40
+	.byte	$00
+	.byte	$01
+	.byte	$1D
+	.byte	$40
+	.byte	$40
+	.byte	$00
+	.byte	$01
+	.byte	$19
+	.byte	$41
+	.byte	$41
+	.byte	$00
+	.byte	$00
+	.byte	$40
+	.byte	$40
+	.byte	$00
+	.byte	$01
+	.byte	$1A
+	.byte	$41
+	.byte	$01
+	.byte	$02
+	.byte	$40
+	.byte	$40
+	.byte	$00
+	.byte	$01
+	.byte	$1D
+	.byte	$40
+	.byte	$40
+	.byte	$00
+	.byte	$01
+	.byte	$1D
+	.byte	$40
+	.byte	$40
+	.byte	$00
+	.byte	$01
+	.byte	$1D
+	.byte	$40
+	.byte	$40
+	.byte	$00
+	.byte	$01
+	.byte	$1D
+	.byte	$40
+	.byte	$40
+	.byte	$00
+	.byte	$01
+	.byte	$1D
+	.byte	$40
+	.byte	$40
+	.byte	$00
+	.byte	$01
+	.byte	$02
+	.byte	$40
+	.byte	$01
+	.byte	$04
+	.byte	$00
+	.byte	$01
+	.byte	$03
+	.byte	$40
+	.byte	$01
+	.byte	$05
+	.byte	$00
+	.byte	$01
+	.byte	$03
+	.byte	$40
+	.byte	$01
+	.byte	$04
+	.byte	$00
+	.byte	$01
+	.byte	$02
+	.byte	$40
+	.byte	$40
+	.byte	$00
+	.byte	$00
+	.byte	$41
+	.byte	$01
+	.byte	$05
+	.byte	$00
+	.byte	$01
+	.byte	$03
+	.byte	$41
+	.byte	$01
+	.byte	$05
+	.byte	$00
+	.byte	$01
+	.byte	$03
+	.byte	$41
+	.byte	$01
+	.byte	$06
+	.byte	$00
+	.byte	$40
+	.byte	$40
+	.byte	$00
+	.byte	$01
+	.byte	$04
+	.byte	$41
+	.byte	$41
+	.byte	$00
+	.byte	$01
+	.byte	$16
+	.byte	$40
+	.byte	$01
+	.byte	$40
+	.byte	$00
+	.byte	$01
+	.byte	$3E
+	.byte	$00
+	.byte	$01
+	.byte	$00
 _testSprite:
 	.byte	$00
 	.byte	$00
 	.byte	$20
 	.byte	$00
+	.byte	$08
+	.byte	$00
+	.byte	$21
+	.byte	$00
+	.byte	$00
+	.byte	$08
+	.byte	$22
+	.byte	$00
+	.byte	$08
+	.byte	$08
+	.byte	$23
+	.byte	$00
 	.byte	$80
+_palSprites:
+	.byte	$0F
+	.byte	$22
+	.byte	$25
+	.byte	$24
+_palBG:
+	.byte	$0F
+	.byte	$06
+	.byte	$17
+	.byte	$16
 
 .segment	"BSS"
 
+.segment	"BSS"
+_player_x:
+	.res	1,$00
+.segment	"BSS"
+_player_y:
+	.res	1,$00
 .segment	"BSS"
 _i:
 	.res	1,$00
@@ -45,12 +297,6 @@ _touch:
 .segment	"BSS"
 _frame:
 	.res	1,$00
-.segment	"BSS"
-_cat_x:
-	.res	2,$00
-.segment	"BSS"
-_cat_y:
-	.res	2,$00
 
 ; ---------------------------------------------------------------
 ; void __near__ main (void)
@@ -63,94 +309,73 @@ _cat_y:
 .segment	"CODE"
 
 ;
+; pal_spr(palSprites);
+;
+	lda     #<(_palSprites)
+	ldx     #>(_palSprites)
+	jsr     _pal_spr
+;
+; pal_bg(palBG);
+;
+	lda     #<(_palBG)
+	ldx     #>(_palBG)
+	jsr     _pal_bg
+;
+; vram_adr(NAMETABLE_A); //unpack nametable into VRAM
+;
+	ldx     #$20
+	lda     #$00
+	jsr     _vram_adr
+;
+; vram_unrle(test_nam); 
+;
+	lda     #<(_test_nam)
+	ldx     #>(_test_nam)
+	jsr     _vram_unrle
+;
 ; ppu_on_all(); //enable rendering
 ;
 	jsr     _ppu_on_all
 ;
-; cat_x[0]=52;
+; player_x = 52;
 ;
 	lda     #$34
-	sta     _cat_x
+	sta     _player_x
 ;
-; cat_y[0]=100;
-;
-	lda     #$64
-	sta     _cat_y
-;
-; cat_x[1]=180;
-;
-	lda     #$B4
-	sta     _cat_x+1
-;
-; cat_y[1]=100;
+; player_y = 100;
 ;
 	lda     #$64
-	sta     _cat_y+1
+	sta     _player_y
 ;
-; touch=0;//collision flag
+; touch = 0; // collision flag
 ;
 	lda     #$00
 	sta     _touch
 ;
-; frame=0;//frame counter
+; frame = 0; // frame counter
 ;
-L0090:	sta     _frame
+	sta     _frame
 ;
-; ppu_wait_frame();//wait for next TV frame
+; ppu_wait_frame(); // wait for next TV frame
 ;
-	jsr     _ppu_wait_frame
+L0108:	jsr     _ppu_wait_frame
 ;
-; pal_col(16, 0x27);//set first sprite color
-;
-	lda     #$10
-	jsr     pusha
-	lda     #$27
-	jsr     _pal_col
-;
-; pal_col(17, 0x21);//set first sprite color
-;
-	lda     #$11
-	jsr     pusha
-	lda     #$21
-	jsr     _pal_col
-;
-; pal_col(18, 0x22);//set first sprite color
-;
-	lda     #$12
-	jsr     pusha
-	lda     #$22
-	jsr     _pal_col
-;
-; pal_col(19, 0x23);//set first sprite color
-;
-	lda     #$13
-	jsr     pusha
-	lda     #$23
-	jsr     _pal_col
-;
-; pal_col(20, 0x24);//set first sprite color
-;
-	lda     #$14
-	jsr     pusha
-	lda     #$24
-	jsr     _pal_col
-;
-; spr=0;
+; spr = 0;
 ;
 	lda     #$00
 	sta     _spr
 ;
-; i=0;
+; i = 0;
 ;
 	sta     _i
 ;
-; spr = oam_meta_spr(cat_x[0], cat_y[0], spr, testSprite);
+; spr = oam_meta_spr(player_x, player_y, spr, testSprite);
 ;
 	jsr     decsp3
-	lda     _cat_x
+	lda     _player_x
 	ldy     #$02
 	sta     (sp),y
-	lda     _cat_y
+	lda     _player_y
 	dey
 	sta     (sp),y
 	lda     _spr
@@ -161,192 +386,66 @@ L0090:	sta     _frame
 	jsr     _oam_meta_spr
 	sta     _spr
 ;
-; pad=pad_poll(i);
+; pad = pad_poll(i);
 ;
 	lda     _i
 	jsr     _pad_poll
 	sta     _pad
 ;
-; if(pad&PAD_LEFT &&cat_x[i]>  0) cat_x[i]-=2;
+; if(pad&PAD_LEFT  && player_x >  0)  player_x -= 2;
 ;
 	and     #$40
-	beq     L0083
-	ldy     _i
-	lda     _cat_x,y
-	beq     L0083
-	lda     #<(_cat_x)
-	ldx     #>(_cat_x)
-	clc
-	adc     _i
-	bcc     L0045
-	inx
-L0045:	sta     ptr1
-	stx     ptr1+1
-	ldy     #$00
-	lda     (ptr1),y
+	beq     L0136
+	lda     _player_x
+	beq     L0136
 	sec
 	sbc     #$02
-	sta     (ptr1),y
+	sta     _player_x
 ;
-; if(pad&PAD_RIGHT&&cat_x[i]<232) cat_x[i]+=2;
+; if(pad&PAD_RIGHT && player_x < 232) player_x += 2;
 ;
-L0083:	lda     _pad
+L0136:	lda     _pad
 	and     #$80
-	beq     L0087
-	ldy     _i
-	lda     _cat_x,y
+	beq     L013A
+	lda     _player_x
 	cmp     #$E8
-	bcs     L0087
-	lda     #<(_cat_x)
-	ldx     #>(_cat_x)
+	bcs     L013A
+	lda     #$02
 	clc
-	adc     _i
-	bcc     L004F
-	inx
-L004F:	sta     ptr1
-	stx     ptr1+1
-	ldy     #$00
-	lda     (ptr1),y
-	clc
-	adc     #$02
-	sta     (ptr1),y
+	adc     _player_x
+	sta     _player_x
 ;
-; if(pad&PAD_UP   &&cat_y[i]>  0) cat_y[i]-=2;
+; if(pad&PAD_UP    && player_y > 0)   player_y -= 2;
 ;
-L0087:	lda     _pad
+L013A:	lda     _pad
 	and     #$10
-	beq     L008B
-	ldy     _i
-	lda     _cat_y,y
-	beq     L008B
-	lda     #<(_cat_y)
-	ldx     #>(_cat_y)
-	clc
-	adc     _i
-	bcc     L0059
-	inx
-L0059:	sta     ptr1
-	stx     ptr1+1
-	ldy     #$00
-	lda     (ptr1),y
+	beq     L013E
+	lda     _player_y
+	beq     L013E
 	sec
 	sbc     #$02
-	sta     (ptr1),y
+	sta     _player_y
 ;
-; if(pad&PAD_DOWN &&cat_y[i]<212) cat_y[i]+=2;
+; if(pad&PAD_DOWN  && player_y < 212) player_y += 2;
 ;
-L008B:	lda     _pad
-	ldx     #$00
+L013E:	lda     _pad
 	and     #$20
-	beq     L008F
-	ldy     _i
-	lda     _cat_y,y
+	beq     L0142
+	lda     _player_y
 	cmp     #$D4
-	bcs     L008F
-	lda     #<(_cat_y)
-	ldx     #>(_cat_y)
+	bcs     L0142
+	lda     #$02
 	clc
-	adc     _i
-	bcc     L0063
-	inx
-L0063:	sta     ptr1
-	stx     ptr1+1
-	ldy     #$00
-	lda     (ptr1),y
-	clc
-	adc     #$02
-	sta     (ptr1),y
+	adc     _player_y
+	sta     _player_y
 ;
-; if(!(cat_x[0]+22< cat_x[1]+2 ||
+; ++frame;
 ;
-	ldx     #$00
-L008F:	lda     _cat_x
-	clc
-	adc     #$16
-	bcc     L0069
-	inx
-L0069:	jsr     pushax
-	ldx     #$00
-	lda     _cat_x+1
-	clc
-	adc     #$02
-	bcc     L006B
-	inx
-L006B:	jsr     tosicmp
-	bcc     L0067
-;
-; cat_x[0]+ 2>=cat_x[1]+22||
-;
-	ldx     #$00
-	lda     _cat_x
-	clc
-	adc     #$02
-	bcc     L006D
-	inx
-L006D:	jsr     pushax
-	ldx     #$00
-	lda     _cat_x+1
-	clc
-	adc     #$16
-	bcc     L006F
-	inx
-L006F:	jsr     tosicmp
-	bcs     L0067
-;
-; cat_y[0]+22< cat_y[1]+2 ||
-;
-	ldx     #$00
-	lda     _cat_y
-	clc
-	adc     #$16
-	bcc     L0071
-	inx
-L0071:	jsr     pushax
-	ldx     #$00
-	lda     _cat_y+1
-	clc
-	adc     #$02
-	bcc     L0073
-	inx
-L0073:	jsr     tosicmp
-	bcc     L0067
-;
-; cat_y[0]+ 2>=cat_y[1]+22)) touch=1; else touch=0;
-;
-	ldx     #$00
-	lda     _cat_y
-	clc
-	adc     #$02
-	bcc     L0075
-	inx
-L0075:	jsr     pushax
-	ldx     #$00
-	lda     _cat_y+1
-	clc
-	adc     #$16
-	bcc     L0077
-	inx
-L0077:	jsr     tosicmp
-	bcs     L0067
-	lda     #$00
-	jmp     L0078
-L0067:	lda     #$01
-L0078:	jsr     bnega
-	beq     L0065
-	lda     #$01
-	jmp     L007F
-L0065:	lda     #$00
-L007F:	sta     _touch
-;
-; frame++;
-;
-	lda     _frame
-	clc
-	adc     #$01
+L0142:	inc     _frame
 ;
 ; while(1)
 ;
-	jmp     L0090
+	jmp     L0108
 
 .endproc
 
