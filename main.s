@@ -1379,7 +1379,7 @@ L059D:	sta     _Y1_Bottom
 .endproc
 
 ; ---------------------------------------------------------------
-; int __near__ getCollisionIndex (unsigned char, unsigned char)
+; int __near__ __fastcall__ getCollisionIndex (unsigned char, unsigned char)
 ; ---------------------------------------------------------------
 
 .segment	"CODE"
@@ -1389,7 +1389,7 @@ L059D:	sta     _Y1_Bottom
 .segment	"CODE"
 
 ;
-; int getCollisionIndex(unsigned char screenX, unsigned char screenY) {
+; int __fastcall__ getCollisionIndex(unsigned char screenX, unsigned char screenY) {
 ;
 	jsr     pusha
 ;

@@ -83,7 +83,7 @@ void four_Sides (void){
 	}
 }
 
-int getCollisionIndex(unsigned char screenX, unsigned char screenY) {
+int __fastcall__ getCollisionIndex(unsigned char screenX, unsigned char screenY) {
 	//return ((screenX & 0xf8) >> 3) + (screenY & 0xf8);
 	// (x >> 3) + ((y >> 3) << 5)
 	return ((int) screenX >> 3) + (((int) screenY >> 3) << 5);
