@@ -17,6 +17,7 @@ static unsigned char spr;
 
 static unsigned char player_x;
 static unsigned char player_y;
+static unsigned char colliding;
 
 
 
@@ -43,9 +44,23 @@ const unsigned char palSprites[4]={
 	0x0f, 0x22, 0x25, 0x24
 };
 
+const unsigned char palSpritesAlt[4]={
+	0x0f, 0x1B, 0x19, 0x29
+};
+
+
 const unsigned char palBG[4]={
 	0x0f, 0x06, 0x17, 0x16
 };
+
+void checkCollision(void) {
+	unsigned char collIndex = ( ( player_x & 0xF0 ) >> 4 ) + ( player_y & 0xF0 );
+	if ( testColl[collIndex] ) {
+		colliding = 1;
+	} else {
+		colliding = 0;
+	}
+}
 
 void main(void)
 {
@@ -67,7 +82,9 @@ void main(void)
 	}
 	*/
 
-	pal_spr(palSprites);
+	colliding = 0;
+
+	
 	pal_bg(palBG);
 
 	vram_adr(NAMETABLE_A); //unpack nametable into VRAM
@@ -92,6 +109,13 @@ void main(void)
 		ppu_wait_frame(); // wait for next TV frame
 	
 
+		checkCollision();
+
+		if ( colliding ) {
+			pal_spr(palSpritesAlt);
+		} else {
+			pal_spr(palSprites);
+		}
 		
 
 		//pal_col(16, 0x27); //set first sprite color
@@ -106,9 +130,9 @@ void main(void)
 		pad = pad_poll(i);
 
 		if(pad&PAD_LEFT  && player_x >  0)  player_x -= 2;
-		if(pad&PAD_RIGHT && player_x < 232) player_x += 2;
+		if(pad&PAD_RIGHT && player_x < 240) player_x += 2;
 		if(pad&PAD_UP    && player_y > 0)   player_y -= 2;
-		if(pad&PAD_DOWN  && player_y < 212) player_y += 2;
+		if(pad&PAD_DOWN  && player_y < 220) player_y += 2;
 
 		//check for collision for a smaller bounding box
 		//metasprite is 24x24, collision box is 20x20

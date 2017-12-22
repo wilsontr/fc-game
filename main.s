@@ -23,7 +23,9 @@
 	.export		_testColl
 	.export		_testSprite
 	.export		_palSprites
+	.export		_palSpritesAlt
 	.export		_palBG
+	.export		_checkCollision
 	.export		_main
 
 .segment	"RODATA"
@@ -510,6 +512,11 @@ _palSprites:
 	.byte	$22
 	.byte	$25
 	.byte	$24
+_palSpritesAlt:
+	.byte	$0F
+	.byte	$1B
+	.byte	$19
+	.byte	$29
 _palBG:
 	.byte	$0F
 	.byte	$06
@@ -523,6 +530,9 @@ _player_x:
 	.res	1,$00
 .segment	"BSS"
 _player_y:
+	.res	1,$00
+.segment	"BSS"
+_colliding:
 	.res	1,$00
 .segment	"BSS"
 _i:
@@ -541,6 +551,54 @@ _frame:
 	.res	1,$00
 
 ; ---------------------------------------------------------------
+; void __near__ checkCollision (void)
+; ---------------------------------------------------------------
+
+.segment	"CODE"
+
+.proc	_checkCollision: near
+
+.segment	"CODE"
+
+;
+; unsigned char collIndex = ( ( player_x & 0xF0 ) >> 4 ) + ( player_y & 0xF0 );
+;
+	lda     _player_x
+	and     #$F0
+	lsr     a
+	lsr     a
+	lsr     a
+	lsr     a
+	sta     ptr1
+	lda     _player_y
+	and     #$F0
+	clc
+	adc     ptr1
+	jsr     pusha
+;
+; if ( testColl[collIndex] ) {
+;
+	ldy     #$00
+	lda     (sp),y
+	tay
+	lda     _testColl,y
+	beq     L023E
+;
+; colliding = 1;
+;
+	lda     #$01
+;
+; colliding = 0;
+;
+L023E:	sta     _colliding
+;
+; }
+;
+	jmp     incsp1
+
+.endproc
+
+; ---------------------------------------------------------------
 ; void __near__ main (void)
 ; ---------------------------------------------------------------
 
@@ -551,11 +609,10 @@ _frame:
 .segment	"CODE"
 
 ;
-; pal_spr(palSprites);
+; colliding = 0;
 ;
-	lda     #<(_palSprites)
-	ldx     #>(_palSprites)
-	jsr     _pal_spr
+	lda     #$00
+	sta     _colliding
 ;
 ; pal_bg(palBG);
 ;
@@ -600,7 +657,31 @@ _frame:
 ;
 ; ppu_wait_frame(); // wait for next TV frame
 ;
-L01F8:	jsr     _ppu_wait_frame
+L020B:	jsr     _ppu_wait_frame
+;
+; checkCollision();
+;
+	jsr     _checkCollision
+;
+; if ( colliding ) {
+;
+	lda     _colliding
+	beq     L0211
+;
+; pal_spr(palSpritesAlt);
+;
+	lda     #<(_palSpritesAlt)
+	ldx     #>(_palSpritesAlt)
+;
+; } else {
+;
+	jmp     L0241
+;
+; pal_spr(palSprites);
+;
+L0211:	lda     #<(_palSprites)
+	ldx     #>(_palSprites)
+L0241:	jsr     _pal_spr
 ;
 ; spr = 0;
 ;
@@ -637,21 +718,21 @@ L01F8:	jsr     _ppu_wait_frame
 ; if(pad&PAD_LEFT  && player_x >  0)  player_x -= 2;
 ;
 	and     #$40
-	beq     L0226
+	beq     L0245
 	lda     _player_x
-	beq     L0226
+	beq     L0245
 	sec
 	sbc     #$02
 	sta     _player_x
 ;
-; if(pad&PAD_RIGHT && player_x < 232) player_x += 2;
+; if(pad&PAD_RIGHT && player_x < 240) player_x += 2;
 ;
-L0226:	lda     _pad
+L0245:	lda     _pad
 	and     #$80
-	beq     L022A
+	beq     L0249
 	lda     _player_x
-	cmp     #$E8
-	bcs     L022A
+	cmp     #$F0
+	bcs     L0249
 	lda     #$02
 	clc
 	adc     _player_x
@@ -659,23 +740,23 @@ L0226:	lda     _pad
 ;
 ; if(pad&PAD_UP    && player_y > 0)   player_y -= 2;
 ;
-L022A:	lda     _pad
+L0249:	lda     _pad
 	and     #$10
-	beq     L022E
+	beq     L024D
 	lda     _player_y
-	beq     L022E
+	beq     L024D
 	sec
 	sbc     #$02
 	sta     _player_y
 ;
-; if(pad&PAD_DOWN  && player_y < 212) player_y += 2;
+; if(pad&PAD_DOWN  && player_y < 220) player_y += 2;
 ;
-L022E:	lda     _pad
+L024D:	lda     _pad
 	and     #$20
-	beq     L0232
+	beq     L0251
 	lda     _player_y
-	cmp     #$D4
-	bcs     L0232
+	cmp     #$DC
+	bcs     L0251
 	lda     #$02
 	clc
 	adc     _player_y
@@ -683,11 +764,11 @@ L022E:	lda     _pad
 ;
 ; ++frame;
 ;
-L0232:	inc     _frame
+L0251:	inc     _frame
 ;
 ; while(1)
 ;
-	jmp     L01F8
+	jmp     L020B
 
 .endproc
 
