@@ -21,10 +21,19 @@
 	.import		_vram_unrle
 	.export		_test_nam
 	.export		_testColl
+	.export		_X1_Right_Side
+	.export		_X1_Left_Side
+	.export		_Y1_Bottom
+	.export		_Y1_Top
+	.export		_corner
 	.export		_testSprite
 	.export		_palSprites
 	.export		_palSpritesAlt
 	.export		_palBG
+	.export		_four_Sides
+	.export		_getCollisionIndex
+	.export		_collide_Check_LR
+	.export		_collide_Check_UD
 	.export		_checkCollision
 	.export		_main
 
@@ -266,6 +275,70 @@ _testColl:
 	.byte	$01
 	.byte	$01
 	.byte	$01
+	.byte	$01
+	.byte	$01
+	.byte	$01
+	.byte	$01
+	.byte	$01
+	.byte	$01
+	.byte	$01
+	.byte	$01
+	.byte	$01
+	.byte	$01
+	.byte	$01
+	.byte	$01
+	.byte	$01
+	.byte	$01
+	.byte	$01
+	.byte	$01
+	.byte	$01
+	.byte	$01
+	.byte	$01
+	.byte	$01
+	.byte	$01
+	.byte	$01
+	.byte	$01
+	.byte	$01
+	.byte	$01
+	.byte	$01
+	.byte	$01
+	.byte	$01
+	.byte	$01
+	.byte	$01
+	.byte	$01
+	.byte	$01
+	.byte	$01
+	.byte	$01
+	.byte	$01
+	.byte	$01
+	.byte	$01
+	.byte	$01
+	.byte	$01
+	.byte	$01
+	.byte	$01
+	.byte	$01
+	.byte	$01
+	.byte	$01
+	.byte	$01
+	.byte	$01
+	.byte	$01
+	.byte	$01
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
 	.byte	$00
 	.byte	$00
 	.byte	$00
@@ -296,24 +369,8 @@ _testColl:
 	.byte	$00
 	.byte	$00
 	.byte	$00
-	.byte	$01
-	.byte	$01
 	.byte	$00
 	.byte	$00
-	.byte	$00
-	.byte	$00
-	.byte	$00
-	.byte	$00
-	.byte	$00
-	.byte	$00
-	.byte	$00
-	.byte	$00
-	.byte	$00
-	.byte	$00
-	.byte	$00
-	.byte	$00
-	.byte	$01
-	.byte	$01
 	.byte	$00
 	.byte	$00
 	.byte	$00
@@ -344,24 +401,8 @@ _testColl:
 	.byte	$00
 	.byte	$00
 	.byte	$00
-	.byte	$01
-	.byte	$01
 	.byte	$00
 	.byte	$00
-	.byte	$00
-	.byte	$00
-	.byte	$00
-	.byte	$00
-	.byte	$00
-	.byte	$00
-	.byte	$00
-	.byte	$00
-	.byte	$00
-	.byte	$00
-	.byte	$00
-	.byte	$00
-	.byte	$01
-	.byte	$01
 	.byte	$00
 	.byte	$00
 	.byte	$00
@@ -392,24 +433,8 @@ _testColl:
 	.byte	$00
 	.byte	$00
 	.byte	$00
-	.byte	$01
-	.byte	$01
 	.byte	$00
 	.byte	$00
-	.byte	$00
-	.byte	$00
-	.byte	$00
-	.byte	$00
-	.byte	$00
-	.byte	$00
-	.byte	$00
-	.byte	$00
-	.byte	$00
-	.byte	$00
-	.byte	$00
-	.byte	$00
-	.byte	$01
-	.byte	$01
 	.byte	$00
 	.byte	$00
 	.byte	$00
@@ -440,6 +465,22 @@ _testColl:
 	.byte	$00
 	.byte	$00
 	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
 	.byte	$01
 	.byte	$01
 	.byte	$00
@@ -456,6 +497,22 @@ _testColl:
 	.byte	$00
 	.byte	$00
 	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
 	.byte	$01
 	.byte	$01
 	.byte	$00
@@ -472,6 +529,678 @@ _testColl:
 	.byte	$00
 	.byte	$00
 	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$01
+	.byte	$01
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$01
+	.byte	$01
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$01
+	.byte	$01
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$01
+	.byte	$01
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$01
+	.byte	$01
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$01
+	.byte	$01
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$01
+	.byte	$01
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$01
+	.byte	$01
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$01
+	.byte	$01
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$01
+	.byte	$01
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$01
+	.byte	$01
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$01
+	.byte	$01
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$01
+	.byte	$01
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$01
+	.byte	$01
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$01
+	.byte	$01
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$01
+	.byte	$01
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$01
+	.byte	$01
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$01
+	.byte	$01
+	.byte	$01
+	.byte	$01
+	.byte	$01
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$01
+	.byte	$01
+	.byte	$01
+	.byte	$01
+	.byte	$01
+	.byte	$01
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$01
+	.byte	$01
+	.byte	$01
+	.byte	$01
+	.byte	$01
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$01
+	.byte	$01
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$01
+	.byte	$01
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$01
+	.byte	$01
+	.byte	$01
+	.byte	$01
+	.byte	$01
+	.byte	$01
+	.byte	$01
+	.byte	$01
+	.byte	$01
+	.byte	$01
+	.byte	$01
+	.byte	$01
+	.byte	$01
+	.byte	$01
+	.byte	$01
+	.byte	$01
+	.byte	$01
+	.byte	$01
+	.byte	$01
+	.byte	$01
+	.byte	$01
+	.byte	$01
+	.byte	$01
+	.byte	$01
+	.byte	$01
+	.byte	$01
+	.byte	$01
+	.byte	$01
+	.byte	$01
+	.byte	$01
+	.byte	$01
+	.byte	$01
+	.byte	$01
+	.byte	$01
+	.byte	$01
+	.byte	$01
+	.byte	$01
+	.byte	$01
+	.byte	$01
+	.byte	$01
+	.byte	$01
+	.byte	$01
+	.byte	$01
+	.byte	$01
+	.byte	$01
+	.byte	$01
+	.byte	$01
+	.byte	$01
 	.byte	$01
 	.byte	$01
 	.byte	$01
@@ -549,6 +1278,446 @@ _touch:
 .segment	"BSS"
 _frame:
 	.res	1,$00
+.segment	"BSS"
+_X1_Right_Side:
+	.res	1,$00
+.segment	"BSS"
+_X1_Left_Side:
+	.res	1,$00
+.segment	"BSS"
+_Y1_Bottom:
+	.res	1,$00
+.segment	"BSS"
+_Y1_Top:
+	.res	1,$00
+.segment	"BSS"
+_corner:
+	.res	2,$00
+
+; ---------------------------------------------------------------
+; void __near__ four_Sides (void)
+; ---------------------------------------------------------------
+
+.segment	"CODE"
+
+.proc	_four_Sides: near
+
+.segment	"CODE"
+
+;
+; if (player_x < (255)){ // find the left side
+;
+	lda     _player_x
+	cmp     #$FF
+	bcs     L059E
+;
+; X1_Left_Side = player_x + 1;
+;
+	clc
+	adc     #$01
+;
+; else {
+;
+	jmp     L059B
+;
+; X1_Left_Side = 255;
+;
+L059E:	lda     #$FF
+L059B:	sta     _X1_Left_Side
+;
+; if (player_x < (255 - 2)){ // find the right side
+;
+	lda     _player_x
+	cmp     #$FD
+	bcs     L059F
+;
+; X1_Right_Side = player_x + 15;
+;
+	clc
+	adc     #$0F
+;
+; else {
+;
+	jmp     L059C
+;
+; X1_Right_Side = 255;
+;
+L059F:	lda     #$FF
+L059C:	sta     _X1_Right_Side
+;
+; Y1_Top = player_y + 1; // our top is the same as the master Y
+;
+	lda     _player_y
+	clc
+	adc     #$01
+	sta     _Y1_Top
+;
+; if (player_y < (255)){ // find the bottom side
+;
+	lda     _player_y
+	cmp     #$FF
+	bcs     L05A0
+;
+; Y1_Bottom = player_y + 15;
+;
+	clc
+	adc     #$0F
+;
+; else {
+;
+	jmp     L059D
+;
+; Y1_Bottom = 255;
+;
+L05A0:	lda     #$FF
+L059D:	sta     _Y1_Bottom
+;
+; }
+;
+	rts
+
+.endproc
+
+; ---------------------------------------------------------------
+; int __near__ getCollisionIndex (unsigned char, unsigned char)
+; ---------------------------------------------------------------
+
+.segment	"CODE"
+
+.proc	_getCollisionIndex: near
+
+.segment	"CODE"
+
+;
+; int getCollisionIndex(unsigned char screenX, unsigned char screenY) {
+;
+	jsr     pusha
+;
+; return ((int) screenX >> 3) + (((int) screenY >> 3) << 5);
+;
+	ldy     #$01
+	lda     (sp),y
+	ldx     #$00
+	lsr     a
+	lsr     a
+	lsr     a
+	sta     ptr1
+	stx     ptr1+1
+	lda     (sp,x)
+	lsr     a
+	lsr     a
+	lsr     a
+	jsr     aslax4
+	stx     tmp1
+	asl     a
+	rol     tmp1
+	clc
+	adc     ptr1
+	pha
+	lda     tmp1
+	adc     ptr1+1
+	tax
+	pla
+;
+; }
+;
+	jmp     incsp2
+
+.endproc
+
+; ---------------------------------------------------------------
+; void __near__ collide_Check_LR (void)
+; ---------------------------------------------------------------
+
+.segment	"CODE"
+
+.proc	_collide_Check_LR: near
+
+.segment	"CODE"
+
+;
+; four_Sides(); // set the L R bottom top variables
+;
+	jsr     _four_Sides
+;
+; if ((pad & PAD_RIGHT) != 0){  // first check right
+;
+	lda     _pad
+	and     #$80
+	beq     L05A2
+;
+; corner = getCollisionIndex(X1_Right_Side, Y1_Top); // top right
+;
+	lda     _X1_Right_Side
+	jsr     pusha
+	lda     _Y1_Top
+	jsr     _getCollisionIndex
+	sta     _corner
+	stx     _corner+1
+;
+; if (testColl[corner] != 0)
+;
+	lda     #<(_testColl)
+	sta     ptr1
+	lda     #>(_testColl)
+	clc
+	adc     _corner+1
+	sta     ptr1+1
+	ldy     _corner
+	lda     (ptr1),y
+	beq     L04EA
+;
+; player_x = (player_x & 0xf8) + 1; // if collision, realign
+;
+	lda     _player_x
+	and     #$F8
+	clc
+	adc     #$01
+	sta     _player_x
+;
+; corner = getCollisionIndex(X1_Right_Side, Y1_Bottom); // bottom right
+;
+L04EA:	lda     _X1_Right_Side
+	jsr     pusha
+	lda     _Y1_Bottom
+	jsr     _getCollisionIndex
+	sta     _corner
+	stx     _corner+1
+;
+; if (testColl[corner] != 0)
+;
+	lda     #<(_testColl)
+	sta     ptr1
+	lda     #>(_testColl)
+	clc
+	adc     _corner+1
+	sta     ptr1+1
+	ldy     _corner
+	lda     (ptr1),y
+	beq     L0510
+;
+; player_x = (player_x & 0xf8) + 1; // if collision, realign
+;
+	lda     _player_x
+	and     #$F8
+	clc
+	adc     #$01
+;
+; else if ((pad & PAD_LEFT) != 0){ // check left
+;
+	jmp     L05A1
+L05A2:	lda     _pad
+	and     #$40
+	beq     L0510
+;
+; corner = getCollisionIndex(X1_Left_Side, Y1_Top); // top left
+;
+	lda     _X1_Left_Side
+	jsr     pusha
+	lda     _Y1_Top
+	jsr     _getCollisionIndex
+	sta     _corner
+	stx     _corner+1
+;
+; if (testColl[corner] != 0)
+;
+	lda     #<(_testColl)
+	sta     ptr1
+	lda     #>(_testColl)
+	clc
+	adc     _corner+1
+	sta     ptr1+1
+	ldy     _corner
+	lda     (ptr1),y
+	beq     L0505
+;
+; player_x = (player_x & 0xf8) + 7; // if collision, realign
+;
+	lda     _player_x
+	and     #$F8
+	clc
+	adc     #$07
+	sta     _player_x
+;
+; corner = getCollisionIndex(X1_Left_Side, Y1_Bottom); // bottom left
+;
+L0505:	lda     _X1_Left_Side
+	jsr     pusha
+	lda     _Y1_Bottom
+	jsr     _getCollisionIndex
+	sta     _corner
+	stx     _corner+1
+;
+; if (testColl[corner] != 0)
+;
+	lda     #<(_testColl)
+	sta     ptr1
+	lda     #>(_testColl)
+	clc
+	adc     _corner+1
+	sta     ptr1+1
+	ldy     _corner
+	lda     (ptr1),y
+	beq     L0510
+;
+; player_x = (player_x & 0xf8) + 7; // if collision, realign
+;
+	lda     _player_x
+	and     #$F8
+	clc
+	adc     #$07
+L05A1:	sta     _player_x
+;
+; }
+;
+L0510:	rts
+
+.endproc
+
+; ---------------------------------------------------------------
+; void __near__ collide_Check_UD (void)
+; ---------------------------------------------------------------
+
+.segment	"CODE"
+
+.proc	_collide_Check_UD: near
+
+.segment	"CODE"
+
+;
+; four_Sides();
+;
+	jsr     _four_Sides
+;
+; if ((pad & PAD_DOWN) != 0){ // down first
+;
+	lda     _pad
+	and     #$20
+	beq     L05A4
+;
+; corner = getCollisionIndex(X1_Right_Side, Y1_Bottom); // bottom right
+;
+	lda     _X1_Right_Side
+	jsr     pusha
+	lda     _Y1_Bottom
+	jsr     _getCollisionIndex
+	sta     _corner
+	stx     _corner+1
+;
+; if (testColl[corner] != 0)
+;
+	lda     #<(_testColl)
+	sta     ptr1
+	lda     #>(_testColl)
+	clc
+	adc     _corner+1
+	sta     ptr1+1
+	ldy     _corner
+	lda     (ptr1),y
+	beq     L0521
+;
+; player_y = (player_y & 0xf8); // if collision, realign
+;
+	lda     _player_y
+	and     #$F8
+	sta     _player_y
+;
+; corner = getCollisionIndex(X1_Left_Side, Y1_Bottom); // bottom left
+;
+L0521:	lda     _X1_Left_Side
+	jsr     pusha
+	lda     _Y1_Bottom
+	jsr     _getCollisionIndex
+	sta     _corner
+	stx     _corner+1
+;
+; if (testColl[corner] != 0)
+;
+	lda     #<(_testColl)
+	sta     ptr1
+	lda     #>(_testColl)
+	clc
+	adc     _corner+1
+	sta     ptr1+1
+	ldy     _corner
+	lda     (ptr1),y
+	beq     L0545
+;
+; player_y = (player_y & 0xf8); // if collision, realign
+;
+	lda     _player_y
+	and     #$F8
+;
+; else if ((pad & PAD_UP) != 0) { //or up
+;
+	jmp     L05A3
+L05A4:	lda     _pad
+	and     #$10
+	beq     L0545
+;
+; corner = getCollisionIndex(X1_Right_Side, Y1_Top); // top right
+;
+	lda     _X1_Right_Side
+	jsr     pusha
+	lda     _Y1_Top
+	jsr     _getCollisionIndex
+	sta     _corner
+	stx     _corner+1
+;
+; if (testColl[corner] != 0)
+;
+	lda     #<(_testColl)
+	sta     ptr1
+	lda     #>(_testColl)
+	clc
+	adc     _corner+1
+	sta     ptr1+1
+	ldy     _corner
+	lda     (ptr1),y
+	beq     L053A
+;
+; player_y = (player_y & 0xf8) + 7; // if collision, realign
+;
+	lda     _player_y
+	and     #$F8
+	clc
+	adc     #$07
+	sta     _player_y
+;
+; corner = getCollisionIndex(X1_Left_Side, Y1_Top);  // top left
+;
+L053A:	lda     _X1_Left_Side
+	jsr     pusha
+	lda     _Y1_Top
+	jsr     _getCollisionIndex
+	sta     _corner
+	stx     _corner+1
+;
+; if (testColl[corner] != 0)
+;
+	lda     #<(_testColl)
+	sta     ptr1
+	lda     #>(_testColl)
+	clc
+	adc     _corner+1
+	sta     ptr1+1
+	ldy     _corner
+	lda     (ptr1),y
+	beq     L0545
+;
+; player_y = (player_y & 0xf8) + 7; // if collision, realign
+;
+	lda     _player_y
+	and     #$F8
+	clc
+	adc     #$07
+L05A3:	sta     _player_y
+;
+; }
+;
+L0545:	rts
+
+.endproc
 
 ; ---------------------------------------------------------------
 ; void __near__ checkCollision (void)
@@ -561,19 +1730,21 @@ _frame:
 .segment	"CODE"
 
 ;
-; unsigned char collIndex = ( ( player_x & 0xF0 ) >> 4 ) + ( player_y & 0xF0 );
+; unsigned char collIndex = ((player_y >> 3) << 3) | ( player_x >> 3);
 ;
-	lda     _player_x
-	and     #$F0
-	lsr     a
-	lsr     a
-	lsr     a
-	lsr     a
-	sta     ptr1
 	lda     _player_y
-	and     #$F0
-	clc
-	adc     ptr1
+	lsr     a
+	lsr     a
+	lsr     a
+	asl     a
+	asl     a
+	asl     a
+	sta     ptr1
+	lda     _player_x
+	lsr     a
+	lsr     a
+	lsr     a
+	ora     ptr1
 	jsr     pusha
 ;
 ; if ( testColl[collIndex] ) {
@@ -582,7 +1753,7 @@ _frame:
 	lda     (sp),y
 	tay
 	lda     _testColl,y
-	beq     L023E
+	beq     L05A5
 ;
 ; colliding = 1;
 ;
@@ -590,7 +1761,7 @@ _frame:
 ;
 ; colliding = 0;
 ;
-L023E:	sta     _colliding
+L05A5:	sta     _colliding
 ;
 ; }
 ;
@@ -655,33 +1826,15 @@ L023E:	sta     _colliding
 ;
 	sta     _frame
 ;
-; ppu_wait_frame(); // wait for next TV frame
-;
-L020B:	jsr     _ppu_wait_frame
-;
-; checkCollision();
-;
-	jsr     _checkCollision
-;
-; if ( colliding ) {
-;
-	lda     _colliding
-	beq     L0211
-;
-; pal_spr(palSpritesAlt);
-;
-	lda     #<(_palSpritesAlt)
-	ldx     #>(_palSpritesAlt)
-;
-; } else {
-;
-	jmp     L0241
-;
 ; pal_spr(palSprites);
 ;
-L0211:	lda     #<(_palSprites)
+	lda     #<(_palSprites)
 	ldx     #>(_palSprites)
-L0241:	jsr     _pal_spr
+	jsr     _pal_spr
+;
+; ppu_wait_frame(); // wait for next TV frame
+;
+L056E:	jsr     _ppu_wait_frame
 ;
 ; spr = 0;
 ;
@@ -718,57 +1871,65 @@ L0241:	jsr     _pal_spr
 ; if(pad&PAD_LEFT  && player_x >  0)  player_x -= 2;
 ;
 	and     #$40
-	beq     L0245
+	beq     L05AA
 	lda     _player_x
-	beq     L0245
+	beq     L05AA
 	sec
 	sbc     #$02
 	sta     _player_x
 ;
 ; if(pad&PAD_RIGHT && player_x < 240) player_x += 2;
 ;
-L0245:	lda     _pad
+L05AA:	lda     _pad
 	and     #$80
-	beq     L0249
+	beq     L0586
 	lda     _player_x
 	cmp     #$F0
-	bcs     L0249
+	bcs     L0586
 	lda     #$02
 	clc
 	adc     _player_x
 	sta     _player_x
 ;
+; collide_Check_LR();
+;
+L0586:	jsr     _collide_Check_LR
+;
 ; if(pad&PAD_UP    && player_y > 0)   player_y -= 2;
 ;
-L0249:	lda     _pad
+	lda     _pad
 	and     #$10
-	beq     L024D
+	beq     L05B1
 	lda     _player_y
-	beq     L024D
+	beq     L05B1
 	sec
 	sbc     #$02
 	sta     _player_y
 ;
 ; if(pad&PAD_DOWN  && player_y < 220) player_y += 2;
 ;
-L024D:	lda     _pad
+L05B1:	lda     _pad
 	and     #$20
-	beq     L0251
+	beq     L0593
 	lda     _player_y
 	cmp     #$DC
-	bcs     L0251
+	bcs     L0593
 	lda     #$02
 	clc
 	adc     _player_y
 	sta     _player_y
 ;
+; collide_Check_UD();
+;
+L0593:	jsr     _collide_Check_UD
+;
 ; ++frame;
 ;
-L0251:	inc     _frame
+	inc     _frame
 ;
 ; while(1)
 ;
-	jmp     L020B
+	jmp     L056E
 
 .endproc
 
