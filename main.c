@@ -1,6 +1,7 @@
 
 #include "neslib.h"
 #include "test_nam.h"
+#include "test_nam_coll.h"
 
 /*
 // frame counter
