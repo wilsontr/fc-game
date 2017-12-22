@@ -214,16 +214,16 @@ detectNTSC:
 	ldx #0
 	jsr _set_vram_update
 
-	ldx #<music_data
-	ldy #>music_data
-	lda <NTSC_MODE
-	jsr FamiToneInit
+;	ldx #<music_data
+;	ldy #>music_data
+;	lda <NTSC_MODE
+;	jsr FamiToneInit
 
-	.if(FT_SFX_ENABLE)
-	ldx #<sounds_data
-	ldy #>sounds_data
-	jsr FamiToneSfxInit
-	.endif
+;	.if(FT_SFX_ENABLE)
+;	ldx #<sounds_data
+;	ldy #>sounds_data
+;	jsr FamiToneSfxInit
+;	.endif
 
 	lda #$fd
 	sta <RAND_SEED
@@ -239,13 +239,13 @@ detectNTSC:
 
 .segment "RODATA"
 
-music_data:
+;music_data:
 	;.include "music.s"
 
-	.if(FT_SFX_ENABLE)
-sounds_data:
+;	.if(FT_SFX_ENABLE)
+;sounds_data:
 	;.include "sounds.s"
-	.endif
+;	.endif
 
 .segment "SAMPLES"
 

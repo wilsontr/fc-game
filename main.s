@@ -11,15 +11,46 @@
 	.importzp	tmp1, tmp2, tmp3, tmp4, ptr1, ptr2, ptr3, ptr4
 	.macpack	longbranch
 	.forceimport	__STARTUP__
+	.import		_pal_col
 	.import		_ppu_wait_frame
 	.import		_ppu_on_all
+	.import		_oam_meta_spr
+	.import		_pad_poll
+	.export		_testSprite
 	.export		_main
+
+.segment	"RODATA"
+
+_testSprite:
+	.byte	$00
+	.byte	$00
+	.byte	$20
+	.byte	$00
+	.byte	$80
 
 .segment	"BSS"
 
+.segment	"BSS"
+_i:
+	.res	1,$00
+.segment	"BSS"
+_pad:
+	.res	1,$00
+.segment	"BSS"
+_spr:
+	.res	1,$00
+.segment	"BSS"
+_touch:
+	.res	1,$00
 .segment	"BSS"
 _frame:
 	.res	1,$00
+.segment	"BSS"
+_cat_x:
+	.res	2,$00
+.segment	"BSS"
+_cat_y:
+	.res	2,$00
 
 ; ---------------------------------------------------------------
 ; void __near__ main (void)
@@ -36,22 +67,286 @@ _frame:
 ;
 	jsr     _ppu_on_all
 ;
-; frame = 0;
+; cat_x[0]=52;
+;
+	lda     #$34
+	sta     _cat_x
+;
+; cat_y[0]=100;
+;
+	lda     #$64
+	sta     _cat_y
+;
+; cat_x[1]=180;
+;
+	lda     #$B4
+	sta     _cat_x+1
+;
+; cat_y[1]=100;
+;
+	lda     #$64
+	sta     _cat_y+1
+;
+; touch=0;//collision flag
 ;
 	lda     #$00
-	sta     _frame
+	sta     _touch
 ;
-; ppu_wait_frame();
+; frame=0;//frame counter
 ;
-L0005:	jsr     _ppu_wait_frame
+L0090:	sta     _frame
 ;
-; ++frame;
+; ppu_wait_frame();//wait for next TV frame
 ;
-	inc     _frame
+	jsr     _ppu_wait_frame
 ;
-; while(1) {
+; pal_col(16, 0x27);//set first sprite color
 ;
-	jmp     L0005
+	lda     #$10
+	jsr     pusha
+	lda     #$27
+	jsr     _pal_col
+;
+; pal_col(17, 0x21);//set first sprite color
+;
+	lda     #$11
+	jsr     pusha
+	lda     #$21
+	jsr     _pal_col
+;
+; pal_col(18, 0x22);//set first sprite color
+;
+	lda     #$12
+	jsr     pusha
+	lda     #$22
+	jsr     _pal_col
+;
+; pal_col(19, 0x23);//set first sprite color
+;
+	lda     #$13
+	jsr     pusha
+	lda     #$23
+	jsr     _pal_col
+;
+; pal_col(20, 0x24);//set first sprite color
+;
+	lda     #$14
+	jsr     pusha
+	lda     #$24
+	jsr     _pal_col
+;
+; spr=0;
+;
+	lda     #$00
+	sta     _spr
+;
+; i=0;
+;
+	sta     _i
+;
+; spr = oam_meta_spr(cat_x[0], cat_y[0], spr, testSprite);
+;
+	jsr     decsp3
+	lda     _cat_x
+	ldy     #$02
+	sta     (sp),y
+	lda     _cat_y
+	dey
+	sta     (sp),y
+	lda     _spr
+	dey
+	sta     (sp),y
+	lda     #<(_testSprite)
+	ldx     #>(_testSprite)
+	jsr     _oam_meta_spr
+	sta     _spr
+;
+; pad=pad_poll(i);
+;
+	lda     _i
+	jsr     _pad_poll
+	sta     _pad
+;
+; if(pad&PAD_LEFT &&cat_x[i]>  0) cat_x[i]-=2;
+;
+	and     #$40
+	beq     L0083
+	ldy     _i
+	lda     _cat_x,y
+	beq     L0083
+	lda     #<(_cat_x)
+	ldx     #>(_cat_x)
+	clc
+	adc     _i
+	bcc     L0045
+	inx
+L0045:	sta     ptr1
+	stx     ptr1+1
+	ldy     #$00
+	lda     (ptr1),y
+	sec
+	sbc     #$02
+	sta     (ptr1),y
+;
+; if(pad&PAD_RIGHT&&cat_x[i]<232) cat_x[i]+=2;
+;
+L0083:	lda     _pad
+	and     #$80
+	beq     L0087
+	ldy     _i
+	lda     _cat_x,y
+	cmp     #$E8
+	bcs     L0087
+	lda     #<(_cat_x)
+	ldx     #>(_cat_x)
+	clc
+	adc     _i
+	bcc     L004F
+	inx
+L004F:	sta     ptr1
+	stx     ptr1+1
+	ldy     #$00
+	lda     (ptr1),y
+	clc
+	adc     #$02
+	sta     (ptr1),y
+;
+; if(pad&PAD_UP   &&cat_y[i]>  0) cat_y[i]-=2;
+;
+L0087:	lda     _pad
+	and     #$10
+	beq     L008B
+	ldy     _i
+	lda     _cat_y,y
+	beq     L008B
+	lda     #<(_cat_y)
+	ldx     #>(_cat_y)
+	clc
+	adc     _i
+	bcc     L0059
+	inx
+L0059:	sta     ptr1
+	stx     ptr1+1
+	ldy     #$00
+	lda     (ptr1),y
+	sec
+	sbc     #$02
+	sta     (ptr1),y
+;
+; if(pad&PAD_DOWN &&cat_y[i]<212) cat_y[i]+=2;
+;
+L008B:	lda     _pad
+	ldx     #$00
+	and     #$20
+	beq     L008F
+	ldy     _i
+	lda     _cat_y,y
+	cmp     #$D4
+	bcs     L008F
+	lda     #<(_cat_y)
+	ldx     #>(_cat_y)
+	clc
+	adc     _i
+	bcc     L0063
+	inx
+L0063:	sta     ptr1
+	stx     ptr1+1
+	ldy     #$00
+	lda     (ptr1),y
+	clc
+	adc     #$02
+	sta     (ptr1),y
+;
+; if(!(cat_x[0]+22< cat_x[1]+2 ||
+;
+	ldx     #$00
+L008F:	lda     _cat_x
+	clc
+	adc     #$16
+	bcc     L0069
+	inx
+L0069:	jsr     pushax
+	ldx     #$00
+	lda     _cat_x+1
+	clc
+	adc     #$02
+	bcc     L006B
+	inx
+L006B:	jsr     tosicmp
+	bcc     L0067
+;
+; cat_x[0]+ 2>=cat_x[1]+22||
+;
+	ldx     #$00
+	lda     _cat_x
+	clc
+	adc     #$02
+	bcc     L006D
+	inx
+L006D:	jsr     pushax
+	ldx     #$00
+	lda     _cat_x+1
+	clc
+	adc     #$16
+	bcc     L006F
+	inx
+L006F:	jsr     tosicmp
+	bcs     L0067
+;
+; cat_y[0]+22< cat_y[1]+2 ||
+;
+	ldx     #$00
+	lda     _cat_y
+	clc
+	adc     #$16
+	bcc     L0071
+	inx
+L0071:	jsr     pushax
+	ldx     #$00
+	lda     _cat_y+1
+	clc
+	adc     #$02
+	bcc     L0073
+	inx
+L0073:	jsr     tosicmp
+	bcc     L0067
+;
+; cat_y[0]+ 2>=cat_y[1]+22)) touch=1; else touch=0;
+;
+	ldx     #$00
+	lda     _cat_y
+	clc
+	adc     #$02
+	bcc     L0075
+	inx
+L0075:	jsr     pushax
+	ldx     #$00
+	lda     _cat_y+1
+	clc
+	adc     #$16
+	bcc     L0077
+	inx
+L0077:	jsr     tosicmp
+	bcs     L0067
+	lda     #$00
+	jmp     L0078
+L0067:	lda     #$01
+L0078:	jsr     bnega
+	beq     L0065
+	lda     #$01
+	jmp     L007F
+L0065:	lda     #$00
+L007F:	sta     _touch
+;
+; frame++;
+;
+	lda     _frame
+	clc
+	adc     #$01
+;
+; while(1)
+;
+	jmp     L0090
 
 .endproc
 

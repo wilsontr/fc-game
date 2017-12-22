@@ -11,4 +11,4 @@ main.s: main.c
 	ca65 $<
 
 clean:
-	rm *.o game.s
+	rm *.o main.s
