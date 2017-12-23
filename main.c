@@ -1,7 +1,12 @@
 
+#include <stdint.h>
 #include "neslib.h"
 #include "test_nam.h"
 #include "test_nam_coll.h"
+
+
+typedef uint8_t u8;
+typedef uint16_t u16;
 
 /*
 // frame counter
@@ -13,6 +18,13 @@ static unsigned char spr;
 */
 
 
+#pragma bss-name (push,"ZEROPAGE")
+#pragma data-name (push,"ZEROPAGE")
+
+u8 oam_off;
+
+#pragma data-name(pop)
+#pragma bss-name (pop)
 
 
 static unsigned char player_x;
@@ -32,7 +44,7 @@ unsigned char X1_Right_Side;	//for collision test
 unsigned char X1_Left_Side;
 unsigned char Y1_Bottom;
 unsigned char Y1_Top;
-int corner;
+u16 corner;
 
 
 
@@ -83,10 +95,10 @@ void four_Sides (void){
 	}
 }
 
-int __fastcall__ getCollisionIndex(unsigned char screenX, unsigned char screenY) {
+u16 __fastcall__ getCollisionIndex(unsigned char screenX, unsigned char screenY) {
 	//return ((screenX & 0xf8) >> 3) + (screenY & 0xf8);
 	// (x >> 3) + ((y >> 3) << 5)
-	return ((int) screenX >> 3) + (((int) screenY >> 3) << 5);
+	return ((u16) screenX >> 3) + (((u16) screenY >> 3) << 5);
 }
 
 /*

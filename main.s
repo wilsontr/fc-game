@@ -21,6 +21,7 @@
 	.import		_vram_unrle
 	.export		_test_nam
 	.export		_testColl
+	.export		_oam_off
 	.export		_X1_Right_Side
 	.export		_X1_Left_Side
 	.export		_Y1_Bottom
@@ -36,6 +37,11 @@
 	.export		_collide_Check_UD
 	.export		_checkCollision
 	.export		_main
+
+.segment	"DATA"
+
+.segment	"ZEROPAGE"
+.segment	"DATA"
 
 .segment	"RODATA"
 
@@ -1254,6 +1260,11 @@ _palBG:
 
 .segment	"BSS"
 
+.segment	"ZEROPAGE"
+.segment	"BSS"
+.segment	"ZEROPAGE"
+_oam_off:
+	.res	1,$00
 .segment	"BSS"
 _player_x:
 	.res	1,$00
@@ -1309,7 +1320,7 @@ _corner:
 ;
 	lda     _player_x
 	cmp     #$FE
-	bcs     L059E
+	bcs     L05A2
 ;
 ; X1_Left_Side = player_x + 1;
 ;
@@ -1318,18 +1329,18 @@ _corner:
 ;
 ; else {
 ;
-	jmp     L059B
+	jmp     L059F
 ;
 ; X1_Left_Side = 255;
 ;
-L059E:	lda     #$FF
-L059B:	sta     _X1_Left_Side
+L05A2:	lda     #$FF
+L059F:	sta     _X1_Left_Side
 ;
 ; if (player_x < (255 - 13)){ // find the right side
 ;
 	lda     _player_x
 	cmp     #$F2
-	bcs     L059F
+	bcs     L05A3
 ;
 ; X1_Right_Side = player_x + 13;
 ;
@@ -1338,12 +1349,12 @@ L059B:	sta     _X1_Left_Side
 ;
 ; else {
 ;
-	jmp     L059C
+	jmp     L05A0
 ;
 ; X1_Right_Side = 255;
 ;
-L059F:	lda     #$FF
-L059C:	sta     _X1_Right_Side
+L05A3:	lda     #$FF
+L05A0:	sta     _X1_Right_Side
 ;
 ; Y1_Top = player_y + 1; // our top is the same as the master Y
 ;
@@ -1356,7 +1367,7 @@ L059C:	sta     _X1_Right_Side
 ;
 	lda     _player_y
 	cmp     #$FF
-	bcs     L05A0
+	bcs     L05A4
 ;
 ; Y1_Bottom = player_y + 15;
 ;
@@ -1365,12 +1376,12 @@ L059C:	sta     _X1_Right_Side
 ;
 ; else {
 ;
-	jmp     L059D
+	jmp     L05A1
 ;
 ; Y1_Bottom = 255;
 ;
-L05A0:	lda     #$FF
-L059D:	sta     _Y1_Bottom
+L05A4:	lda     #$FF
+L05A1:	sta     _Y1_Bottom
 ;
 ; }
 ;
@@ -1379,7 +1390,7 @@ L059D:	sta     _Y1_Bottom
 .endproc
 
 ; ---------------------------------------------------------------
-; int __near__ __fastcall__ getCollisionIndex (unsigned char, unsigned char)
+; unsigned int __near__ __fastcall__ getCollisionIndex (unsigned char, unsigned char)
 ; ---------------------------------------------------------------
 
 .segment	"CODE"
@@ -1389,11 +1400,11 @@ L059D:	sta     _Y1_Bottom
 .segment	"CODE"
 
 ;
-; int __fastcall__ getCollisionIndex(unsigned char screenX, unsigned char screenY) {
+; u16 __fastcall__ getCollisionIndex(unsigned char screenX, unsigned char screenY) {
 ;
 	jsr     pusha
 ;
-; return ((int) screenX >> 3) + (((int) screenY >> 3) << 5);
+; return ((u16) screenX >> 3) + (((u16) screenY >> 3) << 5);
 ;
 	ldy     #$01
 	lda     (sp),y
@@ -1407,7 +1418,7 @@ L059D:	sta     _Y1_Bottom
 	lsr     a
 	lsr     a
 	lsr     a
-	jsr     aslax4
+	jsr     shlax4
 	stx     tmp1
 	asl     a
 	rol     tmp1
@@ -1444,7 +1455,7 @@ L059D:	sta     _Y1_Bottom
 ;
 	lda     _pad
 	and     #$80
-	beq     L05A2
+	beq     L05A6
 ;
 ; corner = getCollisionIndex(X1_Right_Side, Y1_Top); // top right
 ;
@@ -1465,7 +1476,7 @@ L059D:	sta     _Y1_Bottom
 	sta     ptr1+1
 	ldy     _corner
 	lda     (ptr1),y
-	beq     L04EA
+	beq     L04EE
 ;
 ; player_x = (player_x & 0xf8) + 1; // if collision, realign
 ;
@@ -1477,7 +1488,7 @@ L059D:	sta     _Y1_Bottom
 ;
 ; corner = getCollisionIndex(X1_Right_Side, Y1_Bottom); // bottom right
 ;
-L04EA:	lda     _X1_Right_Side
+L04EE:	lda     _X1_Right_Side
 	jsr     pusha
 	lda     _Y1_Bottom
 	jsr     _getCollisionIndex
@@ -1494,7 +1505,7 @@ L04EA:	lda     _X1_Right_Side
 	sta     ptr1+1
 	ldy     _corner
 	lda     (ptr1),y
-	beq     L0510
+	beq     L0514
 ;
 ; player_x = (player_x & 0xf8) + 1; // if collision, realign
 ;
@@ -1505,10 +1516,10 @@ L04EA:	lda     _X1_Right_Side
 ;
 ; else if ((pad & PAD_LEFT) != 0){ // check left
 ;
-	jmp     L05A1
-L05A2:	lda     _pad
+	jmp     L05A5
+L05A6:	lda     _pad
 	and     #$40
-	beq     L0510
+	beq     L0514
 ;
 ; corner = getCollisionIndex(X1_Left_Side, Y1_Top); // top left
 ;
@@ -1529,7 +1540,7 @@ L05A2:	lda     _pad
 	sta     ptr1+1
 	ldy     _corner
 	lda     (ptr1),y
-	beq     L0505
+	beq     L0509
 ;
 ; player_x = (player_x & 0xf8) + 7; // if collision, realign
 ;
@@ -1541,7 +1552,7 @@ L05A2:	lda     _pad
 ;
 ; corner = getCollisionIndex(X1_Left_Side, Y1_Bottom); // bottom left
 ;
-L0505:	lda     _X1_Left_Side
+L0509:	lda     _X1_Left_Side
 	jsr     pusha
 	lda     _Y1_Bottom
 	jsr     _getCollisionIndex
@@ -1558,7 +1569,7 @@ L0505:	lda     _X1_Left_Side
 	sta     ptr1+1
 	ldy     _corner
 	lda     (ptr1),y
-	beq     L0510
+	beq     L0514
 ;
 ; player_x = (player_x & 0xf8) + 7; // if collision, realign
 ;
@@ -1566,11 +1577,11 @@ L0505:	lda     _X1_Left_Side
 	and     #$F8
 	clc
 	adc     #$07
-L05A1:	sta     _player_x
+L05A5:	sta     _player_x
 ;
 ; }
 ;
-L0510:	rts
+L0514:	rts
 
 .endproc
 
@@ -1593,7 +1604,7 @@ L0510:	rts
 ;
 	lda     _pad
 	and     #$20
-	beq     L05A4
+	beq     L05A8
 ;
 ; corner = getCollisionIndex(X1_Right_Side, Y1_Bottom); // bottom right
 ;
@@ -1614,7 +1625,7 @@ L0510:	rts
 	sta     ptr1+1
 	ldy     _corner
 	lda     (ptr1),y
-	beq     L0521
+	beq     L0525
 ;
 ; player_y = (player_y & 0xf8); // if collision, realign
 ;
@@ -1624,7 +1635,7 @@ L0510:	rts
 ;
 ; corner = getCollisionIndex(X1_Left_Side, Y1_Bottom); // bottom left
 ;
-L0521:	lda     _X1_Left_Side
+L0525:	lda     _X1_Left_Side
 	jsr     pusha
 	lda     _Y1_Bottom
 	jsr     _getCollisionIndex
@@ -1641,7 +1652,7 @@ L0521:	lda     _X1_Left_Side
 	sta     ptr1+1
 	ldy     _corner
 	lda     (ptr1),y
-	beq     L0545
+	beq     L0549
 ;
 ; player_y = (player_y & 0xf8); // if collision, realign
 ;
@@ -1650,10 +1661,10 @@ L0521:	lda     _X1_Left_Side
 ;
 ; else if ((pad & PAD_UP) != 0) { //or up
 ;
-	jmp     L05A3
-L05A4:	lda     _pad
+	jmp     L05A7
+L05A8:	lda     _pad
 	and     #$10
-	beq     L0545
+	beq     L0549
 ;
 ; corner = getCollisionIndex(X1_Right_Side, Y1_Top); // top right
 ;
@@ -1674,7 +1685,7 @@ L05A4:	lda     _pad
 	sta     ptr1+1
 	ldy     _corner
 	lda     (ptr1),y
-	beq     L053A
+	beq     L053E
 ;
 ; player_y = (player_y & 0xf8) + 7; // if collision, realign
 ;
@@ -1686,7 +1697,7 @@ L05A4:	lda     _pad
 ;
 ; corner = getCollisionIndex(X1_Left_Side, Y1_Top);  // top left
 ;
-L053A:	lda     _X1_Left_Side
+L053E:	lda     _X1_Left_Side
 	jsr     pusha
 	lda     _Y1_Top
 	jsr     _getCollisionIndex
@@ -1703,7 +1714,7 @@ L053A:	lda     _X1_Left_Side
 	sta     ptr1+1
 	ldy     _corner
 	lda     (ptr1),y
-	beq     L0545
+	beq     L0549
 ;
 ; player_y = (player_y & 0xf8) + 7; // if collision, realign
 ;
@@ -1711,11 +1722,11 @@ L053A:	lda     _X1_Left_Side
 	and     #$F8
 	clc
 	adc     #$07
-L05A3:	sta     _player_y
+L05A7:	sta     _player_y
 ;
 ; }
 ;
-L0545:	rts
+L0549:	rts
 
 .endproc
 
@@ -1753,7 +1764,7 @@ L0545:	rts
 	lda     (sp),y
 	tay
 	lda     _testColl,y
-	beq     L05A5
+	beq     L05A9
 ;
 ; colliding = 1;
 ;
@@ -1761,7 +1772,7 @@ L0545:	rts
 ;
 ; colliding = 0;
 ;
-L05A5:	sta     _colliding
+L05A9:	sta     _colliding
 ;
 ; }
 ;
@@ -1834,7 +1845,7 @@ L05A5:	sta     _colliding
 ;
 ; ppu_wait_frame(); // wait for next TV frame
 ;
-L056E:	jsr     _ppu_wait_frame
+L0572:	jsr     _ppu_wait_frame
 ;
 ; spr = 0;
 ;
@@ -1871,21 +1882,21 @@ L056E:	jsr     _ppu_wait_frame
 ; if(pad&PAD_LEFT  && player_x >  0)  player_x -= 2;
 ;
 	and     #$40
-	beq     L05AA
+	beq     L05AE
 	lda     _player_x
-	beq     L05AA
+	beq     L05AE
 	sec
 	sbc     #$02
 	sta     _player_x
 ;
 ; if(pad&PAD_RIGHT && player_x < 240) player_x += 2;
 ;
-L05AA:	lda     _pad
+L05AE:	lda     _pad
 	and     #$80
-	beq     L0586
+	beq     L058A
 	lda     _player_x
 	cmp     #$F0
-	bcs     L0586
+	bcs     L058A
 	lda     #$02
 	clc
 	adc     _player_x
@@ -1893,27 +1904,27 @@ L05AA:	lda     _pad
 ;
 ; collide_Check_LR();
 ;
-L0586:	jsr     _collide_Check_LR
+L058A:	jsr     _collide_Check_LR
 ;
 ; if(pad&PAD_UP    && player_y > 0)   player_y -= 2;
 ;
 	lda     _pad
 	and     #$10
-	beq     L05B1
+	beq     L05B5
 	lda     _player_y
-	beq     L05B1
+	beq     L05B5
 	sec
 	sbc     #$02
 	sta     _player_y
 ;
 ; if(pad&PAD_DOWN  && player_y < 220) player_y += 2;
 ;
-L05B1:	lda     _pad
+L05B5:	lda     _pad
 	and     #$20
-	beq     L0593
+	beq     L0597
 	lda     _player_y
 	cmp     #$DC
-	bcs     L0593
+	bcs     L0597
 	lda     #$02
 	clc
 	adc     _player_y
@@ -1921,7 +1932,7 @@ L05B1:	lda     _pad
 ;
 ; collide_Check_UD();
 ;
-L0593:	jsr     _collide_Check_UD
+L0597:	jsr     _collide_Check_UD
 ;
 ; ++frame;
 ;
@@ -1929,7 +1940,7 @@ L0593:	jsr     _collide_Check_UD
 ;
 ; while(1)
 ;
-	jmp     L056E
+	jmp     L0572
 
 .endproc
 
