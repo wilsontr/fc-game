@@ -66,12 +66,12 @@ const u8 palBG[4]={
 void unrleCollision(void) {
 	u8 i = 0;
 	u8 j = 0;
-	u8 size = sizeof(test_nam_coll_rle);
+	u16 size = sizeof(test_nam_coll_rle); 
 	u8 currentByte;
 	u8 byteCount;
 	u16 outPointer = 0;
 
-	while ( i < size ) {
+	while ( i <= size ) {
 		currentByte = test_nam_coll_rle[i];
 		++i;
 		byteCount = test_nam_coll_rle[i];

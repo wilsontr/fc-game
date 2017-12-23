@@ -46,6 +46,10 @@ _.each(fileData, (byte) => {
 	}
 });
 
+if ( currentRun.length ) {
+	runsArray.push(currentRun);
+}
+
 let compressedData = [];
 
 _.each(runsArray, (run) => {
@@ -64,7 +68,7 @@ _.each ( compressedData, (byte) => {
 		output += '\n\t';
 	}
 });
-output = _.trimEnd(output, /\n\t \,/);
+output = _.trimEnd(output, '\n\r\t \,');
 output += '\n};\n';
 
 const rleFile = `${mapName}_rle.h`;
