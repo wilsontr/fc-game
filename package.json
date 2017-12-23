@@ -1,0 +1,22 @@
+{
+  "name": "fc-game",
+  "version": "1.0.0",
+  "description": "",
+  "main": "coll_rle.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/wilsontr/fc-game.git"
+  },
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/wilsontr/fc-game/issues"
+  },
+  "homepage": "https://github.com/wilsontr/fc-game#readme",
+  "dependencies": {
+    "lodash": "^4.17.4"
+  }
+}

@@ -10,10 +10,10 @@ typedef uint16_t u16;
 
 /*
 // frame counter
-static unsigned char frame;
+static u8 frame;
 
 
-static unsigned char spr;
+static u8 spr;
 
 */
 
@@ -27,23 +27,23 @@ u8 oam_off;
 #pragma bss-name (pop)
 
 
-static unsigned char player_x;
-static unsigned char player_y;
-static unsigned char colliding;
+static u8 player_x;
+static u8 player_y;
+static u8 colliding;
 
 
 
 //variables
 
-static unsigned char i;
-static unsigned char pad,spr;
-static unsigned char touch;
-static unsigned char frame;
+static u8 i;
+static u8 pad,spr;
+static u8 touch;
+static u8 frame;
 
-unsigned char X1_Right_Side;	//for collision test
-unsigned char X1_Left_Side;
-unsigned char Y1_Bottom;
-unsigned char Y1_Top;
+u8 X1_Right_Side;	//for collision test
+u8 X1_Left_Side;
+u8 Y1_Bottom;
+u8 Y1_Top;
 u16 corner;
 
 
@@ -51,7 +51,7 @@ u16 corner;
 
 // x offset, y offset, tile, attribute
 
-const unsigned char testSprite[] = {
+const u8 testSprite[] = {
 	0, 0, 0x20, 0,
 	8, 0, 0x21, 0,
 	0, 8, 0x22, 0,
@@ -59,16 +59,16 @@ const unsigned char testSprite[] = {
 	128
 };
 
-const unsigned char palSprites[4]={
+const u8 palSprites[4]={
 	0x0f, 0x22, 0x25, 0x24
 };
 
-const unsigned char palSpritesAlt[4]={
+const u8 palSpritesAlt[4]={
 	0x0f, 0x1B, 0x19, 0x29
 };
 
 
-const unsigned char palBG[4]={
+const u8 palBG[4]={
 	0x0f, 0x06, 0x17, 0x16
 };
 
@@ -95,16 +95,16 @@ void four_Sides (void){
 	}
 }
 
-u16 __fastcall__ getCollisionIndex(unsigned char screenX, unsigned char screenY) {
+u16 __fastcall__ getCollisionIndex(u8 screenX, u8 screenY) {
 	//return ((screenX & 0xf8) >> 3) + (screenY & 0xf8);
 	// (x >> 3) + ((y >> 3) << 5)
 	return ((u16) screenX >> 3) + (((u16) screenY >> 3) << 5);
 }
 
 /*
-unsigned char __fastcall__ getCollisionByte(int collIndex) {
-	unsigned char bankIndex = collIndex >> 8; // divide by 256
-	unsigned char indexInBank = collindex & 
+u8 __fastcall__ getCollisionByte(int collIndex) {
+	u8 bankIndex = collIndex >> 8; // divide by 256
+	u8 indexInBank = collindex & 
 }
 */
 
@@ -157,8 +157,8 @@ void collide_Check_UD (void){
 
 
 void checkCollision(void) {
-	//unsigned char collIndex = ( ( player_x & 0xF8 ) >> 3 ) + ( ( player_y & 0xF8 ) );
-	unsigned char collIndex = ((player_y >> 3) << 3) | ( player_x >> 3);
+	//u8 collIndex = ( ( player_x & 0xF8 ) >> 3 ) + ( ( player_y & 0xF8 ) );
+	u8 collIndex = ((player_y >> 3) << 3) | ( player_x >> 3);
 	if ( testColl[collIndex] ) {
 		colliding = 1;
 	} else {

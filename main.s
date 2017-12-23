@@ -1400,7 +1400,7 @@ L05A1:	sta     _Y1_Bottom
 .segment	"CODE"
 
 ;
-; u16 __fastcall__ getCollisionIndex(unsigned char screenX, unsigned char screenY) {
+; u16 __fastcall__ getCollisionIndex(u8 screenX, u8 screenY) {
 ;
 	jsr     pusha
 ;
@@ -1741,7 +1741,7 @@ L0549:	rts
 .segment	"CODE"
 
 ;
-; unsigned char collIndex = ((player_y >> 3) << 3) | ( player_x >> 3);
+; u8 collIndex = ((player_y >> 3) << 3) | ( player_x >> 3);
 ;
 	lda     _player_y
 	lsr     a
