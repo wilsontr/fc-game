@@ -1,21 +1,12 @@
 
+
 #include <stdint.h>
 #include "neslib.h"
 #include "test_nam.h"
-#include "test_nam_coll.h"
-
+#include "test_nam_coll_rle.h"
 
 typedef uint8_t u8;
 typedef uint16_t u16;
-
-/*
-// frame counter
-static u8 frame;
-
-
-static u8 spr;
-
-*/
 
 
 #pragma bss-name (push,"ZEROPAGE")
@@ -31,14 +22,14 @@ static u8 player_x;
 static u8 player_y;
 static u8 colliding;
 
-
-
 //variables
 
 static u8 i;
 static u8 pad,spr;
 static u8 touch;
 static u8 frame;
+
+u8 testColl[960];
 
 u8 X1_Right_Side;	//for collision test
 u8 X1_Left_Side;
@@ -71,6 +62,26 @@ const u8 palSpritesAlt[4]={
 const u8 palBG[4]={
 	0x0f, 0x06, 0x17, 0x16
 };
+
+void unrleCollision(void) {
+	u8 i = 0;
+	u8 j = 0;
+	u8 size = sizeof(test_nam_coll_rle);
+	u8 currentByte;
+	u8 byteCount;
+	u16 outPointer = 0;
+
+	while ( i < size ) {
+		currentByte = test_nam_coll_rle[i];
+		++i;
+		byteCount = test_nam_coll_rle[i];
+		++i;
+		for ( j = 0; j < byteCount; ++j ) {
+			testColl[outPointer] = currentByte;
+			++outPointer;
+		}
+	}
+}
 
 void four_Sides (void){
 	if (player_x < (255 - 1)){	// find the left side
@@ -185,6 +196,8 @@ void main(void)
 		++frame;
 	}
 	*/
+
+	unrleCollision();
 
 	colliding = 0;
 

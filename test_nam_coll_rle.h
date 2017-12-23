@@ -1,4 +1,4 @@
-const unsigned char test_nam_coll[] = {
+const uint8_t test_nam_coll_rle[116] = {
 	1, 65, 0, 30, 1, 2, 0, 30, 1, 2, 0, 30, 1, 
 	2, 0, 30, 1, 2, 0, 30, 1, 2, 0, 30, 1, 2, 
 	0, 30, 1, 2, 0, 30, 1, 2, 0, 30, 1, 2, 0, 

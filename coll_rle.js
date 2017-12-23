@@ -53,7 +53,7 @@ _.each(runsArray, (run) => {
 	compressedData.push(run.length);
 });
 
-let output = `const unsigned char ${mapName}[] = {\n\t`;
+let output = `const uint8_t ${mapName}_rle[${compressedData.length}] = {\n\t`;
 let colCount = 0;
 _.each ( compressedData, (byte) => {
 	let outString = byte + ', ';
