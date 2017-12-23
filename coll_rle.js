@@ -1,7 +1,13 @@
 /* RLE compression for a byte array of level data */
 
+const args = process.argv.slice(2);
+const mapName = args[0];
+if ( !mapName ) {
+	console.error('Error: no map name specified');
+	process.exit(1);
+}
+
 const MAX_COL_LENGTH = 40;
-const mapName = 'test_nam_coll';
 const filename = `${mapName}.csv`;
 const fs = require('fs');
 const _ = require('lodash');
