@@ -38,6 +38,7 @@ u8 X1_Left_Side;
 u8 Y1_Bottom;
 u8 Y1_Top;
 u16 corner;
+u8 playerFlip;
 
 extern const u8 paldat[];
 
@@ -46,7 +47,7 @@ extern const u8 paldat[];
 
 // x offset, y offset, tile, attribute
 
-u8 testSprite[] = {
+const u8 playerSpriteData[17] = {
 	0, 0, 0x04, 0,
 	8, 0, 0x05, 0,
 	0, 8, 0x14, 0,
@@ -54,19 +55,19 @@ u8 testSprite[] = {
 	128
 };
 
+const u8 playerSpriteDataFlipped[17] = {
+	0, 0, 0x05, OAM_FLIP_H,
+	8, 0, 0x04, OAM_FLIP_H,
+	0, 8, 0x15, OAM_FLIP_H,
+	8, 8, 0x14, OAM_FLIP_H,
+	128
+};
+
 u8 palSprites[4];
-
-const u8 palSpritesAlt[4]={
-	0x0f, 0x1B, 0x19, 0x29
-};
-
-/*
-const u8 palBG[4]={
-	0x0f, 0x06, 0x17, 0x16
-};
-*/
-
 u8 palBG[4];
+
+
+
 
 void unrleCollision(void) {
 	u8 i = 0;
@@ -112,18 +113,8 @@ void four_Sides (void){
 }
 
 u16 __fastcall__ getCollisionIndex(u8 screenX, u8 screenY) {
-	//return ((screenX & 0xf8) >> 3) + (screenY & 0xf8);
-	// (x >> 3) + ((y >> 3) << 5)
 	return ((u16) screenX >> 3) + (((u16) screenY >> 3) << 5);
 }
-
-/*
-u8 __fastcall__ getCollisionByte(int collIndex) {
-	u8 bankIndex = collIndex >> 8; // divide by 256
-	u8 indexInBank = collindex & 
-}
-*/
-
 
 void collide_Check_LR (void){
 	four_Sides();	// set the L R bottom top variables
@@ -195,6 +186,7 @@ void main(void)
 
 	colliding = 0;
 
+	pal_spr(palSprites);
 	pal_bg(palBG);
 
 	vram_adr(NAMETABLE_A); //unpack nametable into VRAM
@@ -211,8 +203,10 @@ void main(void)
 	touch = 0; // collision flag
 	frame = 0; // frame counter
 
+	playerFlip = 0;
 
-	pal_spr(palSprites);
+
+	
 
 	// now the main loop
 
@@ -229,9 +223,22 @@ void main(void)
 		spr = 0;
 		i = 0;
 
-		spr = oam_meta_spr(player_x, player_y, spr, testSprite);
+		if ( playerFlip) {
+			spr = oam_meta_spr(player_x, player_y, spr, playerSpriteDataFlipped);
+		} else {
+			spr = oam_meta_spr(player_x, player_y, spr, playerSpriteData);
+		}
+		
 		
 		pad = pad_poll(i);
+
+
+		if ( pad & PAD_RIGHT ) {
+			playerFlip = 1;
+		} else if ( pad & PAD_LEFT ) {
+			playerFlip = 0;
+		}
+
 
 
 		if(pad&PAD_LEFT  && player_x >  0)  player_x -= 2;
