@@ -11,8 +11,8 @@ typedef uint8_t u8;
 typedef uint16_t u16;
 
 
-#pragma bss-name (push,"ZEROPAGE")
-#pragma data-name (push,"ZEROPAGE")
+#pragma bss-name (push, "ZEROPAGE")
+#pragma data-name (push, "ZEROPAGE")
 
 u8 oam_off;
 
@@ -22,7 +22,6 @@ u8 oam_off;
 
 static u8 player_x;
 static u8 player_y;
-static u8 colliding;
 
 //variables
 
@@ -47,7 +46,7 @@ extern const u8 paldat[];
 
 // x offset, y offset, tile, attribute
 
-const u8 playerSpriteData[17] = {
+u8 playerSpriteData[17] = {
 	0, 0, 0x04, 0,
 	8, 0, 0x05, 0,
 	0, 8, 0x14, 0,
@@ -55,18 +54,37 @@ const u8 playerSpriteData[17] = {
 	128
 };
 
-const u8 playerSpriteDataFlipped[17] = {
-	0, 0, 0x05, OAM_FLIP_H,
-	8, 0, 0x04, OAM_FLIP_H,
-	0, 8, 0x15, OAM_FLIP_H,
-	8, 8, 0x14, OAM_FLIP_H,
-	128
-};
-
 u8 palSprites[4];
 u8 palBG[4];
 
+void __fastcall__ flipSprite(u8 *sprite, u8 flip) {
 
+	if ( flip ) {
+		sprite[0] = 8;
+		sprite[3] |= OAM_FLIP_H;
+
+		sprite[4] = 0;
+		sprite[7] |= OAM_FLIP_H;
+
+		sprite[8] = 8;
+		sprite[11] |= OAM_FLIP_H;
+
+		sprite[12] = 0;
+		sprite[15] |= OAM_FLIP_H;
+	} else {
+		sprite[0] = 0;
+		sprite[3] &= ~OAM_FLIP_H;
+
+		sprite[4] = 8;
+		sprite[7] &= ~OAM_FLIP_H;
+
+		sprite[8] = 0;
+		sprite[11] &= ~OAM_FLIP_H;
+
+		sprite[12] = 8;
+		sprite[15] &= ~OAM_FLIP_H;		
+	}
+}
 
 
 void unrleCollision(void) {
@@ -165,17 +183,6 @@ void collide_Check_UD (void){
 	}
 }
 
-
-void checkCollision(void) {
-	//u8 collIndex = ( ( player_x & 0xF8 ) >> 3 ) + ( ( player_y & 0xF8 ) );
-	u8 collIndex = ((player_y >> 3) << 3) | ( player_x >> 3);
-	if ( testColl[collIndex] ) {
-		colliding = 1;
-	} else {
-		colliding = 0;
-	}
-}
-
 void main(void)
 {
 
@@ -183,8 +190,6 @@ void main(void)
 	memcpy(palBG, paldat, 4);
 
 	unrleCollision();
-
-	colliding = 0;
 
 	pal_spr(palSprites);
 	pal_bg(palBG);
@@ -214,29 +219,32 @@ void main(void)
 	{
 		ppu_wait_frame(); // wait for next TV frame
 			
-		//pal_col(16, 0x27); //set first sprite color
-
-		
-		
+	
 		//process player
 		
 		spr = 0;
 		i = 0;
 
+		// This is dumb and memory-intensive. Find a way to rearrange the tiles programmatically
+
 		if ( playerFlip) {
-			spr = oam_meta_spr(player_x, player_y, spr, playerSpriteDataFlipped);
+			
 		} else {
-			spr = oam_meta_spr(player_x, player_y, spr, playerSpriteData);
+			
 		}
+
+		spr = oam_meta_spr(player_x, player_y, spr, playerSpriteData);
 		
 		
 		pad = pad_poll(i);
 
 
 		if ( pad & PAD_RIGHT ) {
-			playerFlip = 1;
+			//playerFlip = 1;
+			flipSprite(playerSpriteData, 1);
 		} else if ( pad & PAD_LEFT ) {
-			playerFlip = 0;
+			//playerFlip = 0;
+			flipSprite(playerSpriteData, 0);
 		}
 
 

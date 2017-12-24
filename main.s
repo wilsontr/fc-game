@@ -32,21 +32,38 @@
 	.export		_playerFlip
 	.import		_paldat
 	.export		_playerSpriteData
-	.export		_playerSpriteDataFlipped
 	.export		_palSprites
 	.export		_palBG
+	.export		_flipSprite
 	.export		_unrleCollision
 	.export		_four_Sides
 	.export		_getCollisionIndex
 	.export		_collide_Check_LR
 	.export		_collide_Check_UD
-	.export		_checkCollision
 	.export		_main
 
 .segment	"DATA"
 
 .segment	"ZEROPAGE"
 .segment	"DATA"
+_playerSpriteData:
+	.byte	$00
+	.byte	$00
+	.byte	$04
+	.byte	$00
+	.byte	$08
+	.byte	$00
+	.byte	$05
+	.byte	$00
+	.byte	$00
+	.byte	$08
+	.byte	$14
+	.byte	$00
+	.byte	$08
+	.byte	$08
+	.byte	$15
+	.byte	$00
+	.byte	$80
 
 .segment	"RODATA"
 
@@ -387,42 +404,6 @@ _test_nam_coll_rle:
 	.byte	$1E
 	.byte	$01
 	.byte	$41
-_playerSpriteData:
-	.byte	$00
-	.byte	$00
-	.byte	$04
-	.byte	$00
-	.byte	$08
-	.byte	$00
-	.byte	$05
-	.byte	$00
-	.byte	$00
-	.byte	$08
-	.byte	$14
-	.byte	$00
-	.byte	$08
-	.byte	$08
-	.byte	$15
-	.byte	$00
-	.byte	$80
-_playerSpriteDataFlipped:
-	.byte	$00
-	.byte	$00
-	.byte	$05
-	.byte	$40
-	.byte	$08
-	.byte	$00
-	.byte	$04
-	.byte	$40
-	.byte	$00
-	.byte	$08
-	.byte	$15
-	.byte	$40
-	.byte	$08
-	.byte	$08
-	.byte	$14
-	.byte	$40
-	.byte	$80
 
 .segment	"BSS"
 
@@ -436,9 +417,6 @@ _player_x:
 	.res	1,$00
 .segment	"BSS"
 _player_y:
-	.res	1,$00
-.segment	"BSS"
-_colliding:
 	.res	1,$00
 .segment	"BSS"
 _i:
@@ -484,6 +462,236 @@ _palBG:
 	.res	4,$00
 
 ; ---------------------------------------------------------------
+; void __near__ __fastcall__ flipSprite (__near__ unsigned char *, unsigned char)
+; ---------------------------------------------------------------
+
+.segment	"CODE"
+
+.proc	_flipSprite: near
+
+.segment	"CODE"
+
+;
+; void __fastcall__ flipSprite(u8 *sprite, u8 flip) {
+;
+	jsr     pusha
+;
+; if ( flip ) {
+;
+	ldy     #$00
+	lda     (sp),y
+	jeq     L016C
+;
+; sprite[0] = 8;
+;
+	ldy     #$02
+	lda     (sp),y
+	sta     ptr1+1
+	dey
+	lda     (sp),y
+	sta     ptr1
+	lda     #$08
+	dey
+	sta     (ptr1),y
+;
+; sprite[3] |= OAM_FLIP_H;
+;
+	ldy     #$02
+	lda     (sp),y
+	sta     ptr1+1
+	dey
+	lda     (sp),y
+	sta     ptr1
+	ldy     #$03
+	lda     (ptr1),y
+	ora     #$40
+	sta     (ptr1),y
+;
+; sprite[4] = 0;
+;
+	dey
+	lda     (sp),y
+	sta     ptr1+1
+	dey
+	lda     (sp),y
+	sta     ptr1
+	lda     #$00
+	ldy     #$04
+	sta     (ptr1),y
+;
+; sprite[7] |= OAM_FLIP_H;
+;
+	ldy     #$02
+	lda     (sp),y
+	sta     ptr1+1
+	dey
+	lda     (sp),y
+	sta     ptr1
+	ldy     #$07
+	lda     (ptr1),y
+	ora     #$40
+	sta     (ptr1),y
+;
+; sprite[8] = 8;
+;
+	ldy     #$02
+	lda     (sp),y
+	sta     ptr1+1
+	dey
+	lda     (sp),y
+	sta     ptr1
+	lda     #$08
+	tay
+	sta     (ptr1),y
+;
+; sprite[11] |= OAM_FLIP_H;
+;
+	ldy     #$02
+	lda     (sp),y
+	sta     ptr1+1
+	dey
+	lda     (sp),y
+	sta     ptr1
+	ldy     #$0B
+	lda     (ptr1),y
+	ora     #$40
+	sta     (ptr1),y
+;
+; sprite[12] = 0;
+;
+	ldy     #$02
+	lda     (sp),y
+	sta     ptr1+1
+	dey
+	lda     (sp),y
+	sta     ptr1
+	lda     #$00
+	ldy     #$0C
+	sta     (ptr1),y
+;
+; sprite[15] |= OAM_FLIP_H;
+;
+	ldy     #$02
+	lda     (sp),y
+	sta     ptr1+1
+	dey
+	lda     (sp),y
+	sta     ptr1
+	ldy     #$0F
+	lda     (ptr1),y
+	ora     #$40
+;
+; } else {
+;
+	jmp     L02AC
+;
+; sprite[0] = 0;
+;
+L016C:	ldy     #$02
+	lda     (sp),y
+	sta     ptr1+1
+	dey
+	lda     (sp),y
+	sta     ptr1
+	lda     #$00
+	dey
+	sta     (ptr1),y
+;
+; sprite[3] &= ~OAM_FLIP_H;
+;
+	ldy     #$02
+	lda     (sp),y
+	sta     ptr1+1
+	dey
+	lda     (sp),y
+	sta     ptr1
+	ldy     #$03
+	lda     (ptr1),y
+	and     #$BF
+	sta     (ptr1),y
+;
+; sprite[4] = 8;
+;
+	dey
+	lda     (sp),y
+	sta     ptr1+1
+	dey
+	lda     (sp),y
+	sta     ptr1
+	lda     #$08
+	ldy     #$04
+	sta     (ptr1),y
+;
+; sprite[7] &= ~OAM_FLIP_H;
+;
+	ldy     #$02
+	lda     (sp),y
+	sta     ptr1+1
+	dey
+	lda     (sp),y
+	sta     ptr1
+	ldy     #$07
+	lda     (ptr1),y
+	and     #$BF
+	sta     (ptr1),y
+;
+; sprite[8] = 0;
+;
+	ldy     #$02
+	lda     (sp),y
+	sta     ptr1+1
+	dey
+	lda     (sp),y
+	sta     ptr1
+	lda     #$00
+	ldy     #$08
+	sta     (ptr1),y
+;
+; sprite[11] &= ~OAM_FLIP_H;
+;
+	ldy     #$02
+	lda     (sp),y
+	sta     ptr1+1
+	dey
+	lda     (sp),y
+	sta     ptr1
+	ldy     #$0B
+	lda     (ptr1),y
+	and     #$BF
+	sta     (ptr1),y
+;
+; sprite[12] = 8;
+;
+	ldy     #$02
+	lda     (sp),y
+	sta     ptr1+1
+	dey
+	lda     (sp),y
+	sta     ptr1
+	lda     #$08
+	ldy     #$0C
+	sta     (ptr1),y
+;
+; sprite[15] &= ~OAM_FLIP_H;  
+;
+	ldy     #$02
+	lda     (sp),y
+	sta     ptr1+1
+	dey
+	lda     (sp),y
+	sta     ptr1
+	ldy     #$0F
+	lda     (ptr1),y
+	and     #$BF
+L02AC:	sta     (ptr1),y
+;
+; }
+;
+	jmp     incsp3
+
+.endproc
+
+; ---------------------------------------------------------------
 ; void __near__ unrleCollision (void)
 ; ---------------------------------------------------------------
 
@@ -515,11 +723,11 @@ _palBG:
 ;
 ; while ( i <= size ) {
 ;
-	jmp     L0185
+	jmp     L01A7
 ;
 ; currentByte = test_nam_coll_rle[i];
 ;
-L0183:	ldy     #$07
+L01A5:	ldy     #$07
 	lda     (sp),y
 	tay
 	lda     _test_nam_coll_rle,y
@@ -553,12 +761,12 @@ L0183:	ldy     #$07
 ;
 	lda     #$00
 	dey
-L029E:	sta     (sp),y
+L02AD:	sta     (sp),y
 	ldx     #$00
 	lda     (sp),y
 	ldy     #$02
 	cmp     (sp),y
-	bcs     L0185
+	bcs     L01A7
 ;
 ; testColl[outPointer] = currentByte;
 ;
@@ -587,11 +795,11 @@ L029E:	sta     (sp),y
 	clc
 	lda     #$01
 	adc     (sp),y
-	jmp     L029E
+	jmp     L02AD
 ;
 ; while ( i <= size ) {
 ;
-L0185:	ldy     #$07
+L01A7:	ldy     #$07
 	lda     (sp),y
 	sec
 	ldy     #$04
@@ -601,8 +809,8 @@ L0185:	ldy     #$07
 	iny
 	sbc     (sp),y
 	ora     tmp1
-	bcc     L0183
-	beq     L0183
+	bcc     L01A5
+	beq     L01A5
 ;
 ; }
 ;
@@ -625,7 +833,7 @@ L0185:	ldy     #$07
 ;
 	lda     _player_x
 	cmp     #$FE
-	bcs     L02A2
+	bcs     L02B1
 ;
 ; X1_Left_Side = player_x + 1;
 ;
@@ -634,18 +842,18 @@ L0185:	ldy     #$07
 ;
 ; else {
 ;
-	jmp     L029F
+	jmp     L02AE
 ;
 ; X1_Left_Side = 255;
 ;
-L02A2:	lda     #$FF
-L029F:	sta     _X1_Left_Side
+L02B1:	lda     #$FF
+L02AE:	sta     _X1_Left_Side
 ;
 ; if (player_x < (255 - 15)){ // find the right side
 ;
 	lda     _player_x
 	cmp     #$F0
-	bcs     L02A3
+	bcs     L02B2
 ;
 ; X1_Right_Side = player_x + 15;
 ;
@@ -654,12 +862,12 @@ L029F:	sta     _X1_Left_Side
 ;
 ; else {
 ;
-	jmp     L02A0
+	jmp     L02AF
 ;
 ; X1_Right_Side = 255;
 ;
-L02A3:	lda     #$FF
-L02A0:	sta     _X1_Right_Side
+L02B2:	lda     #$FF
+L02AF:	sta     _X1_Right_Side
 ;
 ; Y1_Top = player_y + 1; // our top is the same as the master Y
 ;
@@ -672,7 +880,7 @@ L02A0:	sta     _X1_Right_Side
 ;
 	lda     _player_y
 	cmp     #$FF
-	bcs     L02A4
+	bcs     L02B3
 ;
 ; Y1_Bottom = player_y + 16;
 ;
@@ -681,12 +889,12 @@ L02A0:	sta     _X1_Right_Side
 ;
 ; else {
 ;
-	jmp     L02A1
+	jmp     L02B0
 ;
 ; Y1_Bottom = 255;
 ;
-L02A4:	lda     #$FF
-L02A1:	sta     _Y1_Bottom
+L02B3:	lda     #$FF
+L02B0:	sta     _Y1_Bottom
 ;
 ; }
 ;
@@ -760,7 +968,7 @@ L02A1:	sta     _Y1_Bottom
 ;
 	lda     _pad
 	and     #$80
-	beq     L02A6
+	beq     L02B5
 ;
 ; corner = getCollisionIndex(X1_Right_Side, Y1_Top); // top right
 ;
@@ -781,7 +989,7 @@ L02A1:	sta     _Y1_Bottom
 	sta     ptr1+1
 	ldy     _corner
 	lda     (ptr1),y
-	beq     L01CB
+	beq     L01ED
 ;
 ; player_x = (player_x & 0xf8); // if collision, realign
 ;
@@ -790,11 +998,11 @@ L02A1:	sta     _Y1_Bottom
 ;
 ; } else {
 ;
-	jmp     L02A5
+	jmp     L02B4
 ;
 ; corner = getCollisionIndex(X1_Right_Side, Y1_Bottom); // bottom right
 ;
-L01CB:	lda     _X1_Right_Side
+L01ED:	lda     _X1_Right_Side
 	jsr     pusha
 	lda     _Y1_Bottom
 	jsr     _getCollisionIndex
@@ -811,7 +1019,7 @@ L01CB:	lda     _X1_Right_Side
 	sta     ptr1+1
 	ldy     _corner
 	lda     (ptr1),y
-	beq     L01F1
+	beq     L0213
 ;
 ; player_x = (player_x & 0xf8); // if collision, realign
 ;
@@ -820,10 +1028,10 @@ L01CB:	lda     _X1_Right_Side
 ;
 ; else if ((pad & PAD_LEFT) != 0){ // check left
 ;
-	jmp     L02A5
-L02A6:	lda     _pad
+	jmp     L02B4
+L02B5:	lda     _pad
 	and     #$40
-	beq     L01F1
+	beq     L0213
 ;
 ; corner = getCollisionIndex(X1_Left_Side, Y1_Top); // top left
 ;
@@ -847,7 +1055,7 @@ L02A6:	lda     _pad
 ;
 ; } else {
 ;
-	bne     L02AA
+	bne     L02B9
 ;
 ; corner = getCollisionIndex(X1_Left_Side, Y1_Bottom); // bottom left
 ;
@@ -868,19 +1076,19 @@ L02A6:	lda     _pad
 	sta     ptr1+1
 	ldy     _corner
 	lda     (ptr1),y
-	beq     L01F1
+	beq     L0213
 ;
 ; player_x = (player_x & 0xf8) + 8; // if collision, realign   
 ;
-L02AA:	lda     _player_x
+L02B9:	lda     _player_x
 	and     #$F8
 	clc
 	adc     #$08
-L02A5:	sta     _player_x
+L02B4:	sta     _player_x
 ;
 ; }
 ;
-L01F1:	rts
+L0213:	rts
 
 .endproc
 
@@ -903,7 +1111,7 @@ L01F1:	rts
 ;
 	lda     _pad
 	and     #$20
-	beq     L02AC
+	beq     L02BB
 ;
 ; corner = getCollisionIndex(X1_Right_Side, Y1_Bottom); // bottom right
 ;
@@ -924,7 +1132,7 @@ L01F1:	rts
 	sta     ptr1+1
 	ldy     _corner
 	lda     (ptr1),y
-	beq     L0202
+	beq     L0224
 ;
 ; player_y = (player_y & 0xf8) - 1; // if collision, realign
 ;
@@ -935,11 +1143,11 @@ L01F1:	rts
 ;
 ; } else {
 ;
-	jmp     L02AB
+	jmp     L02BA
 ;
 ; corner = getCollisionIndex(X1_Left_Side, Y1_Bottom); // bottom left
 ;
-L0202:	lda     _X1_Left_Side
+L0224:	lda     _X1_Left_Side
 	jsr     pusha
 	lda     _Y1_Bottom
 	jsr     _getCollisionIndex
@@ -956,7 +1164,7 @@ L0202:	lda     _X1_Left_Side
 	sta     ptr1+1
 	ldy     _corner
 	lda     (ptr1),y
-	beq     L0229
+	beq     L024B
 ;
 ; player_y = (player_y & 0xf8) - 1; // if collision, realign   
 ;
@@ -967,10 +1175,10 @@ L0202:	lda     _X1_Left_Side
 ;
 ; else if ((pad & PAD_UP) != 0) { //or up
 ;
-	jmp     L02AB
-L02AC:	lda     _pad
+	jmp     L02BA
+L02BB:	lda     _pad
 	and     #$10
-	beq     L0229
+	beq     L024B
 ;
 ; corner = getCollisionIndex(X1_Right_Side, Y1_Top); // top right
 ;
@@ -991,7 +1199,7 @@ L02AC:	lda     _pad
 	sta     ptr1+1
 	ldy     _corner
 	lda     (ptr1),y
-	beq     L021E
+	beq     L0240
 ;
 ; player_y = (player_y & 0xf8) + 7; // if collision, realign
 ;
@@ -1003,7 +1211,7 @@ L02AC:	lda     _pad
 ;
 ; corner = getCollisionIndex(X1_Left_Side, Y1_Top);  // top left
 ;
-L021E:	lda     _X1_Left_Side
+L0240:	lda     _X1_Left_Side
 	jsr     pusha
 	lda     _Y1_Top
 	jsr     _getCollisionIndex
@@ -1020,7 +1228,7 @@ L021E:	lda     _X1_Left_Side
 	sta     ptr1+1
 	ldy     _corner
 	lda     (ptr1),y
-	beq     L0229
+	beq     L024B
 ;
 ; player_y = (player_y & 0xf8) + 7; // if collision, realign
 ;
@@ -1028,61 +1236,11 @@ L021E:	lda     _X1_Left_Side
 	and     #$F8
 	clc
 	adc     #$07
-L02AB:	sta     _player_y
+L02BA:	sta     _player_y
 ;
 ; }
 ;
-L0229:	rts
-
-.endproc
-
-; ---------------------------------------------------------------
-; void __near__ checkCollision (void)
-; ---------------------------------------------------------------
-
-.segment	"CODE"
-
-.proc	_checkCollision: near
-
-.segment	"CODE"
-
-;
-; u8 collIndex = ((player_y >> 3) << 3) | ( player_x >> 3);
-;
-	lda     _player_y
-	lsr     a
-	lsr     a
-	lsr     a
-	asl     a
-	asl     a
-	asl     a
-	sta     ptr1
-	lda     _player_x
-	lsr     a
-	lsr     a
-	lsr     a
-	ora     ptr1
-	jsr     pusha
-;
-; if ( testColl[collIndex] ) {
-;
-	ldy     #$00
-	lda     (sp),y
-	tay
-	lda     _testColl,y
-	beq     L02AD
-;
-; colliding = 1;
-;
-	lda     #$01
-;
-; colliding = 0;
-;
-L02AD:	sta     _colliding
-;
-; }
-;
-	jmp     incsp1
+L024B:	rts
 
 .endproc
 
@@ -1100,27 +1258,22 @@ L02AD:	sta     _colliding
 ; memcpy(palSprites, paldat + 8, 4);
 ;
 	ldy     #$03
-L0243:	lda     _paldat+8,y
+L0257:	lda     _paldat+8,y
 	sta     _palSprites,y
 	dey
-	bpl     L0243
+	bpl     L0257
 ;
 ; memcpy(palBG, paldat, 4);
 ;
 	ldy     #$03
-L0248:	lda     _paldat,y
+L025C:	lda     _paldat,y
 	sta     _palBG,y
 	dey
-	bpl     L0248
+	bpl     L025C
 ;
 ; unrleCollision();
 ;
 	jsr     _unrleCollision
-;
-; colliding = 0;
-;
-	lda     #$00
-	sta     _colliding
 ;
 ; pal_spr(palSprites);
 ;
@@ -1175,7 +1328,7 @@ L0248:	lda     _paldat,y
 ;
 ; ppu_wait_frame(); // wait for next TV frame
 ;
-L025F:	jsr     _ppu_wait_frame
+L0271:	jsr     _ppu_wait_frame
 ;
 ; spr = 0;
 ;
@@ -1186,12 +1339,7 @@ L025F:	jsr     _ppu_wait_frame
 ;
 	sta     _i
 ;
-; if ( playerFlip) {
-;
-	lda     _playerFlip
-	beq     L0268
-;
-; spr = oam_meta_spr(player_x, player_y, spr, playerSpriteDataFlipped);
+; spr = oam_meta_spr(player_x, player_y, spr, playerSpriteData);
 ;
 	jsr     decsp3
 	lda     _player_x
@@ -1203,28 +1351,9 @@ L025F:	jsr     _ppu_wait_frame
 	lda     _spr
 	dey
 	sta     (sp),y
-	lda     #<(_playerSpriteDataFlipped)
-	ldx     #>(_playerSpriteDataFlipped)
-;
-; } else {
-;
-	jmp     L02C1
-;
-; spr = oam_meta_spr(player_x, player_y, spr, playerSpriteData);
-;
-L0268:	jsr     decsp3
-	lda     _player_x
-	ldy     #$02
-	sta     (sp),y
-	lda     _player_y
-	dey
-	sta     (sp),y
-	lda     _spr
-	dey
-	sta     (sp),y
 	lda     #<(_playerSpriteData)
 	ldx     #>(_playerSpriteData)
-L02C1:	jsr     _oam_meta_spr
+	jsr     _oam_meta_spr
 	sta     _spr
 ;
 ; pad = pad_poll(i);
@@ -1236,43 +1365,49 @@ L02C1:	jsr     _oam_meta_spr
 ; if ( pad & PAD_RIGHT ) {
 ;
 	and     #$80
-	beq     L02B1
+	beq     L02BD
 ;
-; playerFlip = 1;
+; flipSprite(playerSpriteData, 1);
 ;
+	lda     #<(_playerSpriteData)
+	ldx     #>(_playerSpriteData)
+	jsr     pushax
 	lda     #$01
 ;
 ; } else if ( pad & PAD_LEFT ) {
 ;
-	jmp     L02B0
-L02B1:	lda     _pad
+	jmp     L02BC
+L02BD:	lda     _pad
 	and     #$40
-	beq     L02B2
+	beq     L02BE
 ;
-; playerFlip = 0;
+; flipSprite(playerSpriteData, 0);
 ;
+	lda     #<(_playerSpriteData)
+	ldx     #>(_playerSpriteData)
+	jsr     pushax
 	lda     #$00
-L02B0:	sta     _playerFlip
+L02BC:	jsr     _flipSprite
 ;
 ; if(pad&PAD_LEFT  && player_x >  0)  player_x -= 2;
 ;
-L02B2:	lda     _pad
+L02BE:	lda     _pad
 	and     #$40
-	beq     L02B6
+	beq     L02C2
 	lda     _player_x
-	beq     L02B6
+	beq     L02C2
 	sec
 	sbc     #$02
 	sta     _player_x
 ;
 ; if(pad&PAD_RIGHT && player_x < 240) player_x += 2;
 ;
-L02B6:	lda     _pad
+L02C2:	lda     _pad
 	and     #$80
-	beq     L0289
+	beq     L0297
 	lda     _player_x
 	cmp     #$F0
-	bcs     L0289
+	bcs     L0297
 	lda     #$02
 	clc
 	adc     _player_x
@@ -1280,27 +1415,27 @@ L02B6:	lda     _pad
 ;
 ; collide_Check_LR();
 ;
-L0289:	jsr     _collide_Check_LR
+L0297:	jsr     _collide_Check_LR
 ;
 ; if(pad&PAD_UP    && player_y > 0)   player_y -= 2;
 ;
 	lda     _pad
 	and     #$10
-	beq     L02BD
+	beq     L02C9
 	lda     _player_y
-	beq     L02BD
+	beq     L02C9
 	sec
 	sbc     #$02
 	sta     _player_y
 ;
 ; if(pad&PAD_DOWN  && player_y < 220) player_y += 2;
 ;
-L02BD:	lda     _pad
+L02C9:	lda     _pad
 	and     #$20
-	beq     L0296
+	beq     L02A4
 	lda     _player_y
 	cmp     #$DC
-	bcs     L0296
+	bcs     L02A4
 	lda     #$02
 	clc
 	adc     _player_y
@@ -1308,7 +1443,7 @@ L02BD:	lda     _pad
 ;
 ; collide_Check_UD();
 ;
-L0296:	jsr     _collide_Check_UD
+L02A4:	jsr     _collide_Check_UD
 ;
 ; ++frame;
 ;
@@ -1316,7 +1451,7 @@ L0296:	jsr     _collide_Check_UD
 ;
 ; while(1)
 ;
-	jmp     L025F
+	jmp     L0271
 
 .endproc
 
