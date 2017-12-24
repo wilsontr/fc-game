@@ -29,6 +29,7 @@ static u8 i;
 static u8 pad,spr;
 static u8 touch;
 static u8 frame;
+static u8 playerFrame;
 
 u8 testColl[960];
 
@@ -40,6 +41,11 @@ u16 corner;
 u8 playerFlip;
 
 extern const u8 paldat[];
+
+u8 playerFrames[2][4] = {
+	{ 0x04, 0x05, 0x14, 0x15 },
+	{ 0x24, 0x25, 0x34, 0x35 }
+};
 
 
 
@@ -56,6 +62,13 @@ u8 playerSpriteData[17] = {
 
 u8 palSprites[4];
 u8 palBG[4];
+
+void __fastcall__ setFrame(u8 *sprite, u8 *frame) {
+	sprite[2] = frame[0];
+	sprite[6] = frame[1];
+	sprite[10] = frame[2];
+	sprite[14] = frame[3];
+}
 
 void __fastcall__ flipSprite(u8 *sprite, u8 flip) {
 
@@ -209,6 +222,7 @@ void main(void)
 	frame = 0; // frame counter
 
 	playerFlip = 0;
+	playerFrame = 0;
 
 
 	
@@ -227,11 +241,11 @@ void main(void)
 
 		// This is dumb and memory-intensive. Find a way to rearrange the tiles programmatically
 
-		if ( playerFlip) {
-			
-		} else {
-			
-		}
+		// animate sprite
+		if ( ( frame & 0x0F ) == 0x0F ) {
+			playerFrame ^= 1;
+			setFrame(playerSpriteData, playerFrames[playerFrame]);
+		} 
 
 		spr = oam_meta_spr(player_x, player_y, spr, playerSpriteData);
 		
