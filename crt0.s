@@ -5,6 +5,11 @@
 FT_DPCM_OFF			= $c000		;$c000..$ffc0, 64-byte steps
 FT_SFX_STREAMS			= 4		;number of sound effects played at once, 1..4
 
+.export _paldat
+_paldat: 
+	.incbin "fcgame.dat"
+
+
 .define FT_DPCM_ENABLE  0			;undefine to exclude all DMC code
 .define FT_SFX_ENABLE   1			;undefine to exclude all sound effects code
 
@@ -266,5 +271,4 @@ sounds_data:
 .segment "CHARS"
 
 	.incbin "fcgame.chr"
-
 

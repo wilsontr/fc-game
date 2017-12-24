@@ -5,6 +5,8 @@
 #include "test_nam.h"
 #include "test_nam_coll_rle.h"
 
+void __fastcall__ memcpy (void* dest, const void* src, int count);
+
 typedef uint8_t u8;
 typedef uint16_t u16;
 
@@ -37,31 +39,34 @@ u8 Y1_Bottom;
 u8 Y1_Top;
 u16 corner;
 
+extern const u8 paldat[];
+
 
 
 
 // x offset, y offset, tile, attribute
 
-const u8 testSprite[] = {
-	0, 0, 0x20, 0,
-	8, 0, 0x21, 0,
-	0, 8, 0x22, 0,
-	8, 8, 0x23, 0,
+u8 testSprite[] = {
+	0, 0, 0x04, 0,
+	8, 0, 0x05, 0,
+	0, 8, 0x14, 0,
+	8, 8, 0x15, 0,
 	128
 };
 
-const u8 palSprites[4]={
-	0x0f, 0x22, 0x25, 0x24
-};
+u8 palSprites[4];
 
 const u8 palSpritesAlt[4]={
 	0x0f, 0x1B, 0x19, 0x29
 };
 
-
+/*
 const u8 palBG[4]={
 	0x0f, 0x06, 0x17, 0x16
 };
+*/
+
+u8 palBG[4];
 
 void unrleCollision(void) {
 	u8 i = 0;
@@ -90,8 +95,8 @@ void four_Sides (void){
 	else {
 		X1_Left_Side = 255;
 	}
-	if (player_x < (255 - 13)){	// find the right side
-		X1_Right_Side = player_x + 13;
+	if (player_x < (255 - 15)){	// find the right side
+		X1_Right_Side = player_x + 15;
 	}
 	else {
 		X1_Right_Side = 255;
@@ -99,7 +104,7 @@ void four_Sides (void){
 	Y1_Top = player_y + 1;	// our top is the same as the master Y
 	
 	if (player_y < (255)){ // find the bottom side
-		Y1_Bottom = player_y + 15;
+		Y1_Bottom = player_y + 16;
 	}
 	else {
 		Y1_Bottom = 255;
@@ -125,21 +130,23 @@ void collide_Check_LR (void){
 	
 	if ((pad & PAD_RIGHT) != 0){ 	// first check right
 		corner = getCollisionIndex(X1_Right_Side, Y1_Top); // top right
-		if (testColl[corner] != 0)
-			player_x = (player_x & 0xf8) + 1; // if collision, realign
-
-		corner = getCollisionIndex(X1_Right_Side, Y1_Bottom); // bottom right
-		if (testColl[corner] != 0)
-			player_x = (player_x & 0xf8) + 1; // if collision, realign
+		if (testColl[corner] != 0) {
+			player_x = (player_x & 0xf8); // if collision, realign
+		} else {
+			corner = getCollisionIndex(X1_Right_Side, Y1_Bottom); // bottom right
+			if (testColl[corner] != 0)
+				player_x = (player_x & 0xf8); // if collision, realign
+		}
 	}
 	else if ((pad & PAD_LEFT) != 0){ // check left
 		corner = getCollisionIndex(X1_Left_Side, Y1_Top); // top left
-		if (testColl[corner] != 0)
-			player_x = (player_x & 0xf8) + 7; // if collision, realign
-
-		corner = getCollisionIndex(X1_Left_Side, Y1_Bottom); // bottom left
-		if (testColl[corner] != 0)
-			player_x = (player_x & 0xf8) + 7; // if collision, realign
+		if (testColl[corner] != 0) {
+			player_x = (player_x & 0xf8) + 8; // if collision, realign
+		} else {
+			corner = getCollisionIndex(X1_Left_Side, Y1_Bottom); // bottom left
+			if (testColl[corner] != 0)
+				player_x = (player_x & 0xf8) + 8; // if collision, realign			
+		}
 	}
 }
 
@@ -148,12 +155,13 @@ void collide_Check_UD (void){
 	four_Sides();
 	if ((pad & PAD_DOWN) != 0){ // down first
 		corner = getCollisionIndex(X1_Right_Side, Y1_Bottom); // bottom right
-		if (testColl[corner] != 0)
-			player_y = (player_y & 0xf8); // if collision, realign
-
-		corner = getCollisionIndex(X1_Left_Side, Y1_Bottom); // bottom left
-		if (testColl[corner] != 0)
-			player_y = (player_y & 0xf8); // if collision, realign
+		if (testColl[corner] != 0) {
+			player_y = (player_y & 0xf8) - 1; // if collision, realign
+		} else {
+			corner = getCollisionIndex(X1_Left_Side, Y1_Bottom); // bottom left
+			if (testColl[corner] != 0)
+				player_y = (player_y & 0xf8) - 1; // if collision, realign			
+		}
 	}
 	else if ((pad & PAD_UP) != 0) { //or up
 		corner = getCollisionIndex(X1_Right_Side, Y1_Top); // top right
@@ -179,29 +187,14 @@ void checkCollision(void) {
 
 void main(void)
 {
-	/*
-	ppu_on_all(); //enable rendering
 
-	frame = 0;
-
-	player_x = 52;
-	player_y = 100;
-
-
-	while(1) {
-		ppu_wait_frame();
-		pal_col(71, 0x21);
-		spr = 0;
-		spr = oam_meta_spr(player_x, player_y, spr, testSprite);
-		++frame;
-	}
-	*/
+	memcpy(palSprites, paldat + 8, 4);
+	memcpy(palBG, paldat, 4);
 
 	unrleCollision();
 
 	colliding = 0;
 
-	
 	pal_bg(palBG);
 
 	vram_adr(NAMETABLE_A); //unpack nametable into VRAM
@@ -239,6 +232,7 @@ void main(void)
 		spr = oam_meta_spr(player_x, player_y, spr, testSprite);
 		
 		pad = pad_poll(i);
+
 
 		if(pad&PAD_LEFT  && player_x >  0)  player_x -= 2;
 		if(pad&PAD_RIGHT && player_x < 240) player_x += 2;
