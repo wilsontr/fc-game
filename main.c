@@ -39,10 +39,6 @@ static u8 pad,spr;
 static u8 touch;
 static u8 frame;
 static u8 playerFrame;
-
-//static u8 enemyFrame;
-//static u8 enemyDir;
-
 static u8 playerEnemyColliding;
 
 struct enemyStruct {
@@ -254,6 +250,7 @@ void collide_Check_UD (void) {
 
 
 void updateEnemies(void) {
+
 	u8 i;
 	for ( i = 0; i < NUM_ENEMIES; i++ ) {
 		if ( enemyData[i].direction == DIRECTION_RIGHT ) {
@@ -279,36 +276,33 @@ void updateEnemies(void) {
 				enemyData[i].direction = 0;
 			}					
 		}
-
-		/*
-		if ( enemyData[i].x <= enemyData[i].initX - 50 ) {
-			flipSprite(enemySpriteData[i], 1);
-			enemyData[i].direction = 1;
-		} else if ( enemyData[i].x > enemyData[i].initX ) {
-			flipSprite(enemySpriteData[i], 0);
-			enemyData[i].direction = 0;
-		}		
-		*/
 	}
 }
 
 
 void playerEnemyCollideCheck() {
-	
-	u8 enemyTop = enemy_y + 2;
-	u8 enemyBottom = enemy_y + 14;
-	u8 enemyLeft = enemy_x + 2;
-	u8 enemyRight = enemy_x + 14;
+
+	u8 enemyTop;
+	u8 enemyBottom;
+	u8 enemyLeft;
+	u8 enemyRight;
+	u8 j;
 
 	playerEnemyColliding = 0;
 
-	if ( !( X1_Right_Side < enemyLeft  || 
-			X1_Left_Side >= enemyRight || 
-			Y1_Bottom <  enemyTop || 
-			Y1_Top    >= enemyBottom ) ) {
-		playerEnemyColliding = 1;
-	}
+	for ( j = 0; j < NUM_ENEMIES; ++j ) {
+		enemyTop = enemyData[j].y + 2;
+		enemyBottom = enemyData[j].y + 14;
+		enemyLeft = enemyData[j].x + 2;
+		enemyRight = enemyData[j].x + 14;
 
+		if ( !( X1_Right_Side < enemyLeft  || 
+				X1_Left_Side >= enemyRight || 
+				Y1_Bottom <  enemyTop || 
+				Y1_Top    >= enemyBottom ) ) {
+			playerEnemyColliding = 1;
+		}		
+	}
 }
 
 void main(void)
@@ -317,7 +311,6 @@ void main(void)
 	// TODO next:
 
 	// - generalize/rewrite background collision detection
-	// - build a data structure for enemies	
 	// - add gravity
 
 	u8 j;
@@ -381,15 +374,7 @@ void main(void)
 		spr = 0;
 		i = 0;
 
-		// animate sprite
-		if ( ( frame & 0x0F ) == 0x0F ) {
-			playerFrame ^= 1;
-			setFrame(playerSpriteData, playerFrames[playerFrame]);
-
-		} 
-
-		spr = oam_meta_spr(player_x, player_y, spr, playerSpriteData);
-
+		// update player movement
 		pad = pad_poll(i);
 
 		if ( pad & PAD_RIGHT ) {
@@ -398,10 +383,20 @@ void main(void)
 			flipSprite(playerSpriteData, 0);
 		}		
 
-		
+		// animate player sprite
+		if ( ( frame & 0x0F ) == 0x0F ) {
+			playerFrame ^= 1;
+			setFrame(playerSpriteData, playerFrames[playerFrame]);
 
+		} 
+
+		// update player sprite
+		spr = oam_meta_spr(player_x, player_y, spr, playerSpriteData);
+
+		// update enemy sprites
 		for ( i = 0; i < NUM_ENEMIES; ++i ) {
 			
+			// animate
 			if ( ( frame & 0x0F ) == 0x0F ) {
 				enemyData[i].frame ^= 1;
 				setFrame(enemySpriteData[i], enemyFrames[enemyData[i].frame]);
@@ -424,7 +419,7 @@ void main(void)
 		four_Sides(player_x, player_y);	
 		collide_Check_UD();
 
-		/*
+		
 		four_Sides(player_x, player_y);	
 		playerEnemyCollideCheck();
 
@@ -434,9 +429,7 @@ void main(void)
 		} else {
 			setPalette(playerSpriteData, 0x2);
 		}
-		*/
 
 		++frame;
 	}
-	
 }
