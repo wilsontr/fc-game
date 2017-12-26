@@ -10,6 +10,10 @@ void __fastcall__ memcpy (void* dest, const void* src, int count);
 typedef uint8_t u8;
 typedef uint16_t u16;
 
+#define ENEMY_DATA_SIZE	17
+#define NUM_ENEMIES 	4
+#define DIRECTION_LEFT  0
+#define DIRECTION_RIGHT 1
 
 #pragma bss-name (push, "ZEROPAGE")
 #pragma data-name (push, "ZEROPAGE")
@@ -36,11 +40,24 @@ static u8 touch;
 static u8 frame;
 static u8 playerFrame;
 
-static u8 enemyFrame;
-static u8 enemyDir;
+//static u8 enemyFrame;
+//static u8 enemyDir;
 
 static u8 playerEnemyColliding;
 
+struct enemyStruct {
+	u8 x;
+	u8 y; 
+	u8 frame;
+	u8 direction;
+
+	u8 range;
+	u8 initX;
+	u8 initY;
+	u8 initDir;
+};
+
+typedef struct enemyStruct enemy;
 
 u8 testColl[960];
 
@@ -49,6 +66,14 @@ u8 X1_Left_Side;
 u8 Y1_Bottom;
 u8 Y1_Top;
 u16 corner;
+
+enemy enemyData[4] = {
+	// x, y, frame, direction, range, initX, initY, initDir 
+	{ 150, 50,  0, 1, 50, 150, 50,  0 },
+	{ 75,  75,  1, 1, 25, 75,  75,  1 },
+	{ 100, 100, 1, 0, 30, 100, 100, 0 },
+	{ 200, 200, 0, 1, 60, 200, 200, 0 }
+};
 
 
 extern const u8 paldat[];
@@ -74,13 +99,15 @@ u8 playerSpriteData[17] = {
 	128
 };
 
-u8 enemySpriteData[17] = {
+const u8 enemySpriteDataTemplate[17] = {
 	0, 0, 0, 0x3,
 	8, 0, 0, 0x3,
 	0, 8, 0, 0x3,
 	8, 8, 0, 0x3,
 	128
 };
+
+u8 enemySpriteData[4][17];
 
 
 u8 palSprites[4];
@@ -226,23 +253,47 @@ void collide_Check_UD (void) {
 
 
 
-void updateEnemy(void) {
-	if ( enemyDir == 1 ) {
-		enemy_x += 1;
-	} else {
-		enemy_x -= 1;
-	}
+void updateEnemies(void) {
+	u8 i;
+	for ( i = 0; i < NUM_ENEMIES; i++ ) {
+		if ( enemyData[i].direction == DIRECTION_RIGHT ) {
+			enemyData[i].x += 1;
+		} else {
+			enemyData[i].x -= 1;
+		}
 
-	if ( enemy_x <= enemyInitX - 50 ) {
-		flipSprite(enemySpriteData, 1);
-		enemyDir = 1;
-	} else if ( enemy_x > enemyInitX ) {
-		flipSprite(enemySpriteData, 0);
-		enemyDir = 0;
+		if ( enemyData[i].initDir == DIRECTION_RIGHT ) {
+			if ( enemyData[i].x <= enemyData[i].initX ) {
+				flipSprite(enemySpriteData[i], 1);
+				enemyData[i].direction = 1;				
+			} else if ( enemyData[i].x > ( enemyData[i].initX + enemyData[i].range ) ) {
+				flipSprite(enemySpriteData[i], 0);
+				enemyData[i].direction = 0;
+			}		
+		} else {
+			if ( enemyData[i].x <= ( enemyData[i].initX - enemyData[i].range ) ) {
+				flipSprite(enemySpriteData[i], 1);
+				enemyData[i].direction = 1;				
+			} else if ( enemyData[i].x > enemyData[i].initX ) {
+				flipSprite(enemySpriteData[i], 0);
+				enemyData[i].direction = 0;
+			}					
+		}
+
+		/*
+		if ( enemyData[i].x <= enemyData[i].initX - 50 ) {
+			flipSprite(enemySpriteData[i], 1);
+			enemyData[i].direction = 1;
+		} else if ( enemyData[i].x > enemyData[i].initX ) {
+			flipSprite(enemySpriteData[i], 0);
+			enemyData[i].direction = 0;
+		}		
+		*/
 	}
 }
 
-void playerEnemyCollideCheck(void) {
+
+void playerEnemyCollideCheck() {
 	
 	u8 enemyTop = enemy_y + 2;
 	u8 enemyBottom = enemy_y + 14;
@@ -268,6 +319,8 @@ void main(void)
 	// - generalize/rewrite background collision detection
 	// - build a data structure for enemies	
 	// - add gravity
+
+	u8 j;
 
 
 	memcpy(palSprites, paldat, 16);
@@ -296,12 +349,26 @@ void main(void)
 	frame = 0; // frame counter
 
 	playerFrame = 0;
-	
-	enemyFrame = 0;
-	enemyDir = 0;
 
+	
 	setFrame(playerSpriteData, playerFrames[playerFrame]);
-	setFrame(enemySpriteData, enemyFrames[enemyFrame]);
+
+	for ( i = 0; i < NUM_ENEMIES; ++i ) {
+		enemyData[i].x = enemyData[i].initX;
+		enemyData[i].y = enemyData[i].initY;
+		enemyData[i].direction = enemyData[i].initDir;
+
+		//memcpy(enemySpriteData[i], *(enemySpriteDataTemplate), 17);
+		for ( j = 0; j < ENEMY_DATA_SIZE; ++j ) {
+			enemySpriteData[i][j] = enemySpriteDataTemplate[j];
+		}
+
+		if ( enemyData[i].direction == DIRECTION_RIGHT ) {
+			flipSprite(enemySpriteData[i], DIRECTION_RIGHT);
+		}		
+		setFrame(enemySpriteData[i], enemyFrames[enemyData[i].frame]);
+	}
+	
 
 	// now the main loop
 
@@ -319,24 +386,31 @@ void main(void)
 			playerFrame ^= 1;
 			setFrame(playerSpriteData, playerFrames[playerFrame]);
 
-			enemyFrame ^= 1;
-			setFrame(enemySpriteData, enemyFrames[enemyFrame]);
 		} 
 
 		spr = oam_meta_spr(player_x, player_y, spr, playerSpriteData);
-		spr = oam_meta_spr(enemy_x, enemy_y, spr, enemySpriteData);
-		
-		
-		pad = pad_poll(i);
 
+		pad = pad_poll(i);
 
 		if ( pad & PAD_RIGHT ) {
 			flipSprite(playerSpriteData, 1);
 		} else if ( pad & PAD_LEFT ) {
 			flipSprite(playerSpriteData, 0);
+		}		
+
+		
+
+		for ( i = 0; i < NUM_ENEMIES; ++i ) {
+			
+			if ( ( frame & 0x0F ) == 0x0F ) {
+				enemyData[i].frame ^= 1;
+				setFrame(enemySpriteData[i], enemyFrames[enemyData[i].frame]);
+			}
+			
+			spr = oam_meta_spr(enemyData[i].x, enemyData[i].y, spr, enemySpriteData[i]);	
 		}
 
-		updateEnemy();
+		updateEnemies();
 		
 		if ( pad&PAD_LEFT  && player_x > 0 )   player_x -= 2;
 		if ( pad&PAD_RIGHT && player_x < 240 ) player_x += 2;
@@ -350,14 +424,17 @@ void main(void)
 		four_Sides(player_x, player_y);	
 		collide_Check_UD();
 
+		/*
 		four_Sides(player_x, player_y);	
 		playerEnemyCollideCheck();
 
+		
 		if ( playerEnemyColliding ) {
 			setPalette(playerSpriteData, 0x0);
 		} else {
 			setPalette(playerSpriteData, 0x2);
 		}
+		*/
 
 		++frame;
 	}
