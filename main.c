@@ -22,7 +22,6 @@ u8 oam_off;
 static u8 enemyInitX = 150;
 static u8 enemyInitY = 50;
 
-
 static u8 player_x;
 static u8 player_y;
 
@@ -52,9 +51,6 @@ u8 Y1_Top;
 u16 corner;
 
 
-
-
-
 extern const u8 paldat[];
 
 const u8 playerFrames[2][4] = {
@@ -67,8 +63,6 @@ const u8 enemyFrames[2][4] = {
 	{ 0x06, 0x07, 0x16, 0x17 },
 	{ 0x26, 0x27, 0x36, 0x37 }
 };
-
-
 
 // x offset, y offset, tile, attribute
 
@@ -264,28 +258,17 @@ void playerEnemyCollideCheck(void) {
 		playerEnemyColliding = 1;
 	}
 
-
-
-	/*
-	if(!(cat_x[0]+22< cat_x[1]+2 ||
-	     cat_x[0]+ 2>=cat_x[1]+22||
-         cat_y[0]+22< cat_y[1]+2 ||
-	     cat_y[0]+ 2>=cat_y[1]+22)) touch=1; else touch=0;
-	*/
-
-
-	/*
-	// naive algorithm
-	if ( ( ( player_x & 0xF0 ) == ( enemy_x & 0xF0 ) ) && 
-		( ( player_y & 0xF0 ) == ( enemy_y & 0xF0 ) ) ) {
-			playerEnemyColliding = 1;
-		}
-	*/
-
 }
 
 void main(void)
 {
+
+	// TODO next:
+
+	// - generalize/rewrite background collision detection
+	// - build a data structure for enemies	
+	// - add gravity
+
 
 	memcpy(palSprites, paldat, 16);
 	memcpy(palBG, paldat, 4);
@@ -325,14 +308,11 @@ void main(void)
 	while ( 1 )
 	{
 		ppu_wait_frame(); // wait for next TV frame
-			
 	
 		//process player
 		
 		spr = 0;
 		i = 0;
-
-		// This is dumb and memory-intensive. Find a way to rearrange the tiles programmatically
 
 		// animate sprite
 		if ( ( frame & 0x0F ) == 0x0F ) {
@@ -358,7 +338,6 @@ void main(void)
 
 		updateEnemy();
 		
-
 		if ( pad&PAD_LEFT  && player_x > 0 )   player_x -= 2;
 		if ( pad&PAD_RIGHT && player_x < 240 ) player_x += 2;
 
@@ -379,18 +358,6 @@ void main(void)
 		} else {
 			setPalette(playerSpriteData, 0x2);
 		}
-
-		
-
-		//check for collision for a smaller bounding box
-		//metasprite is 24x24, collision box is 20x20
-		
-		/*
-		if(!(cat_x[0]+22< cat_x[1]+2 ||
-		     cat_x[0]+ 2>=cat_x[1]+22||
-	         cat_y[0]+22< cat_y[1]+2 ||
-		     cat_y[0]+ 2>=cat_y[1]+22)) touch=1; else touch=0;
-		*/
 
 		++frame;
 	}
