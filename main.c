@@ -330,19 +330,26 @@ void updateEnemies(void) {
 
 	u8 i;
 	for ( i = 0; i < NUM_ENEMIES; i++ ) {
-		if ( enemyData[i].direction == PAD_RIGHT ) {
-			enemyData[i].x += 1;
-			if ( collideCheckHorizontal(enemyData[i].x, enemyData[i].y, PAD_RIGHT) ) {
-				flipSprite(enemySpriteData[i], 0);
-				enemyData[i].direction = PAD_LEFT;
-			}
+
+		if ( !collideCheckVertical(enemyData[i].x, enemyData[i].y + 1, PAD_DOWN) ) {
+			enemyData[i].y += 1;
 		} else {
-			enemyData[i].x -= 1;
-			if ( collideCheckHorizontal(enemyData[i].x, enemyData[i].y, PAD_LEFT) ) {
-				flipSprite(enemySpriteData[i], 1);
-				enemyData[i].direction = PAD_RIGHT;
-			}
+			if ( enemyData[i].direction == PAD_RIGHT ) {
+				enemyData[i].x += 1;
+				if ( collideCheckHorizontal(enemyData[i].x, enemyData[i].y, PAD_RIGHT) ) {
+					flipSprite(enemySpriteData[i], 0);
+					enemyData[i].direction = PAD_LEFT;
+				}
+			} else {
+				enemyData[i].x -= 1;
+				if ( collideCheckHorizontal(enemyData[i].x, enemyData[i].y, PAD_LEFT) ) {
+					flipSprite(enemySpriteData[i], 1);
+					enemyData[i].direction = PAD_RIGHT;
+				}
+			}			
 		}
+
+
 
 		/*
 		if ( enemyData[i].initDir == PAD_RIGHT ) {
