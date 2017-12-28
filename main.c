@@ -12,8 +12,10 @@ typedef uint16_t u16;
 
 #define ENEMY_DATA_SIZE	17
 #define NUM_ENEMIES 	4
-#define DIRECTION_LEFT  0
-#define DIRECTION_RIGHT 1
+#define DIRECTION_LEFT  0x1
+#define DIRECTION_RIGHT 0x2
+#define DIRECTION_UP	0x4
+#define DIRECTION_DOWN 	0x8
 
 #pragma bss-name (push, "ZEROPAGE")
 #pragma data-name (push, "ZEROPAGE")
@@ -28,9 +30,14 @@ static u8 enemyInitY = 50;
 
 static u8 player_x;
 static u8 player_y;
+static u8 playerDir;
 
 static u8 enemy_x;
 static u8 enemy_y;
+
+static u8 leftSide, rightSide, topSide, bottomSide;
+static u16 testCorner;
+
 
 //variables
 
@@ -65,10 +72,10 @@ u16 corner;
 
 enemy enemyData[4] = {
 	// x, y, frame, direction, range, initX, initY, initDir 
-	{ 150, 50,  0, 1, 50, 150, 50,  0 },
-	{ 75,  75,  1, 1, 25, 75,  75,  1 },
-	{ 100, 100, 1, 0, 30, 100, 100, 0 },
-	{ 200, 200, 0, 1, 60, 200, 200, 0 }
+	{ 150, 50,  0, 0, 50, 150, 50,  PAD_LEFT  },
+	{ 75,  75,  1, 0, 25, 75,  75,  PAD_RIGHT },
+	{ 100, 100, 1, 0, 30, 100, 100, PAD_LEFT  },
+	{ 200, 200, 0, 0, 60, 200, 200, PAD_LEFT  }
 };
 
 
@@ -174,7 +181,7 @@ void unrleCollision(void) {
 	}
 }
 
-void __fastcall__ four_Sides (u8 originX, u8 originY){
+void __fastcall__ four_Sides(u8 originX, u8 originY) {
 	if (originX < (255 - 1)){	// find the left side
 		X1_Left_Side = originX + 1;
 	}
@@ -200,6 +207,8 @@ void __fastcall__ four_Sides (u8 originX, u8 originY){
 u16 __fastcall__ getCollisionIndex(u8 screenX, u8 screenY) {
 	return ((u16) screenX >> 3) + (((u16) screenY >> 3) << 5);
 }
+
+/*
 
 void collide_Check_LR (void) {
 	if ((pad & PAD_RIGHT) != 0){ 	// first check right
@@ -246,6 +255,74 @@ void collide_Check_UD (void) {
 			player_y = (player_y & 0xf8) + 7; // if collision, realign
 	}
 }
+*/
+
+u8 __fastcall__ collideCheckVertical(u8 originX, u8 originY, u8 direction) {
+
+	leftSide = originX + 1;
+	rightSide = originX + 15;
+	topSide = originY + 1;
+	bottomSide = originY + 16;
+
+	if ( ( (direction & PAD_UP) != 0) ) {
+		testCorner = getCollisionIndex(rightSide, topSide);
+		if ( testColl[testCorner] == 0 ) {
+			testCorner = getCollisionIndex(leftSide, topSide);
+		}
+	} else if ( (direction & PAD_DOWN) != 0 ) {
+		testCorner = getCollisionIndex(rightSide, bottomSide);
+		if ( testColl[testCorner] == 0 ) {
+			testCorner = getCollisionIndex(leftSide, bottomSide);
+		}
+	}
+
+	return testColl[testCorner];
+}
+
+u8 __fastcall__ collideCheckHorizontal(u8 originX, u8 originY, u8 direction) {
+
+	leftSide = originX + 1;
+	rightSide = originX + 15;
+	topSide = originY + 1;
+	bottomSide = originY + 16;
+
+	if ( ( (direction & PAD_LEFT) != 0 ) ) {
+		testCorner = getCollisionIndex(leftSide, topSide);
+		if ( testColl[testCorner] == 0 ) {
+			testCorner = getCollisionIndex(leftSide, bottomSide);
+		}
+	} else if ( (direction & PAD_RIGHT) != 0 ) {
+		testCorner = getCollisionIndex(rightSide, topSide);
+		if ( testColl[testCorner] == 0 ) {
+			testCorner = getCollisionIndex(rightSide, bottomSide);
+		}
+	}
+
+	return testColl[testCorner];
+}
+
+
+void __fastcall__ bgVertCollideCheck(u8 *x, u8 *y, u8 dir) {
+	u8 colliding = collideCheckVertical(*x, *y, dir);
+	if ( colliding == 1 ) {
+		if ( dir & PAD_UP ) {
+			*y = (*y & 0xf8) + 7;
+		} else if ( dir & PAD_DOWN ) {
+			*y = (*y & 0xf8) - 1;
+		}
+	}
+}
+
+void __fastcall__ bgHorizCollideCheck(u8 *x, u8 *y, u8 dir) {
+	u8 colliding = collideCheckHorizontal(*x, *y, dir);
+	if ( colliding == 1 ) {
+		if ( dir & PAD_LEFT ) {
+			*x = (*x & 0xf8) + 8;
+		} else if ( dir & PAD_RIGHT ) {
+			*x = (*x & 0xf8);
+		}		
+	}
+}
 
 
 
@@ -253,34 +330,44 @@ void updateEnemies(void) {
 
 	u8 i;
 	for ( i = 0; i < NUM_ENEMIES; i++ ) {
-		if ( enemyData[i].direction == DIRECTION_RIGHT ) {
+		if ( enemyData[i].direction == PAD_RIGHT ) {
 			enemyData[i].x += 1;
+			if ( collideCheckHorizontal(enemyData[i].x, enemyData[i].y, PAD_RIGHT) ) {
+				flipSprite(enemySpriteData[i], 0);
+				enemyData[i].direction = PAD_LEFT;
+			}
 		} else {
 			enemyData[i].x -= 1;
+			if ( collideCheckHorizontal(enemyData[i].x, enemyData[i].y, PAD_LEFT) ) {
+				flipSprite(enemySpriteData[i], 1);
+				enemyData[i].direction = PAD_RIGHT;
+			}
 		}
 
-		if ( enemyData[i].initDir == DIRECTION_RIGHT ) {
+		/*
+		if ( enemyData[i].initDir == PAD_RIGHT ) {
 			if ( enemyData[i].x <= enemyData[i].initX ) {
 				flipSprite(enemySpriteData[i], 1);
-				enemyData[i].direction = 1;				
+				enemyData[i].direction = PAD_RIGHT;				
 			} else if ( enemyData[i].x > ( enemyData[i].initX + enemyData[i].range ) ) {
 				flipSprite(enemySpriteData[i], 0);
-				enemyData[i].direction = 0;
+				enemyData[i].direction = PAD_LEFT;
 			}		
 		} else {
 			if ( enemyData[i].x <= ( enemyData[i].initX - enemyData[i].range ) ) {
 				flipSprite(enemySpriteData[i], 1);
-				enemyData[i].direction = 1;				
+				enemyData[i].direction = PAD_RIGHT;				
 			} else if ( enemyData[i].x > enemyData[i].initX ) {
 				flipSprite(enemySpriteData[i], 0);
-				enemyData[i].direction = 0;
+				enemyData[i].direction = PAD_LEFT;
 			}					
 		}
+		*/
 	}
 }
 
 
-void playerEnemyCollideCheck() {
+void playerEnemyCollideCheck(void) {
 
 	u8 enemyTop;
 	u8 enemyBottom;
@@ -312,6 +399,7 @@ void main(void)
 
 	// - generalize/rewrite background collision detection
 	// - add gravity
+	// - study enemy behavior in games
 
 	u8 j;
 
@@ -332,6 +420,7 @@ void main(void)
 	
 	player_x = 52;
 	player_y = 100;
+	playerDir = PAD_RIGHT;
 
 	enemy_x = enemyInitX;
 	enemy_y = enemyInitY;
@@ -356,8 +445,8 @@ void main(void)
 			enemySpriteData[i][j] = enemySpriteDataTemplate[j];
 		}
 
-		if ( enemyData[i].direction == DIRECTION_RIGHT ) {
-			flipSprite(enemySpriteData[i], DIRECTION_RIGHT);
+		if ( enemyData[i].direction == PAD_RIGHT ) {
+			flipSprite(enemySpriteData[i], PAD_RIGHT);
 		}		
 		setFrame(enemySpriteData[i], enemyFrames[enemyData[i].frame]);
 	}
@@ -406,19 +495,35 @@ void main(void)
 		}
 
 		updateEnemies();
+
+		playerDir = pad;
 		
-		if ( pad&PAD_LEFT  && player_x > 0 )   player_x -= 2;
-		if ( pad&PAD_RIGHT && player_x < 240 ) player_x += 2;
+	
+		if ( pad&PAD_LEFT  && player_x > 0 ) {
+			player_x -= 2;
+		}
+		if ( pad&PAD_RIGHT && player_x < 240 ) {
+			player_x += 2;
+		}
 
-		four_Sides(player_x, player_y);	
-		collide_Check_LR();		
+	
+		// four_Sides(player_x, player_y);	
+		// collide_Check_LR();		
 
-		if ( pad&PAD_UP    && player_y > 0 )   player_y -= 2;
-		if ( pad&PAD_DOWN  && player_y < 220 ) player_y += 2;
+		bgHorizCollideCheck(&player_x, &player_y, playerDir);
 
-		four_Sides(player_x, player_y);	
-		collide_Check_UD();
+		if ( pad&PAD_UP    && player_y > 0 ) { 
+			player_y -= 2;
+		}
+		if ( pad&PAD_DOWN  && player_y < 220 ) {
+			player_y += 2;
+		}
 
+		// four_Sides(player_x, player_y);	
+		// collide_Check_UD();
+
+
+		bgVertCollideCheck(&player_x, &player_y, playerDir);
 		
 		four_Sides(player_x, player_y);	
 		playerEnemyCollideCheck();
