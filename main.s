@@ -23,21 +23,11 @@
 	.export		_test_nam_coll_rle
 	.import		_memcpy
 	.export		_oam_off
-	.export		_testColl
-	.export		_X1_Right_Side
-	.export		_X1_Left_Side
-	.export		_Y1_Bottom
-	.export		_Y1_Top
-	.export		_corner
-	.export		_enemyData
 	.import		_paldat
 	.export		_playerFrames
 	.export		_enemyFrames
 	.export		_playerSpriteData
 	.export		_enemySpriteDataTemplate
-	.export		_enemySpriteData
-	.export		_palSprites
-	.export		_palBG
 	.export		_setSpriteFrame
 	.export		_setSpritePalette
 	.export		_setSpritePriority
@@ -565,9 +555,6 @@ _Y1_Bottom:
 .segment	"BSS"
 _Y1_Top:
 	.res	1,$00
-.segment	"BSS"
-_corner:
-	.res	2,$00
 .segment	"BSS"
 _enemySpriteData:
 	.res	68,$00

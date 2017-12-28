@@ -64,15 +64,15 @@ struct enemyStruct {
 
 typedef struct enemyStruct enemy;
 
-u8 testColl[960];
+static u8 testColl[960];
 
-u8 X1_Right_Side;	//for collision test
-u8 X1_Left_Side;
-u8 Y1_Bottom;
-u8 Y1_Top;
-u16 corner;
+static u8 X1_Right_Side;	//for collision test
+static u8 X1_Left_Side;
+static u8 Y1_Bottom;
+static u8 Y1_Top;
+//static u16 corner;
 
-enemy enemyData[4] = {
+static enemy enemyData[4] = {
 	// x, y, frame, direction, range, initX, initY, initDir 
 	{ 0, 0, 0, 0, 50, 150, 50,  PAD_LEFT  },
 	{ 0, 0, 1, 0, 25, 75,  75,  PAD_RIGHT },
@@ -112,11 +112,9 @@ const u8 enemySpriteDataTemplate[17] = {
 	128
 };
 
-u8 enemySpriteData[4][17];
-
-
-u8 palSprites[4];
-u8 palBG[4];
+static u8 enemySpriteData[4][17];
+static u8 palSprites[4];
+static u8 palBG[4];
 
 void __fastcall__ setSpriteFrame(u8 *sprite, const u8 *frame) {
 	sprite[2] = frame[0];
@@ -428,9 +426,11 @@ void main(void)
 
 	// TODO next:
 
-	// - generalize/rewrite background collision detection
-	// - add gravity
 	// - study enemy behavior in games
+	// - allow enemies to be placed via level data
+	// - add enemy-only blocker tiles
+	// - continue refactoring, break out code into modules
+
 
 	u8 j;
 	u8 sprPriority = 0;
@@ -465,6 +465,8 @@ void main(void)
 	playerFrame = 0;
 
 	
+
+	
 	setSpriteFrame(playerSpriteData, playerFrames[playerFrame]);
 
 	for ( i = 0; i < NUM_ENEMIES; ++i ) {
@@ -472,7 +474,8 @@ void main(void)
 		enemyData[i].y = enemyData[i].initY;
 		enemyData[i].direction = enemyData[i].initDir;
 
-		//memcpy(enemySpriteData[i], *(enemySpriteDataTemplate), 17);
+		//memcpy(enemySpriteData[i], enemySpriteDataTemplate, ENEMY_DATA_SIZE);
+
 		for ( j = 0; j < ENEMY_DATA_SIZE; ++j ) {
 			enemySpriteData[i][j] = enemySpriteDataTemplate[j];
 		}
