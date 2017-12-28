@@ -72,10 +72,10 @@ u16 corner;
 
 enemy enemyData[4] = {
 	// x, y, frame, direction, range, initX, initY, initDir 
-	{ 150, 50,  0, 0, 50, 150, 50,  PAD_LEFT  },
-	{ 75,  75,  1, 0, 25, 75,  75,  PAD_RIGHT },
-	{ 100, 100, 1, 0, 30, 100, 100, PAD_LEFT  },
-	{ 200, 200, 0, 0, 60, 200, 200, PAD_LEFT  }
+	{ 0, 0, 0, 0, 50, 150, 50,  PAD_LEFT  },
+	{ 0, 0, 1, 0, 25, 75,  75,  PAD_RIGHT },
+	{ 0, 0, 1, 0, 30, 100, 100, PAD_LEFT  },
+	{ 0, 0, 0, 0, 60, 200, 180, PAD_LEFT  }
 };
 
 

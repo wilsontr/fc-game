@@ -61,37 +61,37 @@ _enemyInitX:
 _enemyInitY:
 	.byte	$32
 _enemyData:
-	.byte	$96
-	.byte	$32
+	.byte	$00
+	.byte	$00
 	.byte	$00
 	.byte	$00
 	.byte	$32
 	.byte	$96
 	.byte	$32
 	.byte	$40
-	.byte	$4B
-	.byte	$4B
+	.byte	$00
+	.byte	$00
 	.byte	$01
 	.byte	$00
 	.byte	$19
 	.byte	$4B
 	.byte	$4B
 	.byte	$80
-	.byte	$64
-	.byte	$64
+	.byte	$00
+	.byte	$00
 	.byte	$01
 	.byte	$00
 	.byte	$1E
 	.byte	$64
 	.byte	$64
 	.byte	$40
-	.byte	$C8
-	.byte	$C8
+	.byte	$00
+	.byte	$00
 	.byte	$00
 	.byte	$00
 	.byte	$3C
 	.byte	$C8
-	.byte	$C8
+	.byte	$B4
 	.byte	$40
 _playerSpriteData:
 	.byte	$00
