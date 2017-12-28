@@ -38,6 +38,8 @@ static u8 enemy_y;
 static u8 leftSide, rightSide, topSide, bottomSide;
 static u16 testCorner;
 
+static u8 enemySpriteCount = 0;
+
 
 //variables
 
@@ -116,18 +118,32 @@ u8 enemySpriteData[4][17];
 u8 palSprites[4];
 u8 palBG[4];
 
-void __fastcall__ setFrame(u8 *sprite, const u8 *frame) {
+void __fastcall__ setSpriteFrame(u8 *sprite, const u8 *frame) {
 	sprite[2] = frame[0];
 	sprite[6] = frame[1];
 	sprite[10] = frame[2];
 	sprite[14] = frame[3];
 }
 
-void __fastcall__ setPalette(u8 *sprite, u8 palette) {
+void __fastcall__ setSpritePalette(u8 *sprite, u8 palette) {
 	u8 i;
 	for ( i = 3; i <= 15; i = i + 4 ) {
 		sprite[i] &= ~(0x3);
 		sprite[i] |= palette;
+	}
+}
+
+void __fastcall__ setSpritePriority(u8 *sprite, u8 priority) {
+	if ( priority ) {
+		sprite[3] |= OAM_BEHIND;
+		sprite[7] |= OAM_BEHIND;
+		sprite[11] |= OAM_BEHIND;
+		sprite[15] |= OAM_BEHIND;
+	} else {
+		sprite[3] &= ~OAM_BEHIND;
+		sprite[7] &= ~OAM_BEHIND;
+		sprite[11] &= ~OAM_BEHIND;
+		sprite[15] &= ~OAM_BEHIND;
 	}
 }
 
@@ -399,6 +415,14 @@ void playerEnemyCollideCheck(void) {
 	}
 }
 
+u8 __fastcall__ spriteCount(void) {
+	++enemySpriteCount;
+	if ( enemySpriteCount >= NUM_ENEMIES ) {
+		enemySpriteCount = 0;
+	}
+	return enemySpriteCount;
+}
+
 void main(void)
 {
 
@@ -409,6 +433,7 @@ void main(void)
 	// - study enemy behavior in games
 
 	u8 j;
+	u8 sprPriority = 0;
 
 
 	memcpy(palSprites, paldat, 16);
@@ -440,7 +465,7 @@ void main(void)
 	playerFrame = 0;
 
 	
-	setFrame(playerSpriteData, playerFrames[playerFrame]);
+	setSpriteFrame(playerSpriteData, playerFrames[playerFrame]);
 
 	for ( i = 0; i < NUM_ENEMIES; ++i ) {
 		enemyData[i].x = enemyData[i].initX;
@@ -455,7 +480,7 @@ void main(void)
 		if ( enemyData[i].direction == PAD_RIGHT ) {
 			flipSprite(enemySpriteData[i], PAD_RIGHT);
 		}		
-		setFrame(enemySpriteData[i], enemyFrames[enemyData[i].frame]);
+		setSpriteFrame(enemySpriteData[i], enemyFrames[enemyData[i].frame]);
 	}
 	
 
@@ -470,6 +495,8 @@ void main(void)
 		spr = 0;
 		i = 0;
 
+		sprPriority = frame & 0xFE;
+
 		// update player movement
 		pad = pad_poll(i);
 
@@ -482,8 +509,7 @@ void main(void)
 		// animate player sprite
 		if ( ( frame & 0x0F ) == 0x0F ) {
 			playerFrame ^= 1;
-			setFrame(playerSpriteData, playerFrames[playerFrame]);
-
+			setSpriteFrame(playerSpriteData, playerFrames[playerFrame]);
 		} 
 
 		// update player sprite
@@ -491,15 +517,21 @@ void main(void)
 
 		// update enemy sprites
 		for ( i = 0; i < NUM_ENEMIES; ++i ) {
+
+			j = spriteCount();
 			
 			// animate
 			if ( ( frame & 0x0F ) == 0x0F ) {
-				enemyData[i].frame ^= 1;
-				setFrame(enemySpriteData[i], enemyFrames[enemyData[i].frame]);
+				enemyData[j].frame ^= 1;
+				setSpriteFrame(enemySpriteData[j], enemyFrames[enemyData[j].frame]);
 			}
 			
-			spr = oam_meta_spr(enemyData[i].x, enemyData[i].y, spr, enemySpriteData[i]);	
+			//setSpritePriority(enemySpriteData[i], sprPriority);
+			sprPriority ^= 1;
+			spr = oam_meta_spr(enemyData[j].x, enemyData[j].y, spr, enemySpriteData[j]);	
 		}
+
+		spriteCount();
 
 		updateEnemies();
 
@@ -537,9 +569,9 @@ void main(void)
 
 		
 		if ( playerEnemyColliding ) {
-			setPalette(playerSpriteData, 0x0);
+			setSpritePalette(playerSpriteData, 0x0);
 		} else {
-			setPalette(playerSpriteData, 0x2);
+			setSpritePalette(playerSpriteData, 0x2);
 		}
 
 		++frame;
