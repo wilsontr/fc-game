@@ -21,7 +21,7 @@
 	.import		_vram_adr
 	.import		_vram_unrle
 	.export		_test_nam
-	.export		_test_nam_coll_rle
+	.export		_collisionMap
 	.export		_oam_off
 	.export		_enemyData
 	.import		_paldat
@@ -33,7 +33,6 @@
 	.export		_setSpritePalette
 	.export		_setSpritePriority
 	.export		_flipSprite
-	.export		_unrleCollision
 	.export		_four_Sides
 	.export		_getCollisionIndex
 	.export		_collideCheckVertical
@@ -359,241 +358,967 @@ _test_nam:
 	.byte	$00
 	.byte	$01
 	.byte	$00
-_test_nam_coll_rle:
+_collisionMap:
 	.byte	$01
-	.byte	$41
-	.byte	$00
-	.byte	$1E
 	.byte	$01
-	.byte	$02
-	.byte	$00
-	.byte	$1E
 	.byte	$01
-	.byte	$02
-	.byte	$00
-	.byte	$1E
 	.byte	$01
-	.byte	$02
-	.byte	$00
-	.byte	$1E
 	.byte	$01
-	.byte	$02
+	.byte	$01
+	.byte	$01
+	.byte	$01
+	.byte	$01
+	.byte	$01
+	.byte	$01
+	.byte	$01
+	.byte	$01
+	.byte	$01
+	.byte	$01
+	.byte	$01
+	.byte	$01
+	.byte	$01
+	.byte	$01
+	.byte	$01
+	.byte	$01
+	.byte	$01
+	.byte	$01
+	.byte	$01
+	.byte	$01
+	.byte	$01
+	.byte	$01
+	.byte	$01
+	.byte	$01
+	.byte	$01
+	.byte	$01
+	.byte	$01
+	.byte	$01
+	.byte	$01
+	.byte	$01
+	.byte	$01
+	.byte	$01
+	.byte	$01
+	.byte	$01
+	.byte	$01
+	.byte	$01
+	.byte	$01
+	.byte	$01
+	.byte	$01
+	.byte	$01
+	.byte	$01
+	.byte	$01
+	.byte	$01
+	.byte	$01
+	.byte	$01
+	.byte	$01
+	.byte	$01
+	.byte	$01
+	.byte	$01
+	.byte	$01
+	.byte	$01
+	.byte	$01
+	.byte	$01
+	.byte	$01
+	.byte	$01
+	.byte	$01
+	.byte	$01
+	.byte	$01
+	.byte	$01
+	.byte	$01
 	.byte	$00
-	.byte	$10
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$01
+	.byte	$01
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$01
+	.byte	$01
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$01
+	.byte	$01
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$01
+	.byte	$01
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
 	.byte	$04
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$01
 	.byte	$01
 	.byte	$00
-	.byte	$0D
-	.byte	$01
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
 	.byte	$02
 	.byte	$00
-	.byte	$06
-	.byte	$02
-	.byte	$01
 	.byte	$00
-	.byte	$10
-	.byte	$02
-	.byte	$01
 	.byte	$00
-	.byte	$06
-	.byte	$01
-	.byte	$02
 	.byte	$00
-	.byte	$07
-	.byte	$01
-	.byte	$10
 	.byte	$00
-	.byte	$07
-	.byte	$01
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
 	.byte	$02
 	.byte	$00
-	.byte	$1E
-	.byte	$01
-	.byte	$02
 	.byte	$00
-	.byte	$1E
-	.byte	$01
-	.byte	$02
 	.byte	$00
-	.byte	$1E
-	.byte	$01
-	.byte	$02
 	.byte	$00
-	.byte	$07
+	.byte	$00
+	.byte	$00
+	.byte	$01
+	.byte	$01
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$01
+	.byte	$01
+	.byte	$01
+	.byte	$01
+	.byte	$01
+	.byte	$01
+	.byte	$01
+	.byte	$01
+	.byte	$01
+	.byte	$01
+	.byte	$01
+	.byte	$01
+	.byte	$01
+	.byte	$01
+	.byte	$01
+	.byte	$01
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$01
+	.byte	$01
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$01
+	.byte	$01
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$01
+	.byte	$01
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$01
+	.byte	$01
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
 	.byte	$03
-	.byte	$01
 	.byte	$00
-	.byte	$0D
-	.byte	$04
-	.byte	$01
 	.byte	$00
-	.byte	$08
-	.byte	$01
-	.byte	$02
 	.byte	$00
-	.byte	$04
-	.byte	$02
-	.byte	$01
 	.byte	$00
-	.byte	$06
-	.byte	$02
-	.byte	$01
 	.byte	$00
-	.byte	$06
-	.byte	$02
-	.byte	$01
 	.byte	$00
-	.byte	$06
-	.byte	$02
-	.byte	$01
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
 	.byte	$00
 	.byte	$04
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
 	.byte	$01
+	.byte	$01
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
 	.byte	$02
 	.byte	$00
-	.byte	$05
-	.byte	$01
-	.byte	$06
 	.byte	$00
-	.byte	$08
-	.byte	$01
-	.byte	$06
 	.byte	$00
-	.byte	$05
-	.byte	$01
+	.byte	$00
+	.byte	$00
+	.byte	$00
 	.byte	$02
 	.byte	$00
-	.byte	$1E
-	.byte	$01
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
 	.byte	$02
 	.byte	$00
-	.byte	$1E
-	.byte	$01
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
 	.byte	$02
 	.byte	$00
-	.byte	$1E
-	.byte	$01
-	.byte	$02
 	.byte	$00
-	.byte	$0E
+	.byte	$00
+	.byte	$00
+	.byte	$01
+	.byte	$01
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$01
+	.byte	$01
+	.byte	$01
+	.byte	$01
+	.byte	$01
+	.byte	$01
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$01
+	.byte	$01
+	.byte	$01
+	.byte	$01
+	.byte	$01
+	.byte	$01
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$01
+	.byte	$01
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$01
+	.byte	$01
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$01
+	.byte	$01
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$01
+	.byte	$01
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
 	.byte	$04
-	.byte	$01
 	.byte	$00
-	.byte	$0A
-	.byte	$04
-	.byte	$01
 	.byte	$00
-	.byte	$04
-	.byte	$01
-	.byte	$02
-	.byte	$02
-	.byte	$01
 	.byte	$00
-	.byte	$05
-	.byte	$02
-	.byte	$01
 	.byte	$00
-	.byte	$02
-	.byte	$02
-	.byte	$01
 	.byte	$00
-	.byte	$0A
-	.byte	$02
-	.byte	$01
 	.byte	$00
-	.byte	$02
-	.byte	$02
-	.byte	$01
 	.byte	$00
-	.byte	$05
-	.byte	$02
-	.byte	$01
-	.byte	$01
-	.byte	$02
 	.byte	$00
-	.byte	$01
-	.byte	$01
-	.byte	$05
+	.byte	$00
 	.byte	$00
 	.byte	$04
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
 	.byte	$01
-	.byte	$0A
+	.byte	$01
+	.byte	$02
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$02
+	.byte	$00
+	.byte	$00
+	.byte	$02
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$02
+	.byte	$00
+	.byte	$00
+	.byte	$02
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$02
+	.byte	$01
+	.byte	$01
+	.byte	$00
+	.byte	$01
+	.byte	$01
+	.byte	$01
+	.byte	$01
+	.byte	$01
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$01
+	.byte	$01
+	.byte	$01
+	.byte	$01
+	.byte	$01
+	.byte	$01
+	.byte	$01
+	.byte	$01
+	.byte	$01
+	.byte	$01
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$01
+	.byte	$01
+	.byte	$01
+	.byte	$01
+	.byte	$01
+	.byte	$00
+	.byte	$01
+	.byte	$01
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$01
+	.byte	$01
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$01
+	.byte	$01
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$01
+	.byte	$01
+	.byte	$00
+	.byte	$00
+	.byte	$02
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$02
+	.byte	$00
+	.byte	$00
+	.byte	$02
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$02
+	.byte	$00
+	.byte	$00
+	.byte	$02
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$02
+	.byte	$00
+	.byte	$00
+	.byte	$01
+	.byte	$01
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$01
+	.byte	$01
+	.byte	$01
+	.byte	$01
+	.byte	$01
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$01
+	.byte	$01
+	.byte	$01
+	.byte	$01
+	.byte	$01
+	.byte	$01
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$01
+	.byte	$01
+	.byte	$01
+	.byte	$01
+	.byte	$01
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$01
+	.byte	$01
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
 	.byte	$00
 	.byte	$04
-	.byte	$01
-	.byte	$05
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
 	.byte	$00
 	.byte	$01
 	.byte	$01
-	.byte	$02
 	.byte	$00
-	.byte	$1E
-	.byte	$01
-	.byte	$02
 	.byte	$00
-	.byte	$1E
-	.byte	$01
-	.byte	$02
 	.byte	$00
-	.byte	$1E
-	.byte	$01
-	.byte	$02
 	.byte	$00
-	.byte	$02
-	.byte	$02
-	.byte	$01
 	.byte	$00
-	.byte	$05
-	.byte	$02
-	.byte	$01
 	.byte	$00
-	.byte	$02
-	.byte	$02
-	.byte	$01
 	.byte	$00
-	.byte	$06
-	.byte	$02
-	.byte	$01
 	.byte	$00
-	.byte	$02
-	.byte	$02
-	.byte	$01
 	.byte	$00
-	.byte	$05
-	.byte	$02
-	.byte	$01
 	.byte	$00
-	.byte	$02
-	.byte	$01
-	.byte	$02
 	.byte	$00
-	.byte	$03
-	.byte	$01
-	.byte	$05
 	.byte	$00
-	.byte	$04
-	.byte	$01
-	.byte	$06
 	.byte	$00
-	.byte	$04
-	.byte	$01
-	.byte	$05
 	.byte	$00
-	.byte	$03
-	.byte	$01
-	.byte	$02
 	.byte	$00
-	.byte	$0E
-	.byte	$04
-	.byte	$01
 	.byte	$00
-	.byte	$0F
-	.byte	$01
-	.byte	$02
 	.byte	$00
-	.byte	$1E
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
+	.byte	$00
 	.byte	$01
-	.byte	$41
+	.byte	$01
+	.byte	$01
+	.byte	$01
+	.byte	$01
+	.byte	$01
+	.byte	$01
+	.byte	$01
+	.byte	$01
+	.byte	$01
+	.byte	$01
+	.byte	$01
+	.byte	$01
+	.byte	$01
+	.byte	$01
+	.byte	$01
+	.byte	$01
+	.byte	$01
+	.byte	$01
+	.byte	$01
+	.byte	$01
+	.byte	$01
+	.byte	$01
+	.byte	$01
+	.byte	$01
+	.byte	$01
+	.byte	$01
+	.byte	$01
+	.byte	$01
+	.byte	$01
+	.byte	$01
+	.byte	$01
+	.byte	$01
+	.byte	$01
+	.byte	$01
+	.byte	$01
+	.byte	$01
+	.byte	$01
+	.byte	$01
+	.byte	$01
+	.byte	$01
+	.byte	$01
+	.byte	$01
+	.byte	$01
+	.byte	$01
+	.byte	$01
+	.byte	$01
+	.byte	$01
+	.byte	$01
+	.byte	$01
+	.byte	$01
+	.byte	$01
+	.byte	$01
+	.byte	$01
+	.byte	$01
+	.byte	$01
+	.byte	$01
+	.byte	$01
+	.byte	$01
+	.byte	$01
+	.byte	$01
+	.byte	$01
+	.byte	$01
+	.byte	$01
+	.byte	$01
 _playerFrames:
 	.byte	$04
 	.byte	$05
@@ -693,9 +1418,6 @@ _playerEnemyColliding:
 _numEnemies:
 	.res	1,$00
 .segment	"BSS"
-_collisionMap:
-	.res	960,$00
-.segment	"BSS"
 _X1_Right_Side:
 	.res	1,$00
 .segment	"BSS"
@@ -709,7 +1431,7 @@ _Y1_Top:
 	.res	1,$00
 .segment	"BSS"
 _enemyData:
-	.res	32,$00
+	.res	80,$00
 .segment	"BSS"
 _enemySpriteData:
 	.res	170,$00
@@ -820,9 +1542,9 @@ _palBG:
 	jsr     decsp1
 	lda     #$03
 	ldy     #$00
-L04FF:	sta     (sp),y
+L07B3:	sta     (sp),y
 	cmp     #$10
-	bcs     L025E
+	bcs     L0533
 ;
 ; sprite[i] &= ~(0x3);
 ;
@@ -870,11 +1592,11 @@ L04FF:	sta     (sp),y
 	lda     (sp),y
 	clc
 	adc     #$04
-	jmp     L04FF
+	jmp     L07B3
 ;
 ; }
 ;
-L025E:	jmp     incsp4
+L0533:	jmp     incsp4
 
 .endproc
 
@@ -897,7 +1619,7 @@ L025E:	jmp     incsp4
 ;
 	ldy     #$00
 	lda     (sp),y
-	beq     L026F
+	beq     L0544
 ;
 ; sprite[3] |= OAM_BEHIND;
 ;
@@ -952,11 +1674,11 @@ L025E:	jmp     incsp4
 ;
 ; } else {
 ;
-	jmp     L0500
+	jmp     L07B4
 ;
 ; sprite[3] &= ~OAM_BEHIND;
 ;
-L026F:	ldy     #$02
+L0544:	ldy     #$02
 	lda     (sp),y
 	sta     ptr1+1
 	dey
@@ -1004,7 +1726,7 @@ L026F:	ldy     #$02
 	ldy     #$0F
 	lda     (ptr1),y
 	and     #$DF
-L0500:	sta     (ptr1),y
+L07B4:	sta     (ptr1),y
 ;
 ; }
 ;
@@ -1031,7 +1753,7 @@ L0500:	sta     (ptr1),y
 ;
 	ldy     #$00
 	lda     (sp),y
-	jeq     L028B
+	jeq     L0560
 ;
 ; sprite[0] = 8;
 ;
@@ -1134,11 +1856,11 @@ L0500:	sta     (ptr1),y
 ;
 ; } else {
 ;
-	jmp     L0501
+	jmp     L07B5
 ;
 ; sprite[0] = 0;
 ;
-L028B:	ldy     #$02
+L0560:	ldy     #$02
 	lda     (sp),y
 	sta     ptr1+1
 	dey
@@ -1234,138 +1956,11 @@ L028B:	ldy     #$02
 	ldy     #$0F
 	lda     (ptr1),y
 	and     #$BF
-L0501:	sta     (ptr1),y
+L07B5:	sta     (ptr1),y
 ;
 ; }
 ;
 	jmp     incsp3
-
-.endproc
-
-; ---------------------------------------------------------------
-; void __near__ unrleCollision (void)
-; ---------------------------------------------------------------
-
-.segment	"CODE"
-
-.proc	_unrleCollision: near
-
-.segment	"CODE"
-
-;
-; u8 i = 0;
-;
-	lda     #$00
-	jsr     pusha
-;
-; u8 j = 0;
-;
-	jsr     pusha
-;
-; u16 size = sizeof(test_nam_coll_rle); 
-;
-	lda     #$EA
-	jsr     pusha0
-;
-; u16 outPointer = 0;
-;
-	jsr     decsp2
-	jsr     push0
-;
-; while ( i <= size ) {
-;
-	jmp     L02C6
-;
-; currentByte = test_nam_coll_rle[i];
-;
-L02C4:	ldy     #$07
-	lda     (sp),y
-	tay
-	lda     _test_nam_coll_rle,y
-	ldy     #$03
-	sta     (sp),y
-;
-; ++i;
-;
-	ldy     #$07
-	clc
-	lda     #$01
-	adc     (sp),y
-	sta     (sp),y
-;
-; byteCount = test_nam_coll_rle[i];
-;
-	tay
-	lda     _test_nam_coll_rle,y
-	ldy     #$02
-	sta     (sp),y
-;
-; ++i;
-;
-	ldy     #$07
-	clc
-	lda     #$01
-	adc     (sp),y
-	sta     (sp),y
-;
-; for ( j = 0; j < byteCount; ++j ) {
-;
-	lda     #$00
-	dey
-L0502:	sta     (sp),y
-	ldx     #$00
-	lda     (sp),y
-	ldy     #$02
-	cmp     (sp),y
-	bcs     L02C6
-;
-; collisionMap[outPointer] = currentByte;
-;
-	lda     #<(_collisionMap)
-	ldy     #$00
-	clc
-	adc     (sp),y
-	sta     ptr1
-	lda     #>(_collisionMap)
-	iny
-	adc     (sp),y
-	sta     ptr1+1
-	ldy     #$03
-	lda     (sp),y
-	ldy     #$00
-	sta     (ptr1),y
-;
-; ++outPointer;
-;
-	lda     #$01
-	jsr     addeq0sp
-;
-; for ( j = 0; j < byteCount; ++j ) {
-;
-	ldy     #$06
-	clc
-	lda     #$01
-	adc     (sp),y
-	jmp     L0502
-;
-; while ( i <= size ) {
-;
-L02C6:	ldy     #$07
-	lda     (sp),y
-	sec
-	ldy     #$04
-	sbc     (sp),y
-	sta     tmp1
-	txa
-	iny
-	sbc     (sp),y
-	ora     tmp1
-	bcc     L02C4
-	beq     L02C4
-;
-; }
-;
-	jmp     incsp8
 
 .endproc
 
@@ -1389,7 +1984,7 @@ L02C6:	ldy     #$07
 	ldy     #$01
 	lda     (sp),y
 	cmp     #$FE
-	bcs     L0506
+	bcs     L07B9
 ;
 ; X1_Left_Side = originX + 1;
 ;
@@ -1398,18 +1993,18 @@ L02C6:	ldy     #$07
 ;
 ; else {
 ;
-	jmp     L0503
+	jmp     L07B6
 ;
 ; X1_Left_Side = 255;
 ;
-L0506:	lda     #$FF
-L0503:	sta     _X1_Left_Side
+L07B9:	lda     #$FF
+L07B6:	sta     _X1_Left_Side
 ;
 ; if (originX < (255 - 15)){ // find the right side
 ;
 	lda     (sp),y
 	cmp     #$F0
-	bcs     L0507
+	bcs     L07BA
 ;
 ; X1_Right_Side = originX + 15;
 ;
@@ -1418,12 +2013,12 @@ L0503:	sta     _X1_Left_Side
 ;
 ; else {
 ;
-	jmp     L0504
+	jmp     L07B7
 ;
 ; X1_Right_Side = 255;
 ;
-L0507:	lda     #$FF
-L0504:	sta     _X1_Right_Side
+L07BA:	lda     #$FF
+L07B7:	sta     _X1_Right_Side
 ;
 ; Y1_Top = originY + 1; // our top is the same as the master Y
 ;
@@ -1437,7 +2032,7 @@ L0504:	sta     _X1_Right_Side
 ;
 	lda     (sp),y
 	cmp     #$FF
-	bcs     L0508
+	bcs     L07BB
 ;
 ; Y1_Bottom = originY + 16;
 ;
@@ -1446,12 +2041,12 @@ L0504:	sta     _X1_Right_Side
 ;
 ; else {
 ;
-	jmp     L0505
+	jmp     L07B8
 ;
 ; Y1_Bottom = 255;
 ;
-L0508:	lda     #$FF
-L0505:	sta     _Y1_Bottom
+L07BB:	lda     #$FF
+L07B8:	sta     _Y1_Bottom
 ;
 ; }
 ;
@@ -1556,7 +2151,7 @@ L0505:	sta     _Y1_Bottom
 	dey
 	lda     (sp),y
 	and     #$10
-	beq     L050B
+	beq     L07BE
 ;
 ; testCorner = getCollisionIndex(rightSide, topSide);
 ;
@@ -1577,7 +2172,7 @@ L0505:	sta     _Y1_Bottom
 	sta     ptr1+1
 	ldy     _testCorner
 	lda     (ptr1),y
-	bne     L031F
+	bne     L05D4
 ;
 ; testCorner = getCollisionIndex(leftSide, topSide);
 ;
@@ -1587,10 +2182,10 @@ L0505:	sta     _Y1_Bottom
 ;
 ; } else if ( (direction & PAD_DOWN) != 0 ) {
 ;
-	jmp     L050D
-L050B:	lda     (sp),y
+	jmp     L07C0
+L07BE:	lda     (sp),y
 	and     #$20
-	beq     L031F
+	beq     L05D4
 ;
 ; testCorner = getCollisionIndex(rightSide, bottomSide);
 ;
@@ -1611,20 +2206,20 @@ L050B:	lda     (sp),y
 	sta     ptr1+1
 	ldy     _testCorner
 	lda     (ptr1),y
-	bne     L031F
+	bne     L05D4
 ;
 ; testCorner = getCollisionIndex(leftSide, bottomSide);
 ;
 	lda     _leftSide
 	jsr     pusha
 	lda     _bottomSide
-L050D:	jsr     _getCollisionIndex
+L07C0:	jsr     _getCollisionIndex
 	sta     _testCorner
 	stx     _testCorner+1
 ;
 ; return collisionMap[testCorner];
 ;
-L031F:	lda     #<(_collisionMap)
+L05D4:	lda     #<(_collisionMap)
 	sta     ptr1
 	lda     #>(_collisionMap)
 	clc
@@ -1690,7 +2285,7 @@ L031F:	lda     #<(_collisionMap)
 	dey
 	lda     (sp),y
 	and     #$40
-	beq     L0510
+	beq     L07C3
 ;
 ; testCorner = getCollisionIndex(leftSide, topSide);
 ;
@@ -1711,7 +2306,7 @@ L031F:	lda     #<(_collisionMap)
 	sta     ptr1+1
 	ldy     _testCorner
 	lda     (ptr1),y
-	bne     L034E
+	bne     L0603
 ;
 ; testCorner = getCollisionIndex(leftSide, bottomSide);
 ;
@@ -1719,10 +2314,10 @@ L031F:	lda     #<(_collisionMap)
 ;
 ; } else if ( (direction & PAD_RIGHT) != 0 ) {
 ;
-	jmp     L0514
-L0510:	lda     (sp),y
+	jmp     L07C7
+L07C3:	lda     (sp),y
 	and     #$80
-	beq     L034E
+	beq     L0603
 ;
 ; testCorner = getCollisionIndex(rightSide, topSide);
 ;
@@ -1743,12 +2338,12 @@ L0510:	lda     (sp),y
 	sta     ptr1+1
 	ldy     _testCorner
 	lda     (ptr1),y
-	bne     L034E
+	bne     L0603
 ;
 ; testCorner = getCollisionIndex(rightSide, bottomSide);
 ;
 	lda     _rightSide
-L0514:	jsr     pusha
+L07C7:	jsr     pusha
 	lda     _bottomSide
 	jsr     _getCollisionIndex
 	sta     _testCorner
@@ -1756,7 +2351,7 @@ L0514:	jsr     pusha
 ;
 ; return collisionMap[testCorner];
 ;
-L034E:	lda     #<(_collisionMap)
+L0603:	lda     #<(_collisionMap)
 	sta     ptr1
 	lda     #>(_collisionMap)
 	clc
@@ -1819,14 +2414,14 @@ L034E:	lda     #<(_collisionMap)
 	ldy     #$00
 	lda     (sp),y
 	cmp     #$01
-	bne     L036E
+	bne     L0623
 ;
 ; if ( dir & PAD_UP ) {
 ;
 	iny
 	lda     (sp),y
 	and     #$10
-	beq     L0517
+	beq     L07CA
 ;
 ; *y = (*y & 0xf8) + 7;
 ;
@@ -1846,10 +2441,10 @@ L034E:	lda     #<(_collisionMap)
 ;
 ; } else if ( dir & PAD_DOWN ) {
 ;
-	jmp     L0515
-L0517:	lda     (sp),y
+	jmp     L07C8
+L07CA:	lda     (sp),y
 	and     #$20
-	beq     L036E
+	beq     L0623
 ;
 ; *y = (*y & 0xf8) - 1;
 ;
@@ -1866,11 +2461,11 @@ L0517:	lda     (sp),y
 	and     #$F8
 	sec
 	sbc     #$01
-L0515:	jsr     staspidx
+L07C8:	jsr     staspidx
 ;
 ; }
 ;
-L036E:	jmp     incsp6
+L0623:	jmp     incsp6
 
 .endproc
 
@@ -1921,14 +2516,14 @@ L036E:	jmp     incsp6
 	ldy     #$00
 	lda     (sp),y
 	cmp     #$01
-	bne     L0382
+	bne     L0637
 ;
 ; if ( dir & PAD_LEFT ) {
 ;
 	iny
 	lda     (sp),y
 	and     #$40
-	beq     L051A
+	beq     L07CD
 ;
 ; *x = (*x & 0xf8) + 8;
 ;
@@ -1948,10 +2543,10 @@ L036E:	jmp     incsp6
 ;
 ; } else if ( dir & PAD_RIGHT ) {
 ;
-	jmp     L0518
-L051A:	lda     (sp),y
+	jmp     L07CB
+L07CD:	lda     (sp),y
 	and     #$80
-	beq     L0382
+	beq     L0637
 ;
 ; *x = (*x & 0xf8);
 ;
@@ -1966,11 +2561,11 @@ L051A:	lda     (sp),y
 	ldy     #$00
 	lda     (ptr1),y
 	and     #$F8
-L0518:	jsr     staspidx
+L07CB:	jsr     staspidx
 ;
 ; }
 ;
-L0382:	jmp     incsp6
+L0637:	jmp     incsp6
 
 .endproc
 
@@ -1984,11 +2579,11 @@ L0382:	jmp     incsp6
 
 .segment	"BSS"
 
-L0388:
+L063D:
 	.res	1,$00
-L0389:
+L063E:
 	.res	1,$00
-L038A:
+L063F:
 	.res	1,$00
 
 .segment	"CODE"
@@ -1997,11 +2592,11 @@ L038A:
 ; for ( i = 0; i < numEnemies; i++ ) {
 ;
 	lda     #$00
-	sta     L0388
+	sta     L063D
 	tax
-L051C:	lda     L0388
+L07CF:	lda     L063D
 	cmp     _numEnemies
-	bcc     L0526
+	bcc     L07D9
 ;
 ; }
 ;
@@ -2009,8 +2604,8 @@ L051C:	lda     L0388
 ;
 ; vertCollide = collideCheckVertical(enemyData[i].x, enemyData[i].y + 1, PAD_DOWN);
 ;
-L0526:	jsr     decsp2
-	lda     L0388
+L07D9:	jsr     decsp2
+	lda     L063D
 	jsr     aslax2
 	sta     ptr1
 	txa
@@ -2022,7 +2617,7 @@ L0526:	jsr     decsp2
 	ldy     #$01
 	sta     (sp),y
 	ldx     #$00
-	lda     L0388
+	lda     L063D
 	jsr     aslax2
 	clc
 	adc     #<(_enemyData)
@@ -2037,18 +2632,18 @@ L0526:	jsr     decsp2
 	sta     (sp),y
 	lda     #$20
 	jsr     _collideCheckVertical
-	sta     L0389
+	sta     L063E
 ;
 ; if ( vertCollide != TILE_ALLCOLLIDE ) {
 ;
 	ldx     #$00
-	lda     L0389
+	lda     L063E
 	cmp     #$01
-	beq     L051D
+	beq     L07D0
 ;
 ; enemyData[i].y += 1;
 ;
-	lda     L0388
+	lda     L063D
 	jsr     aslax2
 	clc
 	adc     #<(_enemyData)
@@ -2063,11 +2658,11 @@ L0526:	jsr     decsp2
 ;
 ; } else {
 ;
-	jmp     L051B
+	jmp     L07CE
 ;
 ; if ( enemyData[i].direction == PAD_RIGHT ) {
 ;
-L051D:	lda     L0388
+L07D0:	lda     L063D
 	jsr     aslax2
 	clc
 	adc     #<(_enemyData)
@@ -2079,11 +2674,11 @@ L051D:	lda     L0388
 	ldx     #$00
 	lda     (ptr1),y
 	cmp     #$80
-	jne     L0521
+	jne     L07D4
 ;
 ; enemyData[i].x += 1;
 ;
-	lda     L0388
+	lda     L063D
 	jsr     aslax2
 	clc
 	adc     #<(_enemyData)
@@ -2101,7 +2696,7 @@ L051D:	lda     L0388
 ;
 	jsr     decsp2
 	ldx     #$00
-	lda     L0388
+	lda     L063D
 	jsr     aslax2
 	sta     ptr1
 	txa
@@ -2113,7 +2708,7 @@ L051D:	lda     L0388
 	ldy     #$01
 	sta     (sp),y
 	ldx     #$00
-	lda     L0388
+	lda     L063D
 	jsr     aslax2
 	clc
 	adc     #<(_enemyData)
@@ -2126,20 +2721,20 @@ L051D:	lda     L0388
 	sta     (sp),y
 	lda     #$80
 	jsr     _collideCheckHorizontal
-	sta     L038A
+	sta     L063F
 ;
 ; if ( ( horizCollide == TILE_ALLCOLLIDE ) || ( horizCollide == TILE_ENEMYCOLLIDE ) ) {
 ;
 	ldx     #$00
-	lda     L038A
+	lda     L063F
 	cmp     #$01
-	beq     L0520
+	beq     L07D3
 	cmp     #$02
-	jne     L0525
+	jne     L07D8
 ;
 ; flipSprite(enemySpriteData[i], 0);
 ;
-L0520:	lda     L0388
+L07D3:	lda     L063D
 	jsr     pusha0
 	lda     #$11
 	jsr     tosmula0
@@ -2157,7 +2752,7 @@ L0520:	lda     L0388
 ; enemyData[i].direction = PAD_LEFT;
 ;
 	ldx     #$00
-	lda     L0388
+	lda     L063D
 	jsr     aslax2
 	clc
 	adc     #<(_enemyData)
@@ -2172,11 +2767,11 @@ L0520:	lda     L0388
 ;
 ; } else {
 ;
-	jmp     L0525
+	jmp     L07D8
 ;
 ; enemyData[i].x -= 1;
 ;
-L0521:	lda     L0388
+L07D4:	lda     L063D
 	jsr     aslax2
 	clc
 	adc     #<(_enemyData)
@@ -2194,7 +2789,7 @@ L0521:	lda     L0388
 ;
 	jsr     decsp2
 	ldx     #$00
-	lda     L0388
+	lda     L063D
 	jsr     aslax2
 	sta     ptr1
 	txa
@@ -2206,7 +2801,7 @@ L0521:	lda     L0388
 	ldy     #$01
 	sta     (sp),y
 	ldx     #$00
-	lda     L0388
+	lda     L063D
 	jsr     aslax2
 	clc
 	adc     #<(_enemyData)
@@ -2219,20 +2814,20 @@ L0521:	lda     L0388
 	sta     (sp),y
 	lda     #$40
 	jsr     _collideCheckHorizontal
-	sta     L038A
+	sta     L063F
 ;
 ; if ( ( horizCollide == TILE_ALLCOLLIDE ) || ( horizCollide == TILE_ENEMYCOLLIDE ) ) {
 ;
 	ldx     #$00
-	lda     L038A
+	lda     L063F
 	cmp     #$01
-	beq     L0524
+	beq     L07D7
 	cmp     #$02
-	bne     L0525
+	bne     L07D8
 ;
 ; flipSprite(enemySpriteData[i], 1);
 ;
-L0524:	lda     L0388
+L07D7:	lda     L063D
 	jsr     pusha0
 	lda     #$11
 	jsr     tosmula0
@@ -2250,7 +2845,7 @@ L0524:	lda     L0388
 ; enemyData[i].direction = PAD_RIGHT;
 ;
 	ldx     #$00
-	lda     L0388
+	lda     L063D
 	jsr     aslax2
 	clc
 	adc     #<(_enemyData)
@@ -2260,16 +2855,16 @@ L0524:	lda     L0388
 	sta     ptr1+1
 	lda     #$80
 	ldy     #$03
-L051B:	sta     (ptr1),y
+L07CE:	sta     (ptr1),y
 ;
 ; for ( i = 0; i < numEnemies; i++ ) {
 ;
 	ldx     #$00
-L0525:	lda     L0388
+L07D8:	lda     L063D
 	clc
 	adc     #$01
-	sta     L0388
-	jmp     L051C
+	sta     L063D
+	jmp     L07CF
 
 .endproc
 
@@ -2283,15 +2878,15 @@ L0525:	lda     L0388
 
 .segment	"BSS"
 
-L03D2:
+L0687:
 	.res	1,$00
-L03D3:
+L0688:
 	.res	1,$00
-L03D4:
+L0689:
 	.res	1,$00
-L03D5:
+L068A:
 	.res	1,$00
-L03D6:
+L068B:
 	.res	1,$00
 
 .segment	"CODE"
@@ -2304,11 +2899,11 @@ L03D6:
 ;
 ; for ( j = 0; j < numEnemies; ++j ) {
 ;
-	sta     L03D6
+	sta     L068B
 	tax
-L0527:	lda     L03D6
+L07DA:	lda     L068B
 	cmp     _numEnemies
-	bcc     L0529
+	bcc     L07DC
 ;
 ; }
 ;
@@ -2316,7 +2911,7 @@ L0527:	lda     L03D6
 ;
 ; enemyTop = enemyData[j].y + 2;
 ;
-L0529:	jsr     aslax2
+L07DC:	jsr     aslax2
 	clc
 	adc     #<(_enemyData)
 	sta     ptr1
@@ -2327,12 +2922,12 @@ L0529:	jsr     aslax2
 	lda     (ptr1),y
 	clc
 	adc     #$02
-	sta     L03D2
+	sta     L0687
 ;
 ; enemyBottom = enemyData[j].y + 14;
 ;
 	ldx     #$00
-	lda     L03D6
+	lda     L068B
 	jsr     aslax2
 	clc
 	adc     #<(_enemyData)
@@ -2343,12 +2938,12 @@ L0529:	jsr     aslax2
 	lda     (ptr1),y
 	clc
 	adc     #$0E
-	sta     L03D3
+	sta     L0688
 ;
 ; enemyLeft = enemyData[j].x + 2;
 ;
 	ldx     #$00
-	lda     L03D6
+	lda     L068B
 	jsr     aslax2
 	sta     ptr1
 	txa
@@ -2359,12 +2954,12 @@ L0529:	jsr     aslax2
 	lda     (ptr1),y
 	clc
 	adc     #$02
-	sta     L03D4
+	sta     L0689
 ;
 ; enemyRight = enemyData[j].x + 14;
 ;
 	ldx     #$00
-	lda     L03D6
+	lda     L068B
 	jsr     aslax2
 	sta     ptr1
 	txa
@@ -2375,36 +2970,36 @@ L0529:	jsr     aslax2
 	lda     (ptr1),y
 	clc
 	adc     #$0E
-	sta     L03D5
+	sta     L068A
 ;
 ; if ( !( X1_Right_Side < enemyLeft  || 
 ;
 	lda     _X1_Right_Side
-	cmp     L03D4
-	bcc     L0528
+	cmp     L0689
+	bcc     L07DB
 ;
 ; X1_Left_Side >= enemyRight || 
 ;
 	lda     _X1_Left_Side
-	cmp     L03D5
-	bcs     L0528
+	cmp     L068A
+	bcs     L07DB
 ;
 ; Y1_Bottom <  enemyTop || 
 ;
 	lda     _Y1_Bottom
-	cmp     L03D2
-	bcc     L0528
+	cmp     L0687
+	bcc     L07DB
 ;
 ; Y1_Top    >= enemyBottom ) ) {
 ;
 	lda     _Y1_Top
-	cmp     L03D3
-	bcs     L0528
+	cmp     L0688
+	bcs     L07DB
 	lda     #$00
-	jmp     L03F4
-L0528:	lda     #$01
-L03F4:	jsr     bnega
-	beq     L03DB
+	jmp     L06A9
+L07DB:	lda     #$01
+L06A9:	jsr     bnega
+	beq     L0690
 ;
 ; playerEnemyColliding = 1;
 ;
@@ -2413,9 +3008,9 @@ L03F4:	jsr     bnega
 ;
 ; for ( j = 0; j < numEnemies; ++j ) {
 ;
-L03DB:	ldx     #$00
-	inc     L03D6
-	jmp     L0527
+L0690:	ldx     #$00
+	inc     L068B
+	jmp     L07DA
 
 .endproc
 
@@ -2439,7 +3034,7 @@ L03DB:	ldx     #$00
 	ldx     #$00
 	lda     _enemySpriteCount
 	cmp     _numEnemies
-	bcc     L052A
+	bcc     L07DD
 ;
 ; enemySpriteCount = 0;
 ;
@@ -2447,7 +3042,7 @@ L03DB:	ldx     #$00
 ;
 ; return enemySpriteCount;
 ;
-L052A:	lda     _enemySpriteCount
+L07DD:	lda     _enemySpriteCount
 ;
 ; }
 ;
@@ -2465,7 +3060,7 @@ L052A:	lda     _enemySpriteCount
 
 .segment	"RODATA"
 
-L03FF:
+L06B4:
 	.byte	$00
 	.byte	$00
 	.byte	$00
@@ -2479,10 +3074,10 @@ L03FF:
 	ldy     #$0B
 	jsr     subysp
 	ldy     #$03
-L0404:	lda     L03FF,y
+L06B9:	lda     L06B4,y
 	sta     (sp),y
 	dey
-	bpl     L0404
+	bpl     L06B9
 ;
 ; enemyIndex = 0;
 ;
@@ -2506,14 +3101,14 @@ L0404:	lda     L03FF,y
 	sta     (sp),y
 	iny
 	sta     (sp),y
-L040B:	ldy     #$05
+L06C0:	ldy     #$05
 	lda     (sp),y
 	cmp     #$03
-	bne     L0412
+	bne     L06C7
 	dey
 	lda     (sp),y
 	cmp     #$C1
-L0412:	jcs     L040C
+L06C7:	jcs     L06C1
 ;
 ; collByte = collisionMap[index];
 ;
@@ -2534,7 +3129,7 @@ L0412:	jcs     L040C
 ; if ( collByte == TILE_PLAYERSTART ) {
 ;
 	cmp     #$03
-	bne     L052E
+	bne     L07E1
 ;
 ; player_x = mapX << 3;
 ;
@@ -2559,15 +3154,15 @@ L0412:	jcs     L040C
 ; if ( ( collByte == TILE_ENEMY1START_RIGHT ) || ( collByte == TILE_ENEMY1START_LEFT ) ) {
 ;
 	ldy     #$0A
-L052E:	lda     (sp),y
+L07E1:	lda     (sp),y
 	cmp     #$05
-	beq     L052F
+	beq     L07E2
 	cmp     #$04
-	jne     L041F
+	jne     L06D4
 ;
 ; enemyData[enemyIndex] = newEnemy;
 ;
-L052F:	dey
+L07E2:	dey
 	ldx     #$00
 	lda     (sp),y
 	jsr     aslax2
@@ -2641,20 +3236,20 @@ L052F:	dey
 	iny
 	lda     (sp),y
 	cmp     #$05
-	bne     L0530
+	bne     L07E3
 	lda     #$80
-	jmp     L0531
-L0530:	lda     #$40
-L0531:	ldy     #$03
+	jmp     L07E4
+L07E3:	lda     #$40
+L07E4:	ldy     #$03
 	sta     (ptr1),y
 ;
 ; for ( k = 0; k < ENEMY_DATA_SIZE; ++k ) {
 ;
 	lda     #$00
 	ldy     #$08
-L052C:	sta     (sp),y
+L07DF:	sta     (sp),y
 	cmp     #$11
-	bcs     L0438
+	bcs     L06ED
 ;
 ; enemySpriteData[enemyIndex][k] = enemySpriteDataTemplate[k];
 ;
@@ -2674,9 +3269,9 @@ L052C:	sta     (sp),y
 	clc
 	adc     ptr1
 	ldx     ptr1+1
-	bcc     L052B
+	bcc     L07DE
 	inx
-L052B:	jsr     pushax
+L07DE:	jsr     pushax
 	ldy     #$0A
 	lda     (sp),y
 	tay
@@ -2690,11 +3285,11 @@ L052B:	jsr     pushax
 	clc
 	lda     #$01
 	adc     (sp),y
-	jmp     L052C
+	jmp     L07DF
 ;
 ; setSpriteFrame(enemySpriteData[enemyIndex], enemyFrames[0]);
 ;
-L0438:	iny
+L06ED:	iny
 	lda     (sp),y
 	jsr     pusha0
 	lda     #$11
@@ -2721,7 +3316,7 @@ L0438:	iny
 ;
 ; ++mapX;
 ;
-L041F:	ldy     #$07
+L06D4:	ldy     #$07
 	clc
 	lda     #$01
 	adc     (sp),y
@@ -2730,7 +3325,7 @@ L041F:	ldy     #$07
 ; if ( mapX >= 32 ) {
 ;
 	cmp     #$20
-	bcc     L040D
+	bcc     L06C2
 ;
 ; mapX = 0;
 ;
@@ -2747,15 +3342,15 @@ L041F:	ldy     #$07
 ;
 ; for ( index = 0; index <= COLLISION_MAP_SIZE; ++index ) {
 ;
-L040D:	ldy     #$04
+L06C2:	ldy     #$04
 	ldx     #$00
 	lda     #$01
 	jsr     addeqysp
-	jmp     L040B
+	jmp     L06C0
 ;
 ; numEnemies = enemyIndex;
 ;
-L040C:	ldy     #$09
+L06C1:	ldy     #$09
 	lda     (sp),y
 	sta     _numEnemies
 ;
@@ -2786,22 +3381,18 @@ L040C:	ldy     #$09
 ; memcpy(palSprites, paldat, 16);
 ;
 	ldy     #$0F
-L0459:	lda     _paldat,y
+L070E:	lda     _paldat,y
 	sta     _palSprites,y
 	dey
-	bpl     L0459
+	bpl     L070E
 ;
 ; memcpy(palBG, paldat, 4);
 ;
 	ldy     #$03
-L045E:	lda     _paldat,y
+L0713:	lda     _paldat,y
 	sta     _palBG,y
 	dey
-	bpl     L045E
-;
-; unrleCollision();
-;
-	jsr     _unrleCollision
+	bpl     L0713
 ;
 ; pal_spr(palSprites);
 ;
@@ -2891,7 +3482,7 @@ L045E:	lda     _paldat,y
 ;
 ; ppu_wait_frame(); // wait for next TV frame
 ;
-L047E:	jsr     _ppu_wait_frame
+L0732:	jsr     _ppu_wait_frame
 ;
 ; spr = 0;
 ;
@@ -2918,7 +3509,7 @@ L047E:	jsr     _ppu_wait_frame
 ; if ( pad & PAD_RIGHT ) {
 ;
 	and     #$80
-	beq     L0534
+	beq     L07E7
 ;
 ; flipSprite(playerSpriteData, 1);
 ;
@@ -2929,10 +3520,10 @@ L047E:	jsr     _ppu_wait_frame
 ;
 ; } else if ( pad & PAD_LEFT ) {
 ;
-	jmp     L0532
-L0534:	lda     _pad
+	jmp     L07E5
+L07E7:	lda     _pad
 	and     #$40
-	beq     L0535
+	beq     L07E8
 ;
 ; flipSprite(playerSpriteData, 0);
 ;
@@ -2940,14 +3531,14 @@ L0534:	lda     _pad
 	ldx     #>(_playerSpriteData)
 	jsr     pushax
 	lda     #$00
-L0532:	jsr     _flipSprite
+L07E5:	jsr     _flipSprite
 ;
 ; if ( ( frame & 0x0F ) == 0x0F ) {
 ;
-L0535:	lda     _frame
+L07E8:	lda     _frame
 	and     #$0F
 	cmp     #$0F
-	bne     L0497
+	bne     L074B
 ;
 ; playerFrame ^= 1;
 ;
@@ -2974,7 +3565,7 @@ L0535:	lda     _frame
 ;
 ; spr = oam_meta_spr(player_x, player_y, spr, playerSpriteData);
 ;
-L0497:	jsr     decsp3
+L074B:	jsr     decsp3
 	lda     _player_x
 	ldy     #$02
 	sta     (sp),y
@@ -2993,9 +3584,9 @@ L0497:	jsr     decsp3
 ;
 	lda     #$00
 	sta     _i
-L0536:	lda     _i
+L07E9:	lda     _i
 	cmp     _numEnemies
-	jcs     L04A8
+	jcs     L075C
 ;
 ; j = spriteCount();
 ;
@@ -3009,7 +3600,7 @@ L0536:	lda     _i
 	ldx     #$00
 	and     #$0F
 	cmp     #$0F
-	bne     L0537
+	bne     L07EA
 ;
 ; enemyData[j].frame ^= 1;
 ;
@@ -3066,7 +3657,7 @@ L0536:	lda     _i
 ;
 ; setSpritePriority(enemySpriteData[i], sprPriority);
 ;
-L0537:	lda     _i
+L07EA:	lda     _i
 	jsr     pusha0
 	lda     #$11
 	jsr     tosmula0
@@ -3139,11 +3730,11 @@ L0537:	lda     _i
 ; for ( i = 0; i < numEnemies; ++i ) {
 ;
 	inc     _i
-	jmp     L0536
+	jmp     L07E9
 ;
 ; spriteCount();
 ;
-L04A8:	jsr     _spriteCount
+L075C:	jsr     _spriteCount
 ;
 ; updateEnemies();
 ;
@@ -3158,9 +3749,9 @@ L04A8:	jsr     _spriteCount
 ;
 	lda     _pad
 	and     #$40
-	beq     L053B
+	beq     L07EE
 	lda     _player_x
-	beq     L053B
+	beq     L07EE
 ;
 ; player_x -= 2;
 ;
@@ -3170,12 +3761,12 @@ L04A8:	jsr     _spriteCount
 ;
 ; if ( pad&PAD_RIGHT && player_x < 240 ) {
 ;
-L053B:	lda     _pad
+L07EE:	lda     _pad
 	and     #$80
-	beq     L04D7
+	beq     L078B
 	lda     _player_x
 	cmp     #$F0
-	bcs     L04D7
+	bcs     L078B
 ;
 ; player_x += 2;
 ;
@@ -3186,7 +3777,7 @@ L053B:	lda     _pad
 ;
 ; bgHorizCollideCheck(&player_x, &player_y, playerDir);
 ;
-L04D7:	jsr     decsp4
+L078B:	jsr     decsp4
 	lda     #<(_player_x)
 	ldy     #$02
 	sta     (sp),y
@@ -3206,9 +3797,9 @@ L04D7:	jsr     decsp4
 ;
 	lda     _pad
 	and     #$10
-	beq     L0542
+	beq     L07F5
 	lda     _player_y
-	beq     L0542
+	beq     L07F5
 ;
 ; player_y -= 2;
 ;
@@ -3218,12 +3809,12 @@ L04D7:	jsr     decsp4
 ;
 ; if ( pad&PAD_DOWN  && player_y < 220 ) {
 ;
-L0542:	lda     _pad
+L07F5:	lda     _pad
 	and     #$20
-	beq     L04E7
+	beq     L079B
 	lda     _player_y
 	cmp     #$DC
-	bcs     L04E7
+	bcs     L079B
 ;
 ; player_y += 2;
 ;
@@ -3234,7 +3825,7 @@ L0542:	lda     _pad
 ;
 ; bgVertCollideCheck(&player_x, &player_y, playerDir);
 ;
-L04E7:	jsr     decsp4
+L079B:	jsr     decsp4
 	lda     #<(_player_x)
 	ldy     #$02
 	sta     (sp),y
@@ -3264,7 +3855,7 @@ L04E7:	jsr     decsp4
 ; if ( playerEnemyColliding ) {
 ;
 	lda     _playerEnemyColliding
-	beq     L04F5
+	beq     L07A9
 ;
 ; setSpritePalette(playerSpriteData, 0x0);
 ;
@@ -3275,15 +3866,15 @@ L04E7:	jsr     decsp4
 ;
 ; } else {
 ;
-	jmp     L0533
+	jmp     L07E6
 ;
 ; setSpritePalette(playerSpriteData, 0x2);
 ;
-L04F5:	lda     #<(_playerSpriteData)
+L07A9:	lda     #<(_playerSpriteData)
 	ldx     #>(_playerSpriteData)
 	jsr     pushax
 	lda     #$02
-L0533:	jsr     _setSpritePalette
+L07E6:	jsr     _setSpritePalette
 ;
 ; ++frame;
 ;
@@ -3291,7 +3882,7 @@ L0533:	jsr     _setSpritePalette
 ;
 ; while ( 1 )
 ;
-	jmp     L047E
+	jmp     L0732
 
 .endproc
 

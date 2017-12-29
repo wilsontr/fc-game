@@ -3,7 +3,8 @@
 #include <stdint.h>
 #include "neslib.h"
 #include "test_nam.h"
-#include "test_nam_coll_rle.h"
+//#include "test_nam_coll_rle.h"
+#include "test_nam_coll.h"
 
 
 void __fastcall__ memcpy(void *dst, void *src, unsigned int len);
@@ -67,7 +68,7 @@ struct enemyStruct {
 
 typedef struct enemyStruct enemy;
 
-static u8 collisionMap[COLLISION_MAP_SIZE];
+//static u8 collisionMap[COLLISION_MAP_SIZE];
 
 static u8 X1_Right_Side;	//for collision test
 static u8 X1_Left_Side;
@@ -75,7 +76,7 @@ static u8 Y1_Bottom;
 static u8 Y1_Top;
 //static u16 corner;
 
-enemy enemyData[8];
+enemy enemyData[20];
 
 extern const u8 paldat[];
 
@@ -171,6 +172,7 @@ void __fastcall__ flipSprite(u8 *sprite, u8 flip) {
 }
 
 
+/*
 void unrleCollision(void) {
 	u8 i = 0;
 	u8 j = 0;
@@ -190,6 +192,7 @@ void unrleCollision(void) {
 		}
 	}
 }
+*/
 
 void __fastcall__ four_Sides(u8 originX, u8 originY) {
 	if (originX < (255 - 1)){	// find the left side
@@ -429,7 +432,7 @@ void main(void)
 	memcpy(palSprites, paldat, 16);
 	memcpy(palBG, paldat, 4);
 
-	unrleCollision();
+	//unrleCollision();
 
 	pal_spr(palSprites);
 	pal_bg(palBG);
