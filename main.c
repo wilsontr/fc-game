@@ -5,17 +5,24 @@
 #include "test_nam.h"
 #include "test_nam_coll_rle.h"
 
-void __fastcall__ memcpy (void* dest, const void* src, int count);
+
+void __fastcall__ memcpy(void *dst, void *src, unsigned int len);
 
 typedef uint8_t u8;
 typedef uint16_t u16;
 
 #define ENEMY_DATA_SIZE	17
 #define NUM_ENEMIES 	4
-#define DIRECTION_LEFT  0x1
-#define DIRECTION_RIGHT 0x2
-#define DIRECTION_UP	0x4
-#define DIRECTION_DOWN 	0x8
+
+#define TILE_NOCOLLIDE   		0
+#define TILE_ALLCOLLIDE   		1
+#define TILE_ENEMYCOLLIDE 		2
+#define TILE_PLAYERSTART  		3
+#define TILE_ENEMY1START_LEFT 	4	
+#define TILE_ENEMY1START_RIGHT	5	
+
+#define COLLISION_MAP_SIZE 	  960
+
 
 #pragma bss-name (push, "ZEROPAGE")
 #pragma data-name (push, "ZEROPAGE")
@@ -44,27 +51,23 @@ static u8 enemySpriteCount = 0;
 //variables
 
 static u8 i;
-static u8 pad,spr;
+static u8 pad, spr;
 static u8 touch;
 static u8 frame;
 static u8 playerFrame;
 static u8 playerEnemyColliding;
+static u8 numEnemies;
 
 struct enemyStruct {
 	u8 x;
 	u8 y; 
 	u8 frame;
 	u8 direction;
-
-	u8 range;
-	u8 initX;
-	u8 initY;
-	u8 initDir;
 };
 
 typedef struct enemyStruct enemy;
 
-static u8 testColl[960];
+static u8 collisionMap[COLLISION_MAP_SIZE];
 
 static u8 X1_Right_Side;	//for collision test
 static u8 X1_Left_Side;
@@ -72,14 +75,7 @@ static u8 Y1_Bottom;
 static u8 Y1_Top;
 //static u16 corner;
 
-static enemy enemyData[4] = {
-	// x, y, frame, direction, range, initX, initY, initDir 
-	{ 0, 0, 0, 0, 50, 150, 50,  PAD_LEFT  },
-	{ 0, 0, 1, 0, 25, 75,  75,  PAD_RIGHT },
-	{ 0, 0, 1, 0, 30, 100, 100, PAD_LEFT  },
-	{ 0, 0, 0, 0, 60, 200, 180, PAD_LEFT  }
-};
-
+enemy enemyData[8];
 
 extern const u8 paldat[];
 
@@ -112,7 +108,7 @@ const u8 enemySpriteDataTemplate[17] = {
 	128
 };
 
-static u8 enemySpriteData[4][17];
+static u8 enemySpriteData[10][17];
 static u8 palSprites[4];
 static u8 palBG[4];
 
@@ -189,7 +185,7 @@ void unrleCollision(void) {
 		byteCount = test_nam_coll_rle[i];
 		++i;
 		for ( j = 0; j < byteCount; ++j ) {
-			testColl[outPointer] = currentByte;
+			collisionMap[outPointer] = currentByte;
 			++outPointer;
 		}
 	}
@@ -222,55 +218,6 @@ u16 __fastcall__ getCollisionIndex(u8 screenX, u8 screenY) {
 	return ((u16) screenX >> 3) + (((u16) screenY >> 3) << 5);
 }
 
-/*
-
-void collide_Check_LR (void) {
-	if ((pad & PAD_RIGHT) != 0){ 	// first check right
-		corner = getCollisionIndex(X1_Right_Side, Y1_Top); // top right
-		if (testColl[corner] != 0) {
-			player_x = (player_x & 0xf8); // if collision, realign
-		} else {
-			corner = getCollisionIndex(X1_Right_Side, Y1_Bottom); // bottom right
-			if (testColl[corner] != 0)
-				player_x = (player_x & 0xf8); // if collision, realign
-		}
-	}
-	else if ((pad & PAD_LEFT) != 0){ // check left
-		corner = getCollisionIndex(X1_Left_Side, Y1_Top); // top left
-		if (testColl[corner] != 0) {
-			player_x = (player_x & 0xf8) + 8; // if collision, realign
-		} else {
-			corner = getCollisionIndex(X1_Left_Side, Y1_Bottom); // bottom left
-			if (testColl[corner] != 0)
-				player_x = (player_x & 0xf8) + 8; // if collision, realign			
-		}
-	}
-}
-
-
-void collide_Check_UD (void) {
-	if ((pad & PAD_DOWN) != 0){ // down first
-		corner = getCollisionIndex(X1_Right_Side, Y1_Bottom); // bottom right
-		if (testColl[corner] != 0) {
-			player_y = (player_y & 0xf8) - 1; // if collision, realign
-		} else {
-			corner = getCollisionIndex(X1_Left_Side, Y1_Bottom); // bottom left
-			if (testColl[corner] != 0)
-				player_y = (player_y & 0xf8) - 1; // if collision, realign			
-		}
-	}
-	else if ((pad & PAD_UP) != 0) { //or up
-		corner = getCollisionIndex(X1_Right_Side, Y1_Top); // top right
-		if (testColl[corner] != 0)
-			player_y = (player_y & 0xf8) + 7; // if collision, realign
-
-		corner = getCollisionIndex(X1_Left_Side, Y1_Top);  // top left
-		if (testColl[corner] != 0)
-			player_y = (player_y & 0xf8) + 7; // if collision, realign
-	}
-}
-*/
-
 u8 __fastcall__ collideCheckVertical(u8 originX, u8 originY, u8 direction) {
 
 	leftSide = originX + 1;
@@ -280,17 +227,17 @@ u8 __fastcall__ collideCheckVertical(u8 originX, u8 originY, u8 direction) {
 
 	if ( ( (direction & PAD_UP) != 0) ) {
 		testCorner = getCollisionIndex(rightSide, topSide);
-		if ( testColl[testCorner] == 0 ) {
+		if ( collisionMap[testCorner] == 0 ) {
 			testCorner = getCollisionIndex(leftSide, topSide);
 		}
 	} else if ( (direction & PAD_DOWN) != 0 ) {
 		testCorner = getCollisionIndex(rightSide, bottomSide);
-		if ( testColl[testCorner] == 0 ) {
+		if ( collisionMap[testCorner] == 0 ) {
 			testCorner = getCollisionIndex(leftSide, bottomSide);
 		}
 	}
 
-	return testColl[testCorner];
+	return collisionMap[testCorner];
 }
 
 u8 __fastcall__ collideCheckHorizontal(u8 originX, u8 originY, u8 direction) {
@@ -302,17 +249,17 @@ u8 __fastcall__ collideCheckHorizontal(u8 originX, u8 originY, u8 direction) {
 
 	if ( ( (direction & PAD_LEFT) != 0 ) ) {
 		testCorner = getCollisionIndex(leftSide, topSide);
-		if ( testColl[testCorner] == 0 ) {
+		if ( collisionMap[testCorner] == 0 ) {
 			testCorner = getCollisionIndex(leftSide, bottomSide);
 		}
 	} else if ( (direction & PAD_RIGHT) != 0 ) {
 		testCorner = getCollisionIndex(rightSide, topSide);
-		if ( testColl[testCorner] == 0 ) {
+		if ( collisionMap[testCorner] == 0 ) {
 			testCorner = getCollisionIndex(rightSide, bottomSide);
 		}
 	}
 
-	return testColl[testCorner];
+	return collisionMap[testCorner];
 }
 
 
@@ -342,63 +289,44 @@ void __fastcall__ bgHorizCollideCheck(u8 *x, u8 *y, u8 dir) {
 
 void updateEnemies(void) {
 
-	u8 i;
-	for ( i = 0; i < NUM_ENEMIES; i++ ) {
-
-		if ( !collideCheckVertical(enemyData[i].x, enemyData[i].y + 1, PAD_DOWN) ) {
+	static u8 i, vertCollide, horizCollide;
+	for ( i = 0; i < numEnemies; i++ ) {
+		vertCollide = collideCheckVertical(enemyData[i].x, enemyData[i].y + 1, PAD_DOWN);
+		if ( vertCollide != TILE_ALLCOLLIDE ) {
 			enemyData[i].y += 1;
 		} else {
 			if ( enemyData[i].direction == PAD_RIGHT ) {
 				enemyData[i].x += 1;
-				if ( collideCheckHorizontal(enemyData[i].x, enemyData[i].y, PAD_RIGHT) ) {
+				horizCollide = collideCheckHorizontal(enemyData[i].x, enemyData[i].y, PAD_RIGHT);
+				if ( ( horizCollide == TILE_ALLCOLLIDE ) || ( horizCollide == TILE_ENEMYCOLLIDE ) ) {
 					flipSprite(enemySpriteData[i], 0);
 					enemyData[i].direction = PAD_LEFT;
 				}
 			} else {
 				enemyData[i].x -= 1;
-				if ( collideCheckHorizontal(enemyData[i].x, enemyData[i].y, PAD_LEFT) ) {
+				horizCollide = collideCheckHorizontal(enemyData[i].x, enemyData[i].y, PAD_LEFT);
+				if ( ( horizCollide == TILE_ALLCOLLIDE ) || ( horizCollide == TILE_ENEMYCOLLIDE ) ) {
 					flipSprite(enemySpriteData[i], 1);
 					enemyData[i].direction = PAD_RIGHT;
 				}
 			}			
 		}
-
-
-
-		/*
-		if ( enemyData[i].initDir == PAD_RIGHT ) {
-			if ( enemyData[i].x <= enemyData[i].initX ) {
-				flipSprite(enemySpriteData[i], 1);
-				enemyData[i].direction = PAD_RIGHT;				
-			} else if ( enemyData[i].x > ( enemyData[i].initX + enemyData[i].range ) ) {
-				flipSprite(enemySpriteData[i], 0);
-				enemyData[i].direction = PAD_LEFT;
-			}		
-		} else {
-			if ( enemyData[i].x <= ( enemyData[i].initX - enemyData[i].range ) ) {
-				flipSprite(enemySpriteData[i], 1);
-				enemyData[i].direction = PAD_RIGHT;				
-			} else if ( enemyData[i].x > enemyData[i].initX ) {
-				flipSprite(enemySpriteData[i], 0);
-				enemyData[i].direction = PAD_LEFT;
-			}					
-		}
-		*/
 	}
+
 }
 
 
 void playerEnemyCollideCheck(void) {
 
-	u8 enemyTop;
-	u8 enemyBottom;
-	u8 enemyLeft;
-	u8 enemyRight;
-	u8 j;
+	static u8 enemyTop;
+	static u8 enemyBottom;
+	static u8 enemyLeft;
+	static u8 enemyRight;
+	static u8 j;
 
 	playerEnemyColliding = 0;
 
-	for ( j = 0; j < NUM_ENEMIES; ++j ) {
+	for ( j = 0; j < numEnemies; ++j ) {
 		enemyTop = enemyData[j].y + 2;
 		enemyBottom = enemyData[j].y + 14;
 		enemyLeft = enemyData[j].x + 2;
@@ -415,10 +343,73 @@ void playerEnemyCollideCheck(void) {
 
 u8 __fastcall__ spriteCount(void) {
 	++enemySpriteCount;
-	if ( enemySpriteCount >= NUM_ENEMIES ) {
+	if ( enemySpriteCount >= numEnemies ) {
 		enemySpriteCount = 0;
 	}
 	return enemySpriteCount;
+}
+
+void setupMap(void) {
+	u8 collByte, enemyIndex;
+	u8 k, mapX, mapY;
+	u16 index;
+	//u16 index, enemyX, enemyY;
+
+	enemy newEnemy = { 0, 0, 0, PAD_LEFT };
+	enemyIndex = 0;
+	mapX = 0;
+	mapY = 0;
+
+	
+	for ( index = 0; index <= COLLISION_MAP_SIZE; ++index ) {
+		collByte = collisionMap[index];
+
+		if ( collByte == TILE_PLAYERSTART ) {
+			player_x = mapX << 3;
+			player_y = (mapY << 3) - 1;
+		}
+		
+		if ( ( collByte == TILE_ENEMY1START_RIGHT ) || ( collByte == TILE_ENEMY1START_LEFT ) ) {
+			enemyData[enemyIndex] = newEnemy;
+			enemyData[enemyIndex].x = mapX << 3;
+			enemyData[enemyIndex].y = (mapY << 3) - 1;
+			enemyData[enemyIndex].direction = ( collByte == TILE_ENEMY1START_RIGHT ) ? PAD_RIGHT : PAD_LEFT;
+
+			for ( k = 0; k < ENEMY_DATA_SIZE; ++k ) {
+				enemySpriteData[enemyIndex][k] = enemySpriteDataTemplate[k];
+			}
+			setSpriteFrame(enemySpriteData[enemyIndex], enemyFrames[0]);
+			++enemyIndex;
+		}
+
+		++mapX;
+		if ( mapX >= 32 ) {
+			mapX = 0;
+			++mapY;
+		}
+	}
+
+	numEnemies = enemyIndex;
+
+
+	/*
+	for ( i = 0; i < NUM_ENEMIES; ++i ) {
+		enemyData[i].x = enemyData[i].initX;
+		enemyData[i].y = enemyData[i].initY;
+		enemyData[i].direction = enemyData[i].initDir;
+
+		//memcpy(enemySpriteData[i], enemySpriteDataTemplate, ENEMY_DATA_SIZE);
+
+		for ( j = 0; j < ENEMY_DATA_SIZE; ++j ) {
+			enemySpriteData[i][j] = enemySpriteDataTemplate[j];
+		}
+
+		if ( enemyData[i].direction == PAD_RIGHT ) {
+			flipSprite(enemySpriteData[i], PAD_RIGHT);
+		}		
+		setSpriteFrame(enemySpriteData[i], enemyFrames[enemyData[i].frame]);
+	}
+	*/
 }
 
 void main(void)
@@ -427,8 +418,7 @@ void main(void)
 	// TODO next:
 
 	// - study enemy behavior in games
-	// - allow enemies to be placed via level data
-	// - add enemy-only blocker tiles
+	// - make map data use less RAM
 	// - continue refactoring, break out code into modules
 
 
@@ -450,8 +440,8 @@ void main(void)
 	ppu_on_all(); //enable rendering
 	//set initial coords
 	
-	player_x = 52;
-	player_y = 100;
+	player_x = 0;
+	player_y = 0;
 	playerDir = PAD_RIGHT;
 
 	enemy_x = enemyInitX;
@@ -465,27 +455,9 @@ void main(void)
 	playerFrame = 0;
 
 	
-
-	
 	setSpriteFrame(playerSpriteData, playerFrames[playerFrame]);
+	setupMap();
 
-	for ( i = 0; i < NUM_ENEMIES; ++i ) {
-		enemyData[i].x = enemyData[i].initX;
-		enemyData[i].y = enemyData[i].initY;
-		enemyData[i].direction = enemyData[i].initDir;
-
-		//memcpy(enemySpriteData[i], enemySpriteDataTemplate, ENEMY_DATA_SIZE);
-
-		for ( j = 0; j < ENEMY_DATA_SIZE; ++j ) {
-			enemySpriteData[i][j] = enemySpriteDataTemplate[j];
-		}
-
-		if ( enemyData[i].direction == PAD_RIGHT ) {
-			flipSprite(enemySpriteData[i], PAD_RIGHT);
-		}		
-		setSpriteFrame(enemySpriteData[i], enemyFrames[enemyData[i].frame]);
-	}
-	
 
 	// now the main loop
 
@@ -519,7 +491,7 @@ void main(void)
 		spr = oam_meta_spr(player_x, player_y, spr, playerSpriteData);
 
 		// update enemy sprites
-		for ( i = 0; i < NUM_ENEMIES; ++i ) {
+		for ( i = 0; i < numEnemies; ++i ) {
 
 			j = spriteCount();
 			
@@ -529,7 +501,7 @@ void main(void)
 				setSpriteFrame(enemySpriteData[j], enemyFrames[enemyData[j].frame]);
 			}
 			
-			//setSpritePriority(enemySpriteData[i], sprPriority);
+			setSpritePriority(enemySpriteData[i], sprPriority);
 			sprPriority ^= 1;
 			spr = oam_meta_spr(enemyData[j].x, enemyData[j].y, spr, enemySpriteData[j]);	
 		}
@@ -548,10 +520,6 @@ void main(void)
 			player_x += 2;
 		}
 
-	
-		// four_Sides(player_x, player_y);	
-		// collide_Check_LR();		
-
 		bgHorizCollideCheck(&player_x, &player_y, playerDir);
 
 		if ( pad&PAD_UP    && player_y > 0 ) { 
@@ -560,10 +528,6 @@ void main(void)
 		if ( pad&PAD_DOWN  && player_y < 220 ) {
 			player_y += 2;
 		}
-
-		// four_Sides(player_x, player_y);	
-		// collide_Check_UD();
-
 
 		bgVertCollideCheck(&player_x, &player_y, playerDir);
 		
