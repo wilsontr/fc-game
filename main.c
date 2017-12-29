@@ -421,9 +421,8 @@ void main(void)
 	// TODO next:
 
 	// - study enemy behavior in games
-	// - make map data use less RAM
+	// - make const array of map data and write js to automate building it from CSVs
 	// - continue refactoring, break out code into modules
-
 
 	u8 j;
 	u8 sprPriority = 0;
