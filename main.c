@@ -22,6 +22,8 @@ typedef uint16_t u16;
 #define TILE_ENEMY1START_LEFT 	4	
 #define TILE_ENEMY1START_RIGHT	5	
 
+#define MAX_JUMP_HEIGHT			100
+
 #define COLLISION_MAP_SIZE 	  960
 
 
@@ -81,8 +83,8 @@ enemy enemyData[20];
 extern const u8 paldat[];
 
 const u8 playerFrames[2][4] = {
-	{ 0x04, 0x05, 0x14, 0x15 },
-	{ 0x24, 0x25, 0x34, 0x35 }
+	{ 0x08, 0x09, 0x18, 0x19 },
+	{ 0x28, 0x29, 0x38, 0x39 }
 };
 
 
@@ -94,10 +96,10 @@ const u8 enemyFrames[2][4] = {
 // x offset, y offset, tile, attribute
 
 u8 playerSpriteData[17] = {
-	0, 0, 0x04, 0x2,
-	8, 0, 0x05, 0x2,
-	0, 8, 0x14, 0x2,
-	8, 8, 0x15, 0x2,
+	0, 0, 0x08, 0x3,
+	8, 0, 0x09, 0x3,
+	0, 8, 0x18, 0x3,
+	8, 8, 0x19, 0x3,
 	128
 };
 
@@ -218,7 +220,8 @@ void __fastcall__ four_Sides(u8 originX, u8 originY) {
 }
 
 u16 __fastcall__ getCollisionIndex(u8 screenX, u8 screenY) {
-	return ((u16) screenX >> 3) + (((u16) screenY >> 3) << 5);
+	//return ((u16) screenX >> 3) + (((u16) screenY >> 3) << 5);
+	return ( screenX >> 3 ) + ( ( screenY >> 3 ) << 5);
 }
 
 u8 __fastcall__ collideCheckVertical(u8 originX, u8 originY, u8 direction) {
@@ -226,7 +229,7 @@ u8 __fastcall__ collideCheckVertical(u8 originX, u8 originY, u8 direction) {
 	leftSide = originX + 1;
 	rightSide = originX + 15;
 	topSide = originY + 1;
-	bottomSide = originY + 16;
+	bottomSide = originY + 17;
 
 	if ( ( (direction & PAD_UP) != 0) ) {
 		testCorner = getCollisionIndex(rightSide, topSide);
@@ -266,15 +269,17 @@ u8 __fastcall__ collideCheckHorizontal(u8 originX, u8 originY, u8 direction) {
 }
 
 
-void __fastcall__ bgVertCollideCheck(u8 *x, u8 *y, u8 dir) {
+u8 __fastcall__ bgVertCollideCheck(u8 *x, u8 *y, u8 dir) {
 	u8 colliding = collideCheckVertical(*x, *y, dir);
 	if ( colliding == 1 ) {
 		if ( dir & PAD_UP ) {
 			*y = (*y & 0xf8) + 7;
-		} else if ( dir & PAD_DOWN ) {
+		//} else if ( dir & PAD_DOWN ) {
+		} else {
 			*y = (*y & 0xf8) - 1;
 		}
 	}
+	return colliding;
 }
 
 void __fastcall__ bgHorizCollideCheck(u8 *x, u8 *y, u8 dir) {
@@ -420,12 +425,22 @@ void main(void)
 
 	// TODO next:
 
+	// - work on mechanics
 	// - study enemy behavior in games
 	// - make const array of map data and write js to automate building it from CSVs
 	// - continue refactoring, break out code into modules
+	// - if PRG ROM runs short, switch to NROM-256 or pack map data
 
 	u8 j;
 	u8 sprPriority = 0;
+	u8 colliding;
+	u8 playerFalling = 0;
+	u8 playerJumping = 0;
+	u8 playerJumpHeight = 0;
+	u8 playerJumpCounter = 0;
+	signed char playerVertVel = 0;
+	u8 jumpIteration;
+	char playerVertAccel = 0;
 
 
 	memcpy(palSprites, paldat, 16);
@@ -516,22 +531,45 @@ void main(void)
 		
 	
 		if ( pad&PAD_LEFT  && player_x > 0 ) {
-			player_x -= 2;
+			player_x -= 1;
 		}
 		if ( pad&PAD_RIGHT && player_x < 240 ) {
-			player_x += 2;
+			player_x += 1;
 		}
 
 		bgHorizCollideCheck(&player_x, &player_y, playerDir);
 
-		if ( pad&PAD_UP    && player_y > 0 ) { 
-			player_y -= 2;
-		}
-		if ( pad&PAD_DOWN  && player_y < 220 ) {
-			player_y += 2;
+		if ( ( pad & PAD_UP ) && ( player_y > 8 ) && ( !playerJumping ) ) {
+			playerVertVel = 4;
+			playerJumping = 1;
+			playerJumpCounter = 0;
+		} 
+
+
+		if ( !( pad & PAD_UP ) && playerJumping && ( playerVertVel > 0 ) ) {
+			playerVertVel = 0;
 		}
 
-		bgVertCollideCheck(&player_x, &player_y, playerDir);
+		if ( playerVertVel > 0 ) {
+			player_y -= playerVertVel;
+			if ( collideCheckVertical(player_x, player_y, PAD_UP) == TILE_ALLCOLLIDE ) { 
+				player_y = (player_y & 0xF8) + 8;
+			}			
+		} else {
+			if ( collideCheckVertical(player_x, player_y + 2, PAD_DOWN) != TILE_ALLCOLLIDE ) { 
+				player_y -= playerVertVel;
+			} else {
+				player_y = (player_y & 0xF8) + 7;
+				playerJumping = 0;
+			}			
+		}
+
+		if ( ( playerJumpCounter == 5 ) && ( playerVertVel > -4 ) ) {
+			playerVertVel -= 1; 
+			playerJumpCounter = 0;
+		}
+
+		++playerJumpCounter;
 		
 		four_Sides(player_x, player_y);	
 		playerEnemyCollideCheck();
@@ -540,7 +578,7 @@ void main(void)
 		if ( playerEnemyColliding ) {
 			setSpritePalette(playerSpriteData, 0x0);
 		} else {
-			setSpritePalette(playerSpriteData, 0x2);
+			setSpritePalette(playerSpriteData, 0x3);
 		}
 
 		++frame;
