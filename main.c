@@ -245,7 +245,7 @@ u8 __fastcall__ collideCheckVertical(u8 originX, u8 originY, u8 direction) {
 	topSide = originY + 1;
 	bottomSide = originY + 17;
 
-	if ( ( (direction & PAD_UP) != 0) ) {
+	if ( ( (direction & PAD_A) != 0) ) {
 		testCorner = getCollisionIndex(rightSide, topSide);
 		if ( collisionMap[testCorner] == 0 ) {
 			testCorner = getCollisionIndex(leftSide, topSide);
@@ -286,7 +286,7 @@ u8 __fastcall__ collideCheckHorizontal(u8 originX, u8 originY, u8 direction) {
 u8 __fastcall__ bgVertCollideCheck(u8 *x, u8 *y, u8 dir) {
 	u8 colliding = collideCheckVertical(*x, *y, dir);
 	if ( colliding == 1 ) {
-		if ( dir & PAD_UP ) {
+		if ( dir & PAD_A ) {
 			*y = (*y & 0xf8) + 7;
 		//} else if ( dir & PAD_DOWN ) {
 		} else {
@@ -433,21 +433,21 @@ void setupMap(void) {
 }
 
 void updatePlayerVerticalMovement(void) {
-	if ( ( pad & PAD_UP ) && ( player_y > 8 ) && ( !playerJumping ) ) {
+	if ( ( pad & PAD_A ) && ( player_y > 8 ) && ( !playerJumping ) ) {
 		playerVertVel = 4;
 		playerJumping = 1;
 		playerJumpCounter = 0;
 	} 
 
 
-	if ( !( pad & PAD_UP ) && playerJumping && ( playerVertVel > 0 ) ) {
+	if ( !( pad & PAD_A ) && playerJumping && ( playerVertVel > 0 ) ) {
 		playerVertVel = 0;
 	}
 
 	if ( playerVertVel > 0 ) {
 		// moving up, jumping
 		player_y -= playerVertVel;
-		if ( collideCheckVertical(player_x, player_y, PAD_UP) == TILE_ALLCOLLIDE ) { 
+		if ( collideCheckVertical(player_x, player_y, PAD_A) == TILE_ALLCOLLIDE ) { 
 			player_y = (player_y & 0xF8) + 8;
 		}			
 	} else {
@@ -461,7 +461,8 @@ void updatePlayerVerticalMovement(void) {
 	}
 
 	// acceleration toward ground
-	if ( ( playerJumpCounter == 5 ) && ( playerVertVel > -6 ) ) {
+	// setting max fall speed more than -3 causes falls through the floor - why?
+	if ( ( playerJumpCounter == 5 ) && ( playerVertVel > -3 ) ) {
 		playerVertVel -= 1; 
 		playerJumpCounter = 0;
 	}

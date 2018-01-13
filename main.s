@@ -2168,11 +2168,11 @@ L07FA:	sta     _Y1_Bottom
 	adc     #$11
 	sta     _bottomSide
 ;
-; if ( ( (direction & PAD_UP) != 0) ) {
+; if ( ( (direction & PAD_A) != 0) ) {
 ;
 	dey
 	lda     (sp),y
-	and     #$10
+	and     #$01
 	beq     L0800
 ;
 ; testCorner = getCollisionIndex(rightSide, topSide);
@@ -2438,11 +2438,11 @@ L060C:	lda     #<(_collisionMap)
 	cmp     #$01
 	bne     L080C
 ;
-; if ( dir & PAD_UP ) {
+; if ( dir & PAD_A ) {
 ;
 	tay
 	lda     (sp),y
-	and     #$10
+	and     #$01
 	beq     L0625
 ;
 ; *y = (*y & 0xf8) + 7;
@@ -3393,10 +3393,10 @@ L06C7:	ldy     #$08
 .segment	"CODE"
 
 ;
-; if ( ( pad & PAD_UP ) && ( player_y > 8 ) && ( !playerJumping ) ) {
+; if ( ( pad & PAD_A ) && ( player_y > 8 ) && ( !playerJumping ) ) {
 ;
 	lda     _pad
-	and     #$10
+	and     #$01
 	beq     L082A
 	lda     _player_y
 	cmp     #$09
@@ -3419,10 +3419,10 @@ L06C7:	ldy     #$08
 	lda     #$00
 	sta     _playerJumpCounter
 ;
-; if ( !( pad & PAD_UP ) && playerJumping && ( playerVertVel > 0 ) ) {
+; if ( !( pad & PAD_A ) && playerJumping && ( playerVertVel > 0 ) ) {
 ;
 L082A:	lda     _pad
-	and     #$10
+	and     #$01
 	bne     L082E
 	lda     _playerJumping
 	beq     L082E
@@ -3455,7 +3455,7 @@ L0728:	bpl     L0725
 	adc     _player_y
 	sta     _player_y
 ;
-; if ( collideCheckVertical(player_x, player_y, PAD_UP) == TILE_ALLCOLLIDE ) { 
+; if ( collideCheckVertical(player_x, player_y, PAD_A) == TILE_ALLCOLLIDE ) { 
 ;
 	jsr     decsp2
 	lda     _player_x
@@ -3464,7 +3464,7 @@ L0728:	bpl     L0725
 	lda     _player_y
 	dey
 	sta     (sp),y
-	lda     #$10
+	lda     #$01
 	jsr     _collideCheckVertical
 	cmp     #$01
 	bne     L0833
@@ -3522,14 +3522,14 @@ L0736:	lda     _player_y
 	lda     #$00
 	sta     _playerJumping
 ;
-; if ( ( playerJumpCounter == 5 ) && ( playerVertVel > -6 ) ) {
+; if ( ( playerJumpCounter == 5 ) && ( playerVertVel > -3 ) ) {
 ;
 L0833:	lda     _playerJumpCounter
 	cmp     #$05
 	bne     L0837
 	lda     _playerVertVel
 	sec
-	sbc     #$FB
+	sbc     #$FE
 	bvs     L074C
 	eor     #$80
 L074C:	bpl     L0837
