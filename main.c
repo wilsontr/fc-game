@@ -35,33 +35,33 @@ u8 oam_off;
 #pragma data-name(pop)
 #pragma bss-name (pop)
 
-static u8 enemyInitX = 150;
-static u8 enemyInitY = 50;
 
-static u8 player_x;
-static u8 player_y;
-static u8 playerDir;
-
-static u8 enemy_x;
-static u8 enemy_y;
+/* Commonly-used test variables */
 
 static u8 leftSide, rightSide, topSide, bottomSide;
 static u16 testCorner;
 
-static u8 enemySpriteCount = 0;
+/* Bookkeeping and state */
 
-
-//variables
+extern const u8 paldat[];
 
 static u8 i;
-static u8 pad, spr;
+static u8 pad, oamSpriteIndex;
 static u8 touch;
-static u8 frame;
+static u8 frameCount;
+static u8 spriteFlickerIndex = 0;
+static u8 sprPriorityToggle = 0;
 
-static u8 playerEnemyColliding;
-static u8 numEnemies;
+static u8 palSprites[4];
+static u8 palBG[4];
+
+
+/* Player */
+static u8 player_x;
+static u8 player_y;
+static u8 playerDir;
 static u8 jumpIteration;
-
+static u8 playerEnemyColliding;
 static u8 playerFrame = 0;
 static u8 playerFalling = 0;
 static u8 playerJumping = 0;
@@ -70,10 +70,31 @@ static u8 playerJumpCounter = 0;
 static signed char playerVertVel = 0;
 static char playerVertAccel = 0;
 
-static u8 spriteFlickerIndex = 0;
-static u8 sprPriorityToggle = 0;
+
+const u8 playerFrames[2][4] = {
+	{ 0x08, 0x09, 0x18, 0x19 },
+	{ 0x28, 0x29, 0x38, 0x39 }
+};
+
+u8 playerSpriteData[17] = {
+	0, 0, 0x08, 0x3,
+	8, 0, 0x09, 0x3,
+	0, 8, 0x18, 0x3,
+	8, 8, 0x19, 0x3,
+	128
+};
 
 
+/* Potion */
+
+static u8 potionX, potionY;
+static u8 potionActive;
+static u8 potionDirection;
+
+/* Enemies */
+
+static u8 numEnemies;
+static u8 enemySpriteCount = 0;
 
 struct enemyStruct {
 	u8 x;
@@ -84,23 +105,7 @@ struct enemyStruct {
 
 typedef struct enemyStruct enemy;
 
-//static u8 collisionMap[COLLISION_MAP_SIZE];
-
-static u8 X1_Right_Side;	//for collision test
-static u8 X1_Left_Side;
-static u8 Y1_Bottom;
-static u8 Y1_Top;
-//static u16 corner;
-
 enemy enemyData[20];
-
-extern const u8 paldat[];
-
-const u8 playerFrames[2][4] = {
-	{ 0x08, 0x09, 0x18, 0x19 },
-	{ 0x28, 0x29, 0x38, 0x39 }
-};
-
 
 const u8 enemyFrames[2][4] = {
 	{ 0x06, 0x07, 0x16, 0x17 },
@@ -108,14 +113,6 @@ const u8 enemyFrames[2][4] = {
 };
 
 // x offset, y offset, tile, attribute
-
-u8 playerSpriteData[17] = {
-	0, 0, 0x08, 0x3,
-	8, 0, 0x09, 0x3,
-	0, 8, 0x18, 0x3,
-	8, 8, 0x19, 0x3,
-	128
-};
 
 const u8 enemySpriteDataTemplate[17] = {
 	0, 0, 0, 0x3,
@@ -126,8 +123,34 @@ const u8 enemySpriteDataTemplate[17] = {
 };
 
 static u8 enemySpriteData[10][17];
-static u8 palSprites[4];
-static u8 palBG[4];
+
+
+/*********** Unused: utility function for decompressing RLE collision map data ***********/
+
+/*
+void unrleCollision(void) {
+	u8 i = 0;
+	u8 j = 0;
+	u16 size = sizeof(test_nam_coll_rle); 
+	u8 currentByte;
+	u8 byteCount;
+	u16 outPointer = 0;
+
+	while ( i <= size ) {
+		currentByte = test_nam_coll_rle[i];
+		++i;
+		byteCount = test_nam_coll_rle[i];
+		++i;
+		for ( j = 0; j < byteCount; ++j ) {
+			collisionMap[outPointer] = currentByte;
+			++outPointer;
+		}
+	}
+}
+*/
+
+
+/*********** Sprite Management ***********/
 
 void __fastcall__ setSpriteFrame(u8 *sprite, const u8 *frame) {
 	sprite[2] = frame[0];
@@ -188,53 +211,80 @@ void __fastcall__ flipSprite(u8 *sprite, u8 flip) {
 }
 
 
-/*
-void unrleCollision(void) {
-	u8 i = 0;
-	u8 j = 0;
-	u16 size = sizeof(test_nam_coll_rle); 
-	u8 currentByte;
-	u8 byteCount;
-	u16 outPointer = 0;
-
-	while ( i <= size ) {
-		currentByte = test_nam_coll_rle[i];
-		++i;
-		byteCount = test_nam_coll_rle[i];
-		++i;
-		for ( j = 0; j < byteCount; ++j ) {
-			collisionMap[outPointer] = currentByte;
-			++outPointer;
-		}
+u8 __fastcall__ spriteCount(void) {
+	++enemySpriteCount;
+	if ( enemySpriteCount >= numEnemies ) {
+		enemySpriteCount = 0;
 	}
+	return enemySpriteCount;
 }
-*/
+
+
+void updateEnemySprites(void) {
+	// update enemy sprites
+	for ( i = 0; i < numEnemies; ++i ) {
+
+		spriteFlickerIndex = spriteCount();
+		
+		// animate
+		if ( ( frameCount & 0x0F ) == 0x0F ) {
+			enemyData[spriteFlickerIndex].frame ^= 1;
+			setSpriteFrame(enemySpriteData[spriteFlickerIndex], enemyFrames[enemyData[spriteFlickerIndex].frame]);
+		}
+		
+		setSpritePriority(enemySpriteData[i], sprPriorityToggle);
+		sprPriorityToggle ^= 1;
+		oamSpriteIndex = oam_meta_spr(enemyData[spriteFlickerIndex].x, enemyData[spriteFlickerIndex].y, oamSpriteIndex, enemySpriteData[spriteFlickerIndex]);	
+	}	
+}
+
+void updatePlayerSprite(void) {
+	if ( pad & PAD_RIGHT ) {
+		flipSprite(playerSpriteData, 1);
+	} else if ( pad & PAD_LEFT ) {
+		flipSprite(playerSpriteData, 0);
+	}		
+
+	// animate player sprite
+	if ( ( frameCount & 0x0F ) == 0x0F ) {
+		playerFrame ^= 1;
+		setSpriteFrame(playerSpriteData, playerFrames[playerFrame]);
+	} 
+
+	// update player sprite
+	oamSpriteIndex = oam_meta_spr(player_x, player_y, oamSpriteIndex, playerSpriteData);	
+}
+
+void updatePotionSprite(void) {
+
+}
+
+/*********** Collision Checking ***********/
 
 void __fastcall__ four_Sides(u8 originX, u8 originY) {
 	if (originX < (255 - 1)){	// find the left side
-		X1_Left_Side = originX + 1;
+		leftSide = originX + 1;
 	}
 	else {
-		X1_Left_Side = 255;
+		leftSide = 255;
 	}
 	if (originX < (255 - 15)){	// find the right side
-		X1_Right_Side = originX + 15;
+		rightSide = originX + 15;
 	}
 	else {
-		X1_Right_Side = 255;
+		rightSide = 255;
 	}
-	Y1_Top = originY + 1;	// our top is the same as the master Y
+	topSide = originY + 1;	// our top is the same as the master Y
 	
 	if (originY < (255)){ // find the bottom side
-		Y1_Bottom = originY + 16;
+		bottomSide = originY + 16;
 	}
 	else {
-		Y1_Bottom = 255;
+		bottomSide = 255;
 	}
 }
 
 u16 __fastcall__ getCollisionIndex(u8 screenX, u8 screenY) {
-	//return ((u16) screenX >> 3) + (((u16) screenY >> 3) << 5);
 	return ( screenX >> 3 ) + ( ( screenY >> 3 ) << 5);
 }
 
@@ -245,7 +295,7 @@ u8 __fastcall__ collideCheckVertical(u8 originX, u8 originY, u8 direction) {
 	topSide = originY + 1;
 	bottomSide = originY + 17;
 
-	if ( ( (direction & PAD_A) != 0) ) {
+	if ( ( (direction & PAD_UP) != 0) ) {
 		testCorner = getCollisionIndex(rightSide, topSide);
 		if ( collisionMap[testCorner] == 0 ) {
 			testCorner = getCollisionIndex(leftSide, topSide);
@@ -286,7 +336,7 @@ u8 __fastcall__ collideCheckHorizontal(u8 originX, u8 originY, u8 direction) {
 u8 __fastcall__ bgVertCollideCheck(u8 *x, u8 *y, u8 dir) {
 	u8 colliding = collideCheckVertical(*x, *y, dir);
 	if ( colliding == 1 ) {
-		if ( dir & PAD_A ) {
+		if ( dir & PAD_UP ) {
 			*y = (*y & 0xf8) + 7;
 		//} else if ( dir & PAD_DOWN ) {
 		} else {
@@ -308,6 +358,37 @@ void __fastcall__ bgHorizCollideCheck(u8 *x, u8 *y, u8 dir) {
 }
 
 
+void playerEnemyCollideCheck(void) {
+
+	static u8 enemyTop;
+	static u8 enemyBottom;
+	static u8 enemyLeft;
+	static u8 enemyRight;
+	static u8 j;
+
+	playerEnemyColliding = 0;
+
+	for ( j = 0; j < numEnemies; ++j ) {
+		enemyTop = enemyData[j].y + 2;
+		enemyBottom = enemyData[j].y + 14;
+		enemyLeft = enemyData[j].x + 2;
+		enemyRight = enemyData[j].x + 14;
+
+		if ( !( rightSide < enemyLeft  || 
+				leftSide >= enemyRight || 
+				bottomSide <  enemyTop || 
+				topSide    >= enemyBottom ) ) {
+			playerEnemyColliding = 1;
+		}		
+	}
+}
+
+void potionEnemyCollideCheck(void) {
+
+}
+
+
+/*********** State updates ***********/
 
 void updateEnemies(void) {
 
@@ -338,38 +419,6 @@ void updateEnemies(void) {
 }
 
 
-void playerEnemyCollideCheck(void) {
-
-	static u8 enemyTop;
-	static u8 enemyBottom;
-	static u8 enemyLeft;
-	static u8 enemyRight;
-	static u8 j;
-
-	playerEnemyColliding = 0;
-
-	for ( j = 0; j < numEnemies; ++j ) {
-		enemyTop = enemyData[j].y + 2;
-		enemyBottom = enemyData[j].y + 14;
-		enemyLeft = enemyData[j].x + 2;
-		enemyRight = enemyData[j].x + 14;
-
-		if ( !( X1_Right_Side < enemyLeft  || 
-				X1_Left_Side >= enemyRight || 
-				Y1_Bottom <  enemyTop || 
-				Y1_Top    >= enemyBottom ) ) {
-			playerEnemyColliding = 1;
-		}		
-	}
-}
-
-u8 __fastcall__ spriteCount(void) {
-	++enemySpriteCount;
-	if ( enemySpriteCount >= numEnemies ) {
-		enemySpriteCount = 0;
-	}
-	return enemySpriteCount;
-}
 
 void setupMap(void) {
 	u8 collByte, k;
@@ -447,7 +496,7 @@ void updatePlayerVerticalMovement(void) {
 	if ( playerVertVel > 0 ) {
 		// moving up, jumping
 		player_y -= playerVertVel;
-		if ( collideCheckVertical(player_x, player_y, PAD_A) == TILE_ALLCOLLIDE ) { 
+		if ( collideCheckVertical(player_x, player_y, PAD_UP) == TILE_ALLCOLLIDE ) { 
 			player_y = (player_y & 0xF8) + 8;
 		}			
 	} else {
@@ -482,40 +531,20 @@ void playerMoveHorizontal(void) {
 	bgHorizCollideCheck(&player_x, &player_y, playerDir);
 }
 
-void updateEnemySprites(void) {
-	// update enemy sprites
-	for ( i = 0; i < numEnemies; ++i ) {
 
-		spriteFlickerIndex = spriteCount();
-		
-		// animate
-		if ( ( frame & 0x0F ) == 0x0F ) {
-			enemyData[spriteFlickerIndex].frame ^= 1;
-			setSpriteFrame(enemySpriteData[spriteFlickerIndex], enemyFrames[enemyData[spriteFlickerIndex].frame]);
-		}
-		
-		setSpritePriority(enemySpriteData[i], sprPriorityToggle);
-		sprPriorityToggle ^= 1;
-		spr = oam_meta_spr(enemyData[spriteFlickerIndex].x, enemyData[spriteFlickerIndex].y, spr, enemySpriteData[spriteFlickerIndex]);	
-	}	
+
+void updatePlayerAttack(void) {
+	if ( pad & PAD_B ) {
+		// spawn a potion
+	}
 }
 
-void updatePlayerSprite(void) {
-	if ( pad & PAD_RIGHT ) {
-		flipSprite(playerSpriteData, 1);
-	} else if ( pad & PAD_LEFT ) {
-		flipSprite(playerSpriteData, 0);
-	}		
+void updatePotionMovement(void) {
 
-	// animate player sprite
-	if ( ( frame & 0x0F ) == 0x0F ) {
-		playerFrame ^= 1;
-		setSpriteFrame(playerSpriteData, playerFrames[playerFrame]);
-	} 
-
-	// update player sprite
-	spr = oam_meta_spr(player_x, player_y, spr, playerSpriteData);	
 }
+
+
+/*********** Main ***********/
 
 void main(void)
 {
@@ -527,8 +556,6 @@ void main(void)
 	// - make const array of map data and write js to automate building it from CSVs
 	// - continue refactoring, break out code into modules
 	// - if PRG ROM runs short, switch to NROM-256 or pack map data
-
-	u8 colliding;
 
 
 	memcpy(palSprites, paldat, 16);
@@ -543,26 +570,20 @@ void main(void)
 	vram_unrle(test_nam);	
 
 	ppu_on_all(); //enable rendering
+
 	//set initial coords
-	
 	player_x = 0;
 	player_y = 0;
 	playerDir = PAD_RIGHT;
 
-	enemy_x = enemyInitX;
-	enemy_y = enemyInitY;
-
 	//init other vars
-	
 	touch = 0; // collision flag
-	frame = 0; // frame counter
+	frameCount = 0; // frame counter
 
 	playerFrame = 0;
-
 	
 	setSpriteFrame(playerSpriteData, playerFrames[playerFrame]);
 	setupMap();
-
 
 	// now the main loop
 
@@ -572,10 +593,10 @@ void main(void)
 	
 		//process player
 		
-		spr = 0;
+		oamSpriteIndex = 0;
 		i = 0;
 
-		sprPriorityToggle = frame & 0xFE;
+		sprPriorityToggle = frameCount & 0xFE;
 
 		// update player movement
 		pad = pad_poll(i);
@@ -584,6 +605,8 @@ void main(void)
 
 		updateEnemySprites();
 
+		updatePotionSprite();
+
 		spriteCount();
 		updateEnemies();
 
@@ -591,8 +614,14 @@ void main(void)
 
 		updatePlayerVerticalMovement();
 
+		updatePlayerAttack();
+
+		updatePotionMovement();
+
 		four_Sides(player_x, player_y);	
 		playerEnemyCollideCheck();
+
+		potionEnemyCollideCheck();
 
 		
 		if ( playerEnemyColliding ) {
@@ -601,6 +630,6 @@ void main(void)
 			setSpritePalette(playerSpriteData, 0x3);
 		}
 
-		++frame;
+		++frameCount;
 	}
 }
