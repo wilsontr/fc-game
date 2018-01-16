@@ -59,6 +59,8 @@ static u8 sprPriorityToggle = 0;
 static u8 palSprites[4];
 static u8 palBG[4];
 
+static u8 horizontalCollideCheck;
+
 
 /* Player */
 static u8 playerX;
@@ -108,12 +110,16 @@ u8 potionSpriteData[5] = {
 
 static u8 numEnemies;
 static u8 enemySpriteCount = 0;
+static u8 enemyIndex = 0;
+static u8 enemyColliding = 0;
+
 
 struct enemyStruct {
 	u8 x;
 	u8 y; 
 	u8 frame;
 	u8 direction;
+	u8 collidingWithPotion;
 };
 
 typedef struct enemyStruct enemy;
@@ -137,6 +143,8 @@ const u8 enemySpriteDataTemplate[17] = {
 
 static u8 enemySpriteData[10][17];
 
+
+void killPotion(void);
 
 /*********** Unused: utility function for decompressing RLE collision map data ***********/
 
@@ -244,6 +252,13 @@ void updateEnemySprites(void) {
 			enemyData[spriteFlickerIndex].frame ^= 1;
 			setSpriteFrame(enemySpriteData[spriteFlickerIndex], enemyFrames[enemyData[spriteFlickerIndex].frame]);
 		}
+
+		if ( enemyData[spriteFlickerIndex].collidingWithPotion ) {
+			setSpritePalette(enemySpriteData[spriteFlickerIndex], 0x0);
+		} else {
+			setSpritePalette(enemySpriteData[spriteFlickerIndex], 0x3);
+		}
+
 		
 		setSpritePriority(enemySpriteData[i], sprPriorityToggle);
 		sprPriorityToggle ^= 1;
@@ -277,26 +292,19 @@ void updatePotionSprite(void) {
 /*********** Collision Checking ***********/
 
 void __fastcall__ four_Sides(u8 originX, u8 originY) {
-	if (originX < (255 - 1)){	// find the left side
-		leftSide = originX + 1;
-	}
-	else {
-		leftSide = 255;
-	}
-	if (originX < (255 - 15)){	// find the right side
-		rightSide = originX + 15;
-	}
-	else {
-		rightSide = 255;
-	}
-	topSide = originY + 1;	// our top is the same as the master Y
-	
-	if (originY < (255)){ // find the bottom side
-		bottomSide = originY + 16;
-	}
-	else {
-		bottomSide = 255;
-	}
+
+	leftSide = originX + 1;
+	rightSide = originX + 15;
+	topSide = originY;
+	bottomSide = originY + 14;
+}
+
+void __fastcall__ four_SidesSmall(u8 originX, u8 originY) {
+
+	leftSide = originX + 1;
+	rightSide = originX + 7;
+	topSide = originY;
+	bottomSide = originY + 7;
 }
 
 u16 __fastcall__ getCollisionIndex(u8 screenX, u8 screenY) {
@@ -349,6 +357,7 @@ u8 __fastcall__ collideCheckVertical(u8 originX, u8 originY, u8 direction) {
 	return collisionMap[testCorner];
 }
 
+/*
 u8 __fastcall__ collideCheckHorizontal(u8 originX, u8 originY, u8 direction) {
 
 	leftSide = originX + 1;
@@ -370,6 +379,24 @@ u8 __fastcall__ collideCheckHorizontal(u8 originX, u8 originY, u8 direction) {
 
 	return collisionMap[testCorner];
 }
+*/
+
+void simpleCollideCheckHorizontal(u8 originX, u8 originY, u8 direction) {
+
+	if ( ( (direction & PAD_LEFT) != 0 ) ) {
+		testCorner = getCollisionIndex(originX + 1, originY);
+		if ( collisionMap[testCorner] == 0 ) {
+			testCorner = getCollisionIndex(originX + 1, originY + 16);
+		}
+	} else if ( (direction & PAD_RIGHT) != 0 ) {
+		testCorner = getCollisionIndex(originX + 15, originY);
+		if ( collisionMap[testCorner] == 0 ) {
+			testCorner = getCollisionIndex(originX + 15, originY + 16);
+		}
+	}
+
+	horizontalCollideCheck = collisionMap[testCorner];
+}
 
 
 u8 __fastcall__ bgVertCollideCheck(u8 *x, u8 *y, u8 dir) {
@@ -386,8 +413,8 @@ u8 __fastcall__ bgVertCollideCheck(u8 *x, u8 *y, u8 dir) {
 }
 
 void __fastcall__ bgHorizCollideCheck(u8 *x, u8 *y, u8 dir) {
-	u8 colliding = collideCheckHorizontal(*x, *y, dir);
-	if ( colliding == 1 ) {
+	simpleCollideCheckHorizontal(*x, *y, dir);
+	if ( horizontalCollideCheck == 1 ) {
 		if ( dir & PAD_LEFT ) {
 			*x = (*x & 0xf8) + 8;
 		} else if ( dir & PAD_RIGHT ) {
@@ -396,33 +423,65 @@ void __fastcall__ bgHorizCollideCheck(u8 *x, u8 *y, u8 dir) {
 	}
 }
 
+/*
 
-void playerEnemyCollideCheck(void) {
+u8 __fastcall__ enemyCollideCheck(void) {
 
 	static u8 enemyTop;
 	static u8 enemyBottom;
 	static u8 enemyLeft;
 	static u8 enemyRight;
-	static u8 j;
+	enemyColliding = 0;
 
-	playerEnemyColliding = 0;
-
-	for ( j = 0; j < numEnemies; ++j ) {
-		enemyTop = enemyData[j].y + 2;
-		enemyBottom = enemyData[j].y + 14;
-		enemyLeft = enemyData[j].x + 2;
-		enemyRight = enemyData[j].x + 14;
+	for ( enemyIndex = 0; enemyIndex < numEnemies; ++enemyIndex ) {
+		enemyTop = enemyData[enemyIndex].y + 2;
+		enemyBottom = enemyData[enemyIndex].y + 14;
+		enemyLeft = enemyData[enemyIndex].x + 2;
+		enemyRight = enemyData[enemyIndex].x + 14;
 
 		if ( !( rightSide < enemyLeft  || 
 				leftSide >= enemyRight || 
 				bottomSide <  enemyTop || 
 				topSide    >= enemyBottom ) ) {
-			playerEnemyColliding = 1;
+			enemyColliding = 1;
 		}		
+	}
+
+	return enemyColliding;
+}
+*/
+
+void simpleEnemyCollideCheck(void) {
+
+	enemyIndex = 0;
+	enemyColliding = 0;
+
+	while ( !enemyColliding && ( enemyIndex < numEnemies ) ) {
+		if ( !( rightSide < enemyData[enemyIndex].x        || 
+				leftSide >= ( enemyData[enemyIndex].x + 16 )  || 
+				bottomSide <  enemyData[enemyIndex].y || 
+				topSide    >= ( enemyData[enemyIndex].y + 16 ) ) ) {
+			enemyColliding = 1;
+		}		
+		++enemyIndex;
 	}
 }
 
 void potionEnemyCollideCheck(void) {
+	u8 eJ;
+	if ( potionIsActive ) {
+		four_SidesSmall(potionX, potionY);
+		for ( eJ = 0; eJ <= numEnemies; ++eJ ) {
+			simpleEnemyCollideCheck();
+			if ( enemyColliding ) {
+				//enemyData[eJ].collidingWithPotion = 1;
+				killPotion();
+			} else {
+				//enemyData[eJ].collidingWithPotion = 0;
+			}
+			
+		}
+	}
 
 }
 
@@ -430,13 +489,12 @@ void potionEnemyCollideCheck(void) {
 
 void setupMap(void) {
 	u8 collByte, k;
-	u8 enemyIndex = 0;
 	u8 mapX = 0;
 	u8 mapY = 0;
 	u16 index = 0;
-	//u16 index, enemyX, enemyY;
-
 	enemy newEnemy = { 0, 0, 0, PAD_LEFT };
+
+	enemyIndex = 0;
 	
 	for ( index; index <= COLLISION_MAP_SIZE; ++index ) {
 		collByte = collisionMap[index];
@@ -451,10 +509,12 @@ void setupMap(void) {
 			enemyData[enemyIndex].x = mapX << 3;
 			enemyData[enemyIndex].y = (mapY << 3) - 1;
 			enemyData[enemyIndex].direction = ( collByte == TILE_ENEMY1START_RIGHT ) ? PAD_RIGHT : PAD_LEFT;
+			enemyData[enemyIndex].collidingWithPotion = 0;
 
 			for ( k = 0; k < ENEMY_DATA_SIZE; ++k ) {
 				enemySpriteData[enemyIndex][k] = enemySpriteDataTemplate[k];
 			}
+
 			setSpriteFrame(enemySpriteData[enemyIndex], enemyFrames[0]);
 			++enemyIndex;
 		}
@@ -502,15 +562,15 @@ void updateEnemies(void) {
 		} else {
 			if ( enemyData[i].direction == PAD_RIGHT ) {
 				enemyData[i].x += 1;
-				horizCollide = collideCheckHorizontal(enemyData[i].x, enemyData[i].y, PAD_RIGHT);
-				if ( ( horizCollide == TILE_ALLCOLLIDE ) || ( horizCollide == TILE_ENEMYCOLLIDE ) ) {
+				 simpleCollideCheckHorizontal(enemyData[i].x, enemyData[i].y, PAD_RIGHT);
+				if ( ( horizontalCollideCheck == TILE_ALLCOLLIDE ) || ( horizontalCollideCheck == TILE_ENEMYCOLLIDE ) ) {
 					flipSprite(enemySpriteData[i], 0);
 					enemyData[i].direction = PAD_LEFT;
 				}
 			} else {
 				enemyData[i].x -= 1;
-				horizCollide = collideCheckHorizontal(enemyData[i].x, enemyData[i].y, PAD_LEFT);
-				if ( ( horizCollide == TILE_ALLCOLLIDE ) || ( horizCollide == TILE_ENEMYCOLLIDE ) ) {
+				simpleCollideCheckHorizontal(enemyData[i].x, enemyData[i].y, PAD_LEFT);
+				if ( ( horizontalCollideCheck == TILE_ALLCOLLIDE ) || ( horizontalCollideCheck == TILE_ENEMYCOLLIDE ) ) {
 					flipSprite(enemySpriteData[i], 1);
 					enemyData[i].direction = PAD_RIGHT;
 				}
@@ -533,7 +593,8 @@ void updatePlayerVerticalMovement(void) {
 		playerVertVel = 0;
 	}
 
-	if ( playerVertVel > 0 ) {
+
+	if ( playerJumping && ( playerVertVel > 0 ) ) {
 		// moving up, jumping
 		playerY -= playerVertVel;
 		if ( collideCheckVertical(playerX, playerY, PAD_UP) == TILE_ALLCOLLIDE ) { 
@@ -551,7 +612,7 @@ void updatePlayerVerticalMovement(void) {
 
 	// acceleration toward ground
 	// setting max fall speed more than -3 causes falls through the floor - why?
-	if ( ( playerJumpCounter == 4 ) && ( playerVertVel > -3 ) ) {
+	if ( ( playerVertVel > -3 ) && ( playerJumpCounter == 4 ) ) {
 		playerVertVel -= 1; 
 		playerJumpCounter = 0;
 	}
@@ -562,16 +623,16 @@ void updatePlayerVerticalMovement(void) {
 void playerMoveHorizontal(void) {	
 	if ( pad & PAD_LEFT ) {
 		playerDir = PAD_LEFT;
+		if ( playerX > 0 ) {
+			playerX -= 1;
+		}
 	} else if ( pad & PAD_RIGHT ) {
 		playerDir = PAD_RIGHT;
+		if ( playerX < 240 ) {
+			playerX += 1;
+		}
 	}
 
-	if ( ( pad & PAD_LEFT ) && playerX > 0 ) {
-		playerX -= 1;
-	}
-	if ( ( pad & PAD_RIGHT ) && playerX < 240 ) {
-		playerX += 1;
-	}
 	bgHorizCollideCheck(&playerX, &playerY, pad);
 }
 
@@ -636,7 +697,6 @@ void updatePotionMovement(void) {
 		}			
 
 		// acceleration toward ground
-		//if ( ( potionVerticalVel >= -1 ) && ( ( frameCount & 0x3 ) == 2 ) ) {
 		if ( ( potionVerticalVel >= -2 ) && ( potionMoveCounter == 3 ) ) {
 			potionVerticalVel -= 1; 
 			potionMoveCounter = 0;
@@ -652,6 +712,36 @@ void updatePotionMovement(void) {
 	}
 }
 
+void simpleUpdatePotionMovement(void) {
+	u8 potionCollided = 0;
+	if ( potionIsActive ) {
+		/* horizontal movement */
+		if ( potionDirection == PAD_LEFT ) {
+			potionX -= POTION_HORIZ_VELOCITY;
+		} else {
+			potionX += POTION_HORIZ_VELOCITY;
+		}
+
+		if ( ( potionX <= 8 ) || ( potionX >= 248 ) ) {
+			potionCollided = 1;
+		}
+
+
+		++potionMoveCounter;
+
+		if ( potionCollided ) {
+			killPotion();
+		}		
+
+	}
+}
+
+void killPotion(void) {
+	potionIsActive = 0;
+	potionX = -8;
+	potionY = -8;
+}
+
 
 /*********** Main ***********/
 
@@ -659,6 +749,9 @@ void main(void)
 {
 
 	// TODO next:
+
+	// Optimize main loop
+	// Try using globals instead of function parameters to save on cycles
 
 	// - work on mechanics
 	// - study enemy behavior in games
@@ -717,12 +810,13 @@ void main(void)
 
 		updateEnemies();
 		playerMoveHorizontal();
-		updatePlayerVerticalMovement();
+		//updatePlayerVerticalMovement();
 		updatePlayerAttack();
-		updatePotionMovement();
+		simpleUpdatePotionMovement();
 
-		four_Sides(playerX, playerY);	
-		playerEnemyCollideCheck();
+		//four_Sides(playerX, playerY);
+		//simpleEnemyCollideCheck();
+		playerEnemyColliding = enemyColliding;
 		potionEnemyCollideCheck();
 
 		
