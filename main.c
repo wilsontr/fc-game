@@ -95,7 +95,7 @@ static u8 potionX = -8;
 static u8 potionY = -8;
 static u8 potionIsActive = 0;
 static u8 potionDirection;
-static u8 potionVerticalVel = 0;
+static signed char potionVerticalVel = 0;
 static u8 potionMoveCounter = 0;
 
 u8 potionSpriteData[5] = {
@@ -612,8 +612,8 @@ void updatePotionMovement(void) {
 
 		if ( potionVerticalVel > 0 ) {
 			// moving up in arc 
-			if ( smallCollideCheckVertical(potionX, potionY + 8, PAD_UP) == TILE_ALLCOLLIDE ) { 
-				/* collided with ground */
+			if ( smallCollideCheckVertical(potionX, potionY, PAD_UP) == TILE_ALLCOLLIDE ) { 
+				/* collided with ceiling */
 				potionCollided = 1;				
 			} else {
 				potionY -= potionVerticalVel;
@@ -621,7 +621,7 @@ void updatePotionMovement(void) {
 			
 		} else {
 			// falling
-			if ( smallCollideCheckVertical(potionX, potionY - 8, PAD_DOWN) == TILE_ALLCOLLIDE ) { 
+			if ( smallCollideCheckVertical(potionX, potionY, PAD_DOWN) == TILE_ALLCOLLIDE ) { 
 				/* collided with ground */
 				potionCollided = 1;				
 			} else {
