@@ -2,9 +2,8 @@
 
 #include <stdint.h>
 #include "neslib.h"
-#include "test_nam.h"
-//#include "test_nam_coll_rle.h"
-#include "test_nam_coll.h"
+#include "map1.h"
+#include "map1_coll.h"
 
 
 void __fastcall__ memcpy(void *dst, void *src, unsigned int len);
@@ -28,6 +27,8 @@ typedef uint16_t u16;
 
 #define POTION_HORIZ_VELOCITY	 2
 #define POTION_INIT_VERTICAL_VEL 2
+
+#define PLAYER_INIT_JUMP_VEL 	 4
 
 
 #pragma bss-name (push, "ZEROPAGE")
@@ -95,6 +96,7 @@ static u8 potionY = -8;
 static u8 potionIsActive = 0;
 static u8 potionDirection;
 static u8 potionVerticalVel = 0;
+static u8 potionMoveCounter = 0;
 
 u8 potionSpriteData[5] = {
 	0, 0, 0x2A, 0x2,
@@ -519,7 +521,7 @@ void updateEnemies(void) {
 
 void updatePlayerVerticalMovement(void) {
 	if ( ( pad & PAD_A ) && ( playerY > 8 ) && ( !playerJumping ) ) {
-		playerVertVel = 4;
+		playerVertVel = PLAYER_INIT_JUMP_VEL;
 		playerJumping = 1;
 		playerJumpCounter = 0;
 	} 
@@ -547,7 +549,7 @@ void updatePlayerVerticalMovement(void) {
 
 	// acceleration toward ground
 	// setting max fall speed more than -3 causes falls through the floor - why?
-	if ( ( playerJumpCounter == 5 ) && ( playerVertVel > -3 ) ) {
+	if ( ( playerJumpCounter == 4 ) && ( playerVertVel > -3 ) ) {
 		playerVertVel -= 1; 
 		playerJumpCounter = 0;
 	}
@@ -578,6 +580,7 @@ void updatePlayerAttack(void) {
 		// spawn a potion
 		if ( !potionIsActive ) {
 			potionIsActive = 1;
+			potionMoveCounter = 0;
 			potionY = playerY + 6;
 			if ( playerDir == PAD_RIGHT ) {
 				potionX = playerX + 12;
@@ -631,9 +634,13 @@ void updatePotionMovement(void) {
 		}			
 
 		// acceleration toward ground
-		if ( ( potionVerticalVel >= -1 ) && ( ( frameCount & 0x3 ) == 2 ) ) {
+		//if ( ( potionVerticalVel >= -1 ) && ( ( frameCount & 0x3 ) == 2 ) ) {
+		if ( ( potionVerticalVel >= -1 ) && ( potionMoveCounter == 3 ) ) {
 			potionVerticalVel -= 1; 
+			potionMoveCounter = 0;
 		}		
+
+		++potionMoveCounter;
 
 		if ( potionCollided ) {
 			potionIsActive = 0;
@@ -667,7 +674,7 @@ void main(void)
 	pal_bg(palBG);
 
 	vram_adr(NAMETABLE_A); //unpack nametable into VRAM
-	vram_unrle(test_nam);	
+	vram_unrle(map1);	
 
 	ppu_on_all(); //enable rendering
 
