@@ -7,7 +7,7 @@ FT_SFX_STREAMS			= 4		;number of sound effects played at once, 1..4
 
 .export _paldat
 _paldat: 
-	.incbin "fcgame.dat"
+	.incbin "palette.dat"
 
 
 .define FT_DPCM_ENABLE  0			;undefine to exclude all DMC code
