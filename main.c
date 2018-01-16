@@ -73,6 +73,7 @@ static u8 playerJumpHeight = 0;
 static u8 playerJumpCounter = 0;
 static signed char playerVertVel = 0;
 static char playerVertAccel = 0;
+static u8 jumpButtonPressed = 0;
 
 
 const u8 playerFrames[2][4] = {
@@ -99,7 +100,7 @@ static signed char potionVerticalVel = 0;
 static u8 potionMoveCounter = 0;
 
 u8 potionSpriteData[5] = {
-	0, 0, 0x2A, 0x2,
+	0, 0, 0x2A, 0x0,
 	128
 };
 
@@ -520,6 +521,7 @@ void updateEnemies(void) {
 }
 
 void updatePlayerVerticalMovement(void) {
+
 	if ( ( pad & PAD_A ) && ( playerY > 8 ) && ( !playerJumping ) ) {
 		playerVertVel = PLAYER_INIT_JUMP_VEL;
 		playerJumping = 1;
@@ -612,7 +614,7 @@ void updatePotionMovement(void) {
 
 		if ( potionVerticalVel > 0 ) {
 			// moving up in arc 
-			if ( smallCollideCheckVertical(potionX, potionY, PAD_UP) == TILE_ALLCOLLIDE ) { 
+			if ( smallCollideCheckVertical(potionX, potionY + 8, PAD_UP) == TILE_ALLCOLLIDE ) { 
 				/* collided with ceiling */
 				potionCollided = 1;				
 			} else {
@@ -635,7 +637,7 @@ void updatePotionMovement(void) {
 
 		// acceleration toward ground
 		//if ( ( potionVerticalVel >= -1 ) && ( ( frameCount & 0x3 ) == 2 ) ) {
-		if ( ( potionVerticalVel >= -1 ) && ( potionMoveCounter == 3 ) ) {
+		if ( ( potionVerticalVel >= -2 ) && ( potionMoveCounter == 3 ) ) {
 			potionVerticalVel -= 1; 
 			potionMoveCounter = 0;
 		}		
@@ -666,7 +668,7 @@ void main(void)
 
 
 	memcpy(palSprites, paldat, 16);
-	memcpy(palBG, paldat, 4);
+	memcpy(palBG, paldat + 16, 4);
 
 	//unrleCollision();
 
