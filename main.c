@@ -35,6 +35,11 @@ typedef uint16_t u16;
 #pragma data-name (push, "ZEROPAGE")
 
 u8 oam_off;
+static u8 playerX;
+static u8 playerY;
+static u8 enemyIndex = 0;
+static u8 frameCount;
+static u8 enemyColliding = 0;
 
 #pragma data-name(pop)
 #pragma bss-name (pop)
@@ -52,7 +57,6 @@ extern const u8 paldat[];
 static u8 i;
 static u8 pad, oamSpriteIndex;
 static u8 touch;
-static u8 frameCount;
 static u8 spriteFlickerIndex = 0;
 static u8 sprPriorityToggle = 0;
 
@@ -63,18 +67,12 @@ static u8 horizontalCollideCheck;
 
 
 /* Player */
-static u8 playerX;
-static u8 playerY;
 static u8 playerDir;
-static u8 jumpIteration;
 static u8 playerEnemyColliding;
 static u8 playerFrame = 0;
-static u8 playerFalling = 0;
 static u8 playerJumping = 0;
-static u8 playerJumpHeight = 0;
 static u8 playerJumpCounter = 0;
 static signed char playerVertVel = 0;
-static char playerVertAccel = 0;
 static u8 jumpButtonPressed = 0;
 
 
@@ -110,8 +108,13 @@ u8 potionSpriteData[5] = {
 
 static u8 numEnemies;
 static u8 enemySpriteCount = 0;
-static u8 enemyIndex = 0;
-static u8 enemyColliding = 0;
+
+/* For collision checking */
+static u8 enemyTop;
+static u8 enemyBottom;
+static u8 enemyLeft;
+static u8 enemyRight;
+
 
 
 struct enemyStruct {
@@ -142,9 +145,10 @@ const u8 enemySpriteDataTemplate[17] = {
 };
 
 static u8 enemySpriteData[10][17];
-
+static enemy currentEnemy;
 
 void killPotion(void);
+void setupMap(void);
 
 /*********** Unused: utility function for decompressing RLE collision map data ***********/
 
@@ -457,10 +461,16 @@ void simpleEnemyCollideCheck(void) {
 	enemyColliding = 0;
 
 	while ( !enemyColliding && ( enemyIndex < numEnemies ) ) {
-		if ( !( rightSide < enemyData[enemyIndex].x        || 
-				leftSide >= ( enemyData[enemyIndex].x + 16 )  || 
-				bottomSide <  enemyData[enemyIndex].y || 
-				topSide    >= ( enemyData[enemyIndex].y + 16 ) ) ) {
+		currentEnemy = enemyData[enemyIndex];
+		enemyTop = currentEnemy.y + 2;
+		enemyBottom = currentEnemy.y + 14;
+		enemyLeft = currentEnemy.x + 2;
+		enemyRight = currentEnemy.x + 14;
+
+		if ( !( rightSide  <  enemyLeft  || 
+				leftSide   >= enemyRight || 
+				bottomSide <  enemyTop   || 
+				topSide    >= enemyBottom ) ) {
 			enemyColliding = 1;
 		}		
 		++enemyIndex;
@@ -468,18 +478,14 @@ void simpleEnemyCollideCheck(void) {
 }
 
 void potionEnemyCollideCheck(void) {
-	u8 eJ;
 	if ( potionIsActive ) {
 		four_SidesSmall(potionX, potionY);
-		for ( eJ = 0; eJ <= numEnemies; ++eJ ) {
-			simpleEnemyCollideCheck();
-			if ( enemyColliding ) {
-				//enemyData[eJ].collidingWithPotion = 1;
-				killPotion();
-			} else {
-				//enemyData[eJ].collidingWithPotion = 0;
-			}
-			
+		simpleEnemyCollideCheck();
+		if ( enemyColliding ) {
+			//enemyData[eJ].collidingWithPotion = 1;
+			killPotion();
+		} else {
+			//enemyData[eJ].collidingWithPotion = 0;
 		}
 	}
 
@@ -580,6 +586,7 @@ void updateEnemies(void) {
 
 }
 
+
 void updatePlayerVerticalMovement(void) {
 
 	if ( ( pad & PAD_A ) && ( playerY > 8 ) && ( !playerJumping ) ) {
@@ -638,7 +645,7 @@ void playerMoveHorizontal(void) {
 
 
 
-void updatePlayerAttack(void) {
+void  updatePlayerAttack(void) {
 	if ( pad & PAD_B ) {
 		// spawn a potion
 		if ( !potionIsActive ) {
@@ -656,7 +663,7 @@ void updatePlayerAttack(void) {
 	}
 }
 
-void updatePotionMovement(void) {
+void __fastcall__ updatePotionMovement(void) {
 	u8 potionCollided = 0;
 	if ( potionIsActive ) {
 		/* horizontal movement */
@@ -712,7 +719,7 @@ void updatePotionMovement(void) {
 	}
 }
 
-void simpleUpdatePotionMovement(void) {
+void __fastcall__ simpleUpdatePotionMovement(void) {
 	u8 potionCollided = 0;
 	if ( potionIsActive ) {
 		/* horizontal movement */
@@ -736,7 +743,7 @@ void simpleUpdatePotionMovement(void) {
 	}
 }
 
-void killPotion(void) {
+void __fastcall__ killPotion(void) {
 	potionIsActive = 0;
 	potionX = -8;
 	potionY = -8;
@@ -810,12 +817,12 @@ void main(void)
 
 		updateEnemies();
 		playerMoveHorizontal();
-		//updatePlayerVerticalMovement();
+		updatePlayerVerticalMovement();
 		updatePlayerAttack();
 		simpleUpdatePotionMovement();
 
 		//four_Sides(playerX, playerY);
-		//simpleEnemyCollideCheck();
+		simpleEnemyCollideCheck();
 		playerEnemyColliding = enemyColliding;
 		potionEnemyCollideCheck();
 
