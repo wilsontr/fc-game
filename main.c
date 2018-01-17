@@ -42,7 +42,7 @@ static u8 frameCount;
 static u8 enemyColliding = 0;
 static u8 i;
 static u16 collisionIndex;
-static u8 screenX, screenY;
+static u8 leftSide, rightSide, topSide, bottomSide;
 
 #pragma data-name(pop)
 #pragma bss-name (pop)
@@ -50,8 +50,7 @@ static u8 screenX, screenY;
 
 /* Commonly-used test variables */
 
-static u8 leftSide, rightSide, topSide, bottomSide;
-static u16 testCorner;
+
 
 /* Bookkeeping and state */
 
@@ -152,6 +151,8 @@ static enemy * currentEnemy;
 
 void killPotion(void);
 void setupMap(void);
+void __fastcall__ setSpriteFrame(u8 *sprite, const u8 *frame);
+void __fastcall__ setSpritePalette(u8 *sprite, u8 palette);
 
 /*********** Unused: utility function for decompressing RLE collision map data ***********/
 
@@ -176,6 +177,71 @@ void unrleCollision(void) {
 	}
 }
 */
+
+
+/*********** State Setup ***********/
+
+void setupMap(void) {
+	u8 collByte, k;
+	u8 mapX = 0;
+	u8 mapY = 0;
+	u16 index = 0;
+	enemy newEnemy = { 0, 0, 0, PAD_LEFT };
+
+	enemyIndex = 0;
+	
+	for ( index; index <= COLLISION_MAP_SIZE; ++index ) {
+		collByte = collisionMap[index];
+
+		if ( collByte == TILE_PLAYERSTART ) {
+			playerX = mapX << 3;
+			playerY = (mapY << 3) - 1;
+		}
+		
+		if ( ( collByte == TILE_ENEMY1START_RIGHT ) || ( collByte == TILE_ENEMY1START_LEFT ) ) {
+			enemyData[enemyIndex] = newEnemy;
+			enemyData[enemyIndex].x = mapX << 3;
+			enemyData[enemyIndex].y = (mapY << 3) - 1;
+			enemyData[enemyIndex].direction = ( collByte == TILE_ENEMY1START_RIGHT ) ? PAD_RIGHT : PAD_LEFT;
+			enemyData[enemyIndex].collidingWithPotion = 0;
+
+			for ( k = 0; k < ENEMY_DATA_SIZE; ++k ) {
+				enemySpriteData[enemyIndex][k] = enemySpriteDataTemplate[k];
+			}
+
+			setSpriteFrame(enemySpriteData[enemyIndex], enemyFrames[0]);
+			++enemyIndex;
+		}
+
+		++mapX;
+		if ( mapX >= 32 ) {
+			mapX = 0;
+			++mapY;
+		}
+	}
+
+	numEnemies = enemyIndex;
+
+
+	/*
+	for ( i = 0; i < NUM_ENEMIES; ++i ) {
+		enemyData[i].x = enemyData[i].initX;
+		enemyData[i].y = enemyData[i].initY;
+		enemyData[i].direction = enemyData[i].initDir;
+
+		//memcpy(enemySpriteData[i], enemySpriteDataTemplate, ENEMY_DATA_SIZE);
+
+		for ( j = 0; j < ENEMY_DATA_SIZE; ++j ) {
+			enemySpriteData[i][j] = enemySpriteDataTemplate[j];
+		}
+
+		if ( enemyData[i].direction == PAD_RIGHT ) {
+			flipSprite(enemySpriteData[i], PAD_RIGHT);
+		}		
+		setSpriteFrame(enemySpriteData[i], enemyFrames[enemyData[i].frame]);
+	}
+	*/
+}
 
 
 /*********** Sprite Management ***********/
@@ -326,6 +392,8 @@ u8 __fastcall__ smallCollideCheckVertical(u8 originX, u8 originY, u8 direction) 
 	topSide = originY;
 	bottomSide = originY + 8;
 
+	collisionIndex = 0;
+
 	if ( ( (direction & PAD_UP) != 0) ) {
 		getCollisionIndex(rightSide, topSide);
 		if ( collisionMap[collisionIndex] == 0 ) {
@@ -338,7 +406,12 @@ u8 __fastcall__ smallCollideCheckVertical(u8 originX, u8 originY, u8 direction) 
 		}
 	}
 
-	return collisionMap[collisionIndex];
+	if ( collisionIndex ) {
+		return collisionMap[collisionIndex];	
+	} else {
+		return 0;
+	}
+	
 }
 
 
@@ -349,6 +422,8 @@ u8 __fastcall__ collideCheckVertical(u8 originX, u8 originY, u8 direction) {
 	topSide = originY + 1;
 	bottomSide = originY + 17;
 
+	collisionIndex = 0;
+
 	if ( ( (direction & PAD_UP) != 0) ) {
 		getCollisionIndex(rightSide, topSide);
 		if ( collisionMap[collisionIndex] == 0 ) {
@@ -361,7 +436,13 @@ u8 __fastcall__ collideCheckVertical(u8 originX, u8 originY, u8 direction) {
 		}
 	}
 
-	return collisionMap[collisionIndex];
+	if ( collisionIndex ) {
+		return collisionMap[collisionIndex];	
+	} else {
+		return 0;
+	}
+
+	
 }
 
 void collideCheckHorizontal(u8 originX, u8 originY, u8 direction) {
@@ -451,72 +532,9 @@ void potionEnemyCollideCheck(void) {
 	}
 
 	enemyColliding = 0;
-
 }
 
-/*********** State Setup ***********/
 
-void setupMap(void) {
-	u8 collByte, k;
-	u8 mapX = 0;
-	u8 mapY = 0;
-	u16 index = 0;
-	enemy newEnemy = { 0, 0, 0, PAD_LEFT };
-
-	enemyIndex = 0;
-	
-	for ( index; index <= COLLISION_MAP_SIZE; ++index ) {
-		collByte = collisionMap[index];
-
-		if ( collByte == TILE_PLAYERSTART ) {
-			playerX = mapX << 3;
-			playerY = (mapY << 3) - 1;
-		}
-		
-		if ( ( collByte == TILE_ENEMY1START_RIGHT ) || ( collByte == TILE_ENEMY1START_LEFT ) ) {
-			enemyData[enemyIndex] = newEnemy;
-			enemyData[enemyIndex].x = mapX << 3;
-			enemyData[enemyIndex].y = (mapY << 3) - 1;
-			enemyData[enemyIndex].direction = ( collByte == TILE_ENEMY1START_RIGHT ) ? PAD_RIGHT : PAD_LEFT;
-			enemyData[enemyIndex].collidingWithPotion = 0;
-
-			for ( k = 0; k < ENEMY_DATA_SIZE; ++k ) {
-				enemySpriteData[enemyIndex][k] = enemySpriteDataTemplate[k];
-			}
-
-			setSpriteFrame(enemySpriteData[enemyIndex], enemyFrames[0]);
-			++enemyIndex;
-		}
-
-		++mapX;
-		if ( mapX >= 32 ) {
-			mapX = 0;
-			++mapY;
-		}
-	}
-
-	numEnemies = enemyIndex;
-
-
-	/*
-	for ( i = 0; i < NUM_ENEMIES; ++i ) {
-		enemyData[i].x = enemyData[i].initX;
-		enemyData[i].y = enemyData[i].initY;
-		enemyData[i].direction = enemyData[i].initDir;
-
-		//memcpy(enemySpriteData[i], enemySpriteDataTemplate, ENEMY_DATA_SIZE);
-
-		for ( j = 0; j < ENEMY_DATA_SIZE; ++j ) {
-			enemySpriteData[i][j] = enemySpriteDataTemplate[j];
-		}
-
-		if ( enemyData[i].direction == PAD_RIGHT ) {
-			flipSprite(enemySpriteData[i], PAD_RIGHT);
-		}		
-		setSpriteFrame(enemySpriteData[i], enemyFrames[enemyData[i].frame]);
-	}
-	*/
-}
 
 
 /*********** State Management ***********/
@@ -553,11 +571,7 @@ void updateEnemies(void) {
 
 void updatePlayerVerticalMovement(void) {
 
-	if ( ( pad & PAD_A ) && ( playerY > 8 ) && ( !playerJumping ) ) {
-		playerVertVel = PLAYER_INIT_JUMP_VEL;
-		playerJumping = 1;
-		playerJumpCounter = 0;
-	} 
+	u8 collideBottom = 1;
 
 	// stop ascent when player releases A button
 	if ( !( pad & PAD_A ) && playerJumping && ( playerVertVel > 0 ) ) {
@@ -573,13 +587,17 @@ void updatePlayerVerticalMovement(void) {
 		}			
 	} else {
 		// falling
-		if ( collideCheckVertical(playerX, playerY + 2, PAD_DOWN) != TILE_ALLCOLLIDE ) { 
-			playerY -= playerVertVel;
-		} else {
+		if ( collideCheckVertical(playerX, playerY + 2, PAD_DOWN) == TILE_ALLCOLLIDE ) { 
 			playerY = (playerY & 0xF8) + 7;
 			playerJumping = 0;
+			//playerVertVel = 0;
+			collideBottom = 1;			
+		} else {
+			playerY -= playerVertVel;
+			collideBottom = 0;
 		}			
 	}
+
 
 	// acceleration toward ground
 	// setting max fall speed more than -3 causes falls through the floor - why?
@@ -588,21 +606,14 @@ void updatePlayerVerticalMovement(void) {
 		playerJumpCounter = 0;
 	}
 
-	++playerJumpCounter;
-}
 
-void simpleUpdatePlayerVerticalMovement(void) {
-	if ( ( pad & PAD_A ) && ( !playerJumping ) ) {
+	if ( ( pad & PAD_A ) && ( !playerJumping ) && ( collideBottom ) ) {
 		playerVertVel = PLAYER_INIT_JUMP_VEL;
 		playerJumping = 1;
 		playerJumpCounter = 0;
 	} 	
 
-	// stop ascent when player releases A button
-	if ( !( pad & PAD_A ) && playerJumping && ( playerVertVel > 0 ) ) {
-		playerVertVel = 0;
-	}
-
+	++playerJumpCounter;
 
 }
 
@@ -656,7 +667,6 @@ void __fastcall__ updatePotionMovement(void) {
 			potionCollided = 1;
 		}
 
-
 		/* vertical movement */
 
 		if ( potionVerticalVel > 0 ) {
@@ -683,7 +693,7 @@ void __fastcall__ updatePotionMovement(void) {
 		}			
 
 		// acceleration toward ground
-		if ( ( potionVerticalVel >= -2 ) && ( potionMoveCounter == 3 ) ) {
+		if ( ( potionVerticalVel >= -3 ) && ( potionMoveCounter == 3 ) ) {
 			potionVerticalVel -= 1; 
 			potionMoveCounter = 0;
 		}		
