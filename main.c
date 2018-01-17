@@ -449,8 +449,8 @@ void collideCheckHorizontal(u8 originX, u8 originY, u8 direction) {
 
 	leftSide = originX + 1;
 	rightSide = originX + 15;
-	topSide = originY + 1;
-	bottomSide = originY + 16;
+	topSide = originY + 4;
+	bottomSide = originY + 12;
 
 
 	if ( ( (direction & PAD_LEFT) != 0 ) ) {

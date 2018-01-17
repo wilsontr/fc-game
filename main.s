@@ -3216,19 +3216,19 @@ L06E8:	tax
 	adc     #$0F
 	sta     _rightSide
 ;
-; topSide = originY + 1;
+; topSide = originY + 4;
 ;
 	dey
 	lda     (sp),y
 	clc
-	adc     #$01
+	adc     #$04
 	sta     _topSide
 ;
-; bottomSide = originY + 16;
+; bottomSide = originY + 12;
 ;
 	lda     (sp),y
 	clc
-	adc     #$10
+	adc     #$0C
 	sta     _bottomSide
 ;
 ; if ( ( (direction & PAD_LEFT) != 0 ) ) {
