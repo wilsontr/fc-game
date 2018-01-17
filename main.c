@@ -40,6 +40,9 @@ static u8 playerY;
 static u8 enemyIndex = 0;
 static u8 frameCount;
 static u8 enemyColliding = 0;
+static u8 i;
+static u16 collisionIndex;
+static u8 screenX, screenY;
 
 #pragma data-name(pop)
 #pragma bss-name (pop)
@@ -54,7 +57,7 @@ static u16 testCorner;
 
 extern const u8 paldat[];
 
-static u8 i;
+
 static u8 pad, oamSpriteIndex;
 static u8 touch;
 static u8 spriteFlickerIndex = 0;
@@ -145,7 +148,7 @@ const u8 enemySpriteDataTemplate[17] = {
 };
 
 static u8 enemySpriteData[10][17];
-static enemy currentEnemy;
+static enemy * currentEnemy;
 
 void killPotion(void);
 void setupMap(void);
@@ -311,8 +314,8 @@ void __fastcall__ four_SidesSmall(u8 originX, u8 originY) {
 	bottomSide = originY + 7;
 }
 
-u16 __fastcall__ getCollisionIndex(u8 screenX, u8 screenY) {
-	return ( screenX >> 3 ) + ( ( screenY >> 3 ) << 5);
+void __fastcall__ getCollisionIndex(u8 screenX, u8 screenY) {
+	collisionIndex = ( screenX >> 3 ) + ( ( screenY >> 3 ) << 5);
 }
 
 
@@ -324,18 +327,18 @@ u8 __fastcall__ smallCollideCheckVertical(u8 originX, u8 originY, u8 direction) 
 	bottomSide = originY + 8;
 
 	if ( ( (direction & PAD_UP) != 0) ) {
-		testCorner = getCollisionIndex(rightSide, topSide);
-		if ( collisionMap[testCorner] == 0 ) {
-			testCorner = getCollisionIndex(leftSide, topSide);
+		getCollisionIndex(rightSide, topSide);
+		if ( collisionMap[collisionIndex] == 0 ) {
+			getCollisionIndex(leftSide, topSide);
 		}
 	} else if ( (direction & PAD_DOWN) != 0 ) {
-		testCorner = getCollisionIndex(rightSide, bottomSide);
-		if ( collisionMap[testCorner] == 0 ) {
-			testCorner = getCollisionIndex(leftSide, bottomSide);
+		getCollisionIndex(rightSide, bottomSide);
+		if ( collisionMap[collisionIndex] == 0 ) {
+			getCollisionIndex(leftSide, bottomSide);
 		}
 	}
 
-	return collisionMap[testCorner];
+	return collisionMap[collisionIndex];
 }
 
 
@@ -347,59 +350,41 @@ u8 __fastcall__ collideCheckVertical(u8 originX, u8 originY, u8 direction) {
 	bottomSide = originY + 17;
 
 	if ( ( (direction & PAD_UP) != 0) ) {
-		testCorner = getCollisionIndex(rightSide, topSide);
-		if ( collisionMap[testCorner] == 0 ) {
-			testCorner = getCollisionIndex(leftSide, topSide);
+		getCollisionIndex(rightSide, topSide);
+		if ( collisionMap[collisionIndex] == 0 ) {
+			getCollisionIndex(leftSide, topSide);
 		}
 	} else if ( (direction & PAD_DOWN) != 0 ) {
-		testCorner = getCollisionIndex(rightSide, bottomSide);
-		if ( collisionMap[testCorner] == 0 ) {
-			testCorner = getCollisionIndex(leftSide, bottomSide);
+		getCollisionIndex(rightSide, bottomSide);
+		if ( collisionMap[collisionIndex] == 0 ) {
+			getCollisionIndex(leftSide, bottomSide);
 		}
 	}
 
-	return collisionMap[testCorner];
+	return collisionMap[collisionIndex];
 }
 
-/*
-u8 __fastcall__ collideCheckHorizontal(u8 originX, u8 originY, u8 direction) {
+void collideCheckHorizontal(u8 originX, u8 originY, u8 direction) {
 
 	leftSide = originX + 1;
 	rightSide = originX + 15;
 	topSide = originY + 1;
 	bottomSide = originY + 16;
 
+
 	if ( ( (direction & PAD_LEFT) != 0 ) ) {
-		testCorner = getCollisionIndex(leftSide, topSide);
-		if ( collisionMap[testCorner] == 0 ) {
-			testCorner = getCollisionIndex(leftSide, bottomSide);
+		getCollisionIndex(leftSide, topSide);
+		if ( collisionMap[collisionIndex] == 0 ) {
+			getCollisionIndex(leftSide, bottomSide);
 		}
 	} else if ( (direction & PAD_RIGHT) != 0 ) {
-		testCorner = getCollisionIndex(rightSide, topSide);
-		if ( collisionMap[testCorner] == 0 ) {
-			testCorner = getCollisionIndex(rightSide, bottomSide);
+		getCollisionIndex(rightSide, topSide);
+		if ( collisionMap[collisionIndex] == 0 ) {
+			getCollisionIndex(rightSide, bottomSide);
 		}
 	}
 
-	return collisionMap[testCorner];
-}
-*/
-
-void simpleCollideCheckHorizontal(u8 originX, u8 originY, u8 direction) {
-
-	if ( ( (direction & PAD_LEFT) != 0 ) ) {
-		testCorner = getCollisionIndex(originX + 1, originY);
-		if ( collisionMap[testCorner] == 0 ) {
-			testCorner = getCollisionIndex(originX + 1, originY + 16);
-		}
-	} else if ( (direction & PAD_RIGHT) != 0 ) {
-		testCorner = getCollisionIndex(originX + 15, originY);
-		if ( collisionMap[testCorner] == 0 ) {
-			testCorner = getCollisionIndex(originX + 15, originY + 16);
-		}
-	}
-
-	horizontalCollideCheck = collisionMap[testCorner];
+	horizontalCollideCheck = collisionMap[collisionIndex];
 }
 
 
@@ -417,7 +402,7 @@ u8 __fastcall__ bgVertCollideCheck(u8 *x, u8 *y, u8 dir) {
 }
 
 void __fastcall__ bgHorizCollideCheck(u8 *x, u8 *y, u8 dir) {
-	simpleCollideCheckHorizontal(*x, *y, dir);
+	collideCheckHorizontal(*x, *y, dir);
 	if ( horizontalCollideCheck == 1 ) {
 		if ( dir & PAD_LEFT ) {
 			*x = (*x & 0xf8) + 8;
@@ -427,45 +412,18 @@ void __fastcall__ bgHorizCollideCheck(u8 *x, u8 *y, u8 dir) {
 	}
 }
 
-/*
 
-u8 __fastcall__ enemyCollideCheck(void) {
-
-	static u8 enemyTop;
-	static u8 enemyBottom;
-	static u8 enemyLeft;
-	static u8 enemyRight;
-	enemyColliding = 0;
-
-	for ( enemyIndex = 0; enemyIndex < numEnemies; ++enemyIndex ) {
-		enemyTop = enemyData[enemyIndex].y + 2;
-		enemyBottom = enemyData[enemyIndex].y + 14;
-		enemyLeft = enemyData[enemyIndex].x + 2;
-		enemyRight = enemyData[enemyIndex].x + 14;
-
-		if ( !( rightSide < enemyLeft  || 
-				leftSide >= enemyRight || 
-				bottomSide <  enemyTop || 
-				topSide    >= enemyBottom ) ) {
-			enemyColliding = 1;
-		}		
-	}
-
-	return enemyColliding;
-}
-*/
-
-void simpleEnemyCollideCheck(void) {
+void enemyCollideCheck(void) {
 
 	enemyIndex = 0;
 	enemyColliding = 0;
 
 	while ( !enemyColliding && ( enemyIndex < numEnemies ) ) {
-		currentEnemy = enemyData[enemyIndex];
-		enemyTop = currentEnemy.y + 2;
-		enemyBottom = currentEnemy.y + 14;
-		enemyLeft = currentEnemy.x + 2;
-		enemyRight = currentEnemy.x + 14;
+		currentEnemy = &(enemyData[enemyIndex]);
+		enemyTop = (*currentEnemy).y + 2;
+		enemyBottom = (*currentEnemy).y + 14;
+		enemyLeft = (*currentEnemy).x + 2;
+		enemyRight = (*currentEnemy).x + 14;
 
 		if ( !( rightSide  <  enemyLeft  || 
 				leftSide   >= enemyRight || 
@@ -478,16 +436,21 @@ void simpleEnemyCollideCheck(void) {
 }
 
 void potionEnemyCollideCheck(void) {
+	enemyColliding = 0;
+
 	if ( potionIsActive ) {
 		four_SidesSmall(potionX, potionY);
-		simpleEnemyCollideCheck();
+		enemyCollideCheck();
 		if ( enemyColliding ) {
 			//enemyData[eJ].collidingWithPotion = 1;
 			killPotion();
 		} else {
 			//enemyData[eJ].collidingWithPotion = 0;
 		}
+
 	}
+
+	enemyColliding = 0;
 
 }
 
@@ -562,23 +525,24 @@ void updateEnemies(void) {
 
 	static u8 i, vertCollide, horizCollide;
 	for ( i = 0; i < numEnemies; i++ ) {
-		vertCollide = collideCheckVertical(enemyData[i].x, enemyData[i].y + 1, PAD_DOWN);
+		currentEnemy = &(enemyData[i]);
+		vertCollide = collideCheckVertical((*currentEnemy).x, (*currentEnemy).y + 1, PAD_DOWN);
 		if ( vertCollide != TILE_ALLCOLLIDE ) {
-			enemyData[i].y += 1;
+			(*currentEnemy).y += 1;
 		} else {
-			if ( enemyData[i].direction == PAD_RIGHT ) {
-				enemyData[i].x += 1;
-				 simpleCollideCheckHorizontal(enemyData[i].x, enemyData[i].y, PAD_RIGHT);
+			if ( (*currentEnemy).direction == PAD_RIGHT ) {
+				(*currentEnemy).x += 1;
+				 collideCheckHorizontal((*currentEnemy).x, (*currentEnemy).y, PAD_RIGHT);
 				if ( ( horizontalCollideCheck == TILE_ALLCOLLIDE ) || ( horizontalCollideCheck == TILE_ENEMYCOLLIDE ) ) {
 					flipSprite(enemySpriteData[i], 0);
-					enemyData[i].direction = PAD_LEFT;
+					(*currentEnemy).direction = PAD_LEFT;
 				}
 			} else {
-				enemyData[i].x -= 1;
-				simpleCollideCheckHorizontal(enemyData[i].x, enemyData[i].y, PAD_LEFT);
+				(*currentEnemy).x -= 1;
+				collideCheckHorizontal((*currentEnemy).x, (*currentEnemy).y, PAD_LEFT);
 				if ( ( horizontalCollideCheck == TILE_ALLCOLLIDE ) || ( horizontalCollideCheck == TILE_ENEMYCOLLIDE ) ) {
 					flipSprite(enemySpriteData[i], 1);
-					enemyData[i].direction = PAD_RIGHT;
+					(*currentEnemy).direction = PAD_RIGHT;
 				}
 			}			
 		}
@@ -625,6 +589,21 @@ void updatePlayerVerticalMovement(void) {
 	}
 
 	++playerJumpCounter;
+}
+
+void simpleUpdatePlayerVerticalMovement(void) {
+	if ( ( pad & PAD_A ) && ( !playerJumping ) ) {
+		playerVertVel = PLAYER_INIT_JUMP_VEL;
+		playerJumping = 1;
+		playerJumpCounter = 0;
+	} 	
+
+	// stop ascent when player releases A button
+	if ( !( pad & PAD_A ) && playerJumping && ( playerVertVel > 0 ) ) {
+		playerVertVel = 0;
+	}
+
+
 }
 
 void playerMoveHorizontal(void) {	
@@ -819,10 +798,11 @@ void main(void)
 		playerMoveHorizontal();
 		updatePlayerVerticalMovement();
 		updatePlayerAttack();
-		simpleUpdatePotionMovement();
+		updatePotionMovement();
 
-		//four_Sides(playerX, playerY);
-		simpleEnemyCollideCheck();
+		enemyColliding = 0;
+		four_Sides(playerX, playerY);
+		enemyCollideCheck();
 		playerEnemyColliding = enemyColliding;
 		potionEnemyCollideCheck();
 
