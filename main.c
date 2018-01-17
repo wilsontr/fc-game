@@ -30,6 +30,11 @@ typedef uint16_t u16;
 
 #define PLAYER_INIT_JUMP_VEL 	 4
 
+#define ENEMY_STATE_NORMAL 		 0
+#define ENEMY_STATE_MUSHROOM	 1
+
+#define POTION_TOSS_WAIT_TIME	60
+
 
 #pragma bss-name (push, "ZEROPAGE")
 #pragma data-name (push, "ZEROPAGE")
@@ -43,6 +48,10 @@ static u8 enemyColliding = 0;
 static u8 i;
 static u16 collisionIndex;
 static u8 leftSide, rightSide, topSide, bottomSide;
+static u8 enemyVertCollide;
+static u8 potionX;
+static u8 potionY;
+static u8 potionTossTimer;
 
 #pragma data-name(pop)
 #pragma bss-name (pop)
@@ -75,7 +84,7 @@ static u8 playerFrame = 0;
 static u8 playerJumping = 0;
 static u8 playerJumpCounter = 0;
 static signed char playerVertVel = 0;
-static u8 jumpButtonPressed = 0;
+static u8 jumpButtonReset = 1;
 
 
 const u8 playerFrames[2][4] = {
@@ -94,8 +103,6 @@ u8 playerSpriteData[17] = {
 
 /* Potion */
 
-static u8 potionX = -8;
-static u8 potionY = -8;
 static u8 potionIsActive = 0;
 static u8 potionDirection;
 static signed char potionVerticalVel = 0;
@@ -103,6 +110,16 @@ static u8 potionMoveCounter = 0;
 
 u8 potionSpriteData[5] = {
 	0, 0, 0x2A, 0x0,
+	128
+};
+
+/* Mushroom */
+
+const u8 mushroomSpriteDataTemplate[17] = {
+	0, 0, 0x2B, 0x2,
+	8, 0, 0x2C, 0x2,
+	0, 8, 0x3B, 0x2,
+	8, 8, 0x3C, 0x2,
 	128
 };
 
@@ -116,6 +133,7 @@ static u8 enemyTop;
 static u8 enemyBottom;
 static u8 enemyLeft;
 static u8 enemyRight;
+static u8 enemyCollidedIndex = 0;
 
 
 
@@ -125,6 +143,7 @@ struct enemyStruct {
 	u8 frame;
 	u8 direction;
 	u8 collidingWithPotion;
+	u8 state;
 };
 
 typedef struct enemyStruct enemy;
@@ -187,6 +206,10 @@ void setupMap(void) {
 	u8 mapY = 0;
 	u16 index = 0;
 	enemy newEnemy = { 0, 0, 0, PAD_LEFT };
+	potionTossTimer = 0;
+
+	potionX = -8;
+	potionY = -8;
 
 	enemyIndex = 0;
 	
@@ -204,6 +227,7 @@ void setupMap(void) {
 			enemyData[enemyIndex].y = (mapY << 3) - 1;
 			enemyData[enemyIndex].direction = ( collByte == TILE_ENEMY1START_RIGHT ) ? PAD_RIGHT : PAD_LEFT;
 			enemyData[enemyIndex].collidingWithPotion = 0;
+			enemyData[enemyIndex].state = ENEMY_STATE_NORMAL;
 
 			for ( k = 0; k < ENEMY_DATA_SIZE; ++k ) {
 				enemySpriteData[enemyIndex][k] = enemySpriteDataTemplate[k];
@@ -320,22 +344,28 @@ void updateEnemySprites(void) {
 
 		spriteFlickerIndex = spriteCount();
 		
-		// animate
-		if ( ( frameCount & 0x0F ) == 0x0F ) {
-			enemyData[spriteFlickerIndex].frame ^= 1;
-			setSpriteFrame(enemySpriteData[spriteFlickerIndex], enemyFrames[enemyData[spriteFlickerIndex].frame]);
-		}
+		if ( enemyData[spriteFlickerIndex].state == ENEMY_STATE_NORMAL ) {
+			// animate
+			if ( ( frameCount & 0x0F ) == 0x0F ) {
+				enemyData[spriteFlickerIndex].frame ^= 1;
+				setSpriteFrame(enemySpriteData[spriteFlickerIndex], enemyFrames[enemyData[spriteFlickerIndex].frame]);
+			}
 
-		if ( enemyData[spriteFlickerIndex].collidingWithPotion ) {
-			setSpritePalette(enemySpriteData[spriteFlickerIndex], 0x0);
+			if ( enemyData[spriteFlickerIndex].collidingWithPotion ) {
+				setSpritePalette(enemySpriteData[spriteFlickerIndex], 0x0);
+			} else {
+				setSpritePalette(enemySpriteData[spriteFlickerIndex], 0x3);
+			}			
+
+			setSpritePriority(enemySpriteData[i], sprPriorityToggle);
+			sprPriorityToggle ^= 1;
+			oamSpriteIndex = oam_meta_spr(enemyData[spriteFlickerIndex].x, enemyData[spriteFlickerIndex].y, oamSpriteIndex, enemySpriteData[spriteFlickerIndex]);				
 		} else {
-			setSpritePalette(enemySpriteData[spriteFlickerIndex], 0x3);
+			setSpritePriority(enemySpriteData[i], sprPriorityToggle);
+			sprPriorityToggle ^= 1;
+			oamSpriteIndex = oam_meta_spr(enemyData[spriteFlickerIndex].x, enemyData[spriteFlickerIndex].y, oamSpriteIndex, mushroomSpriteDataTemplate);							
 		}
-
 		
-		setSpritePriority(enemySpriteData[i], sprPriorityToggle);
-		sprPriorityToggle ^= 1;
-		oamSpriteIndex = oam_meta_spr(enemyData[spriteFlickerIndex].x, enemyData[spriteFlickerIndex].y, oamSpriteIndex, enemySpriteData[spriteFlickerIndex]);	
 	}	
 }
 
@@ -440,9 +470,7 @@ u8 __fastcall__ collideCheckVertical(u8 originX, u8 originY, u8 direction) {
 		return collisionMap[collisionIndex];	
 	} else {
 		return 0;
-	}
-
-	
+	}	
 }
 
 void collideCheckHorizontal(u8 originX, u8 originY, u8 direction) {
@@ -451,7 +479,6 @@ void collideCheckHorizontal(u8 originX, u8 originY, u8 direction) {
 	rightSide = originX + 15;
 	topSide = originY + 4;
 	bottomSide = originY + 12;
-
 
 	if ( ( (direction & PAD_LEFT) != 0 ) ) {
 		getCollisionIndex(leftSide, topSide);
@@ -498,6 +525,7 @@ void enemyCollideCheck(void) {
 
 	enemyIndex = 0;
 	enemyColliding = 0;
+	enemyCollidedIndex = 0;
 
 	while ( !enemyColliding && ( enemyIndex < numEnemies ) ) {
 		currentEnemy = &(enemyData[enemyIndex]);
@@ -511,6 +539,7 @@ void enemyCollideCheck(void) {
 				bottomSide <  enemyTop   || 
 				topSide    >= enemyBottom ) ) {
 			enemyColliding = 1;
+			enemyCollidedIndex = enemyIndex;
 		}		
 		++enemyIndex;
 	}
@@ -523,12 +552,9 @@ void potionEnemyCollideCheck(void) {
 		four_SidesSmall(potionX, potionY);
 		enemyCollideCheck();
 		if ( enemyColliding ) {
-			//enemyData[eJ].collidingWithPotion = 1;
 			killPotion();
-		} else {
-			//enemyData[eJ].collidingWithPotion = 0;
+			enemyData[enemyCollidedIndex].state = ENEMY_STATE_MUSHROOM;
 		}
-
 	}
 
 	enemyColliding = 0;
@@ -539,13 +565,15 @@ void potionEnemyCollideCheck(void) {
 
 /*********** State Management ***********/
 
-void updateEnemies(void) {
+void updateEnemyMovement(void) {
 
-	static u8 i, vertCollide, horizCollide;
 	for ( i = 0; i < numEnemies; i++ ) {
 		currentEnemy = &(enemyData[i]);
-		vertCollide = collideCheckVertical((*currentEnemy).x, (*currentEnemy).y + 1, PAD_DOWN);
-		if ( vertCollide != TILE_ALLCOLLIDE ) {
+		if ( (*currentEnemy).state == ENEMY_STATE_MUSHROOM ) {
+			continue;
+		}
+		enemyVertCollide = collideCheckVertical((*currentEnemy).x, (*currentEnemy).y + 1, PAD_DOWN);
+		if ( enemyVertCollide != TILE_ALLCOLLIDE ) {
 			(*currentEnemy).y += 1;
 		} else {
 			if ( (*currentEnemy).direction == PAD_RIGHT ) {
@@ -572,6 +600,10 @@ void updateEnemies(void) {
 void updatePlayerVerticalMovement(void) {
 
 	u8 collideBottom = 1;
+
+	if ( !(pad & PAD_A ) ) {
+		jumpButtonReset = 1;
+	}
 
 	// stop ascent when player releases A button
 	if ( !( pad & PAD_A ) && playerJumping && ( playerVertVel > 0 ) ) {
@@ -606,11 +638,11 @@ void updatePlayerVerticalMovement(void) {
 		playerJumpCounter = 0;
 	}
 
-
-	if ( ( pad & PAD_A ) && ( !playerJumping ) && ( collideBottom ) ) {
+	if ( ( pad & PAD_A ) && ( !playerJumping ) && ( collideBottom ) && ( jumpButtonReset ) ) {
 		playerVertVel = PLAYER_INIT_JUMP_VEL;
 		playerJumping = 1;
 		playerJumpCounter = 0;
+		jumpButtonReset = 0;
 	} 	
 
 	++playerJumpCounter;
@@ -636,7 +668,7 @@ void playerMoveHorizontal(void) {
 
 
 void  updatePlayerAttack(void) {
-	if ( pad & PAD_B ) {
+	if ( ( pad & PAD_B ) && ( potionTossTimer == 0 ) ) {
 		// spawn a potion
 		if ( !potionIsActive ) {
 			potionIsActive = 1;
@@ -649,12 +681,19 @@ void  updatePlayerAttack(void) {
 			}
 			potionDirection = playerDir;
 			potionVerticalVel = POTION_INIT_VERTICAL_VEL;
+			++potionTossTimer;
 		}
 	}
 }
 
 void __fastcall__ updatePotionMovement(void) {
 	u8 potionCollided = 0;
+	if ( potionTossTimer > 0 ) {
+		++potionTossTimer;
+		if ( potionTossTimer >= POTION_TOSS_WAIT_TIME ) {
+			potionTossTimer = 0;
+		}
+	}
 	if ( potionIsActive ) {
 		/* horizontal movement */
 		if ( potionDirection == PAD_LEFT ) {
@@ -721,7 +760,6 @@ void __fastcall__ simpleUpdatePotionMovement(void) {
 		if ( ( potionX <= 8 ) || ( potionX >= 248 ) ) {
 			potionCollided = 1;
 		}
-
 
 		++potionMoveCounter;
 
@@ -804,7 +842,7 @@ void main(void)
 		updatePotionSprite();
 		spriteCount();
 
-		updateEnemies();
+		updateEnemyMovement();
 		playerMoveHorizontal();
 		updatePlayerVerticalMovement();
 		updatePlayerAttack();
