@@ -32,6 +32,7 @@ typedef uint16_t u16;
 
 #define ENEMY_STATE_NORMAL 		 0
 #define ENEMY_STATE_MUSHROOM	 1
+#define ENEMY_STATE_DEAD		 3
 
 #define POTION_TOSS_WAIT_TIME	60
 
@@ -360,7 +361,7 @@ void updateEnemySprites(void) {
 			setSpritePriority(enemySpriteData[i], sprPriorityToggle);
 			sprPriorityToggle ^= 1;
 			oamSpriteIndex = oam_meta_spr(enemyData[spriteFlickerIndex].x, enemyData[spriteFlickerIndex].y, oamSpriteIndex, enemySpriteData[spriteFlickerIndex]);				
-		} else {
+		} else if ( enemyData[spriteFlickerIndex].state == ENEMY_STATE_MUSHROOM ) {
 			setSpritePriority(enemySpriteData[i], sprPriorityToggle);
 			sprPriorityToggle ^= 1;
 			oamSpriteIndex = oam_meta_spr(enemyData[spriteFlickerIndex].x, enemyData[spriteFlickerIndex].y, oamSpriteIndex, mushroomSpriteDataTemplate);							
@@ -387,9 +388,7 @@ void updatePlayerSprite(void) {
 }
 
 void updatePotionSprite(void) {
-	//if ( potionIsActive ) {
-		oamSpriteIndex = oam_meta_spr(potionX, potionY, oamSpriteIndex, potionSpriteData);	
-	//}
+	oamSpriteIndex = oam_meta_spr(potionX, potionY, oamSpriteIndex, potionSpriteData);	
 }
 
 /*********** Collision Checking ***********/
@@ -538,8 +537,20 @@ void enemyCollideCheck(void) {
 				leftSide   >= enemyRight || 
 				bottomSide <  enemyTop   || 
 				topSide    >= enemyBottom ) ) {
-			enemyColliding = 1;
-			enemyCollidedIndex = enemyIndex;
+
+			switch ( (*currentEnemy).state ) {
+				case ENEMY_STATE_NORMAL: 
+					enemyColliding = 1;
+					enemyCollidedIndex = enemyIndex;
+					break;
+				case ENEMY_STATE_MUSHROOM:
+					(*currentEnemy).state = ENEMY_STATE_DEAD;
+					break;
+				case ENEMY_STATE_DEAD:
+					break;
+
+			}
+			
 		}		
 		++enemyIndex;
 	}
@@ -770,12 +781,11 @@ void __fastcall__ simpleUpdatePotionMovement(void) {
 	}
 }
 
-void __fastcall__ killPotion(void) {
+void killPotion(void) {
 	potionIsActive = 0;
 	potionX = -8;
 	potionY = -8;
 }
-
 
 /*********** Main ***********/
 
@@ -784,14 +794,10 @@ void main(void)
 
 	// TODO next:
 
-	// Optimize main loop
-	// Try using globals instead of function parameters to save on cycles
+	// - animate player/monster walks properly
+	// - add ladders
 
-	// - work on mechanics
 	// - study enemy behavior in games
-	// - make const array of map data and write js to automate building it from CSVs
-	// - continue refactoring, break out code into modules
-	// - if PRG ROM runs short, switch to NROM-256 or pack map data
 
 
 	memcpy(palSprites, paldat, 16);
@@ -860,6 +866,8 @@ void main(void)
 		} else {
 			setSpritePalette(playerSpriteData, 0x3);
 		}
+
+		oam_hide_rest(oamSpriteIndex);
 
 		++frameCount;
 	}
