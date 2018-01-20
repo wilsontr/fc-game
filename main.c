@@ -20,6 +20,7 @@ typedef uint16_t u16;
 #define TILE_PLAYERSTART  		3
 #define TILE_ENEMY1START_LEFT 	4	
 #define TILE_ENEMY1START_RIGHT	5	
+#define TILE_LADDER				6
 
 #define MAX_JUMP_HEIGHT			 100
 
@@ -56,6 +57,8 @@ static u8 potionTossTimer;
 
 #pragma data-name(pop)
 #pragma bss-name (pop)
+
+static uint8_t * collisionMap;
 
 
 /* Commonly-used test variables */
@@ -211,6 +214,8 @@ void setupMap(void) {
 
 	potionX = -8;
 	potionY = -8;
+
+	collisionMap = (u8 *) map1_coll;
 
 	enemyIndex = 0;
 	
