@@ -181,6 +181,7 @@ const u8 enemySpriteDataTemplate[17] = {
 
 static u8 enemySpriteData[10][17];
 static enemy * currentEnemy;
+static u8 * currentEnemySprite;
 
 void killPotion(void);
 void setupMap(void);
@@ -340,15 +341,18 @@ void updateEnemySprites(void) {
 	for ( i = 0; i < numEnemies; ++i ) {
 
 		spriteFlickerIndex = spriteCount();
+
+		currentEnemy = &(enemyData[spriteFlickerIndex]);
+		//currentEnemySprite = &(enemySpriteData[spriteFlickerIndex]);
 		
-		if ( enemyData[spriteFlickerIndex].state == ENEMY_STATE_NORMAL ) {
+		if ( (*currentEnemy).state == ENEMY_STATE_NORMAL ) {
 			// animate
 			if ( ( frameCount & 0x0F ) == 0x0F ) {
-				enemyData[spriteFlickerIndex].frame ^= 1;
-				setSpriteFrame(enemySpriteData[spriteFlickerIndex], enemyFrames[enemyData[spriteFlickerIndex].frame]);
+				(*currentEnemy).frame ^= 1;
+				setSpriteFrame(enemySpriteData[spriteFlickerIndex], enemyFrames[(*currentEnemy).frame]);
 			}
 
-			if ( enemyData[spriteFlickerIndex].collidingWithPotion ) {
+			if ( (*currentEnemy).collidingWithPotion ) {
 				setSpritePalette(enemySpriteData[spriteFlickerIndex], 0x0);
 			} else {
 				setSpritePalette(enemySpriteData[spriteFlickerIndex], 0x3);
@@ -356,11 +360,11 @@ void updateEnemySprites(void) {
 
 			setSpritePriority(enemySpriteData[i], sprPriorityToggle);
 			sprPriorityToggle ^= 1;
-			oamSpriteIndex = oam_meta_spr(enemyData[spriteFlickerIndex].x, enemyData[spriteFlickerIndex].y, oamSpriteIndex, enemySpriteData[spriteFlickerIndex]);				
-		} else if ( enemyData[spriteFlickerIndex].state == ENEMY_STATE_MUSHROOM ) {
+			oamSpriteIndex = oam_meta_spr((*currentEnemy).x, (*currentEnemy).y, oamSpriteIndex, enemySpriteData[spriteFlickerIndex]);				
+		} else if ( (*currentEnemy).state == ENEMY_STATE_MUSHROOM ) {
 			setSpritePriority(enemySpriteData[i], sprPriorityToggle);
 			sprPriorityToggle ^= 1;
-			oamSpriteIndex = oam_meta_spr(enemyData[spriteFlickerIndex].x, enemyData[spriteFlickerIndex].y, oamSpriteIndex, mushroomSpriteDataTemplate);							
+			oamSpriteIndex = oam_meta_spr((*currentEnemy).x, (*currentEnemy).y, oamSpriteIndex, mushroomSpriteDataTemplate);							
 		}
 		
 	}	
@@ -416,7 +420,7 @@ void __fastcall__ four_SidesSmall(u8 originX, u8 originY) {
 }
 
 void __fastcall__ getCollisionIndex(u8 screenX, u8 screenY) {
-	collisionIndex = ( screenX >> 3 ) + ( ( screenY >> 3 ) << 5);
+	collisionIndex = ( screenX >> 3 ) + ( ( screenY & 0xF8 ) << 2);
 }
 
 
@@ -684,15 +688,23 @@ void updatePlayerVerticalAcceleration(void) {
 		}			
 	}
 
-	if ( ( collideBottom ) && ( pad & PAD_UP ) ) {
-		checkPlayerLadderCollision();
-	}
+	if ( collideBottom ) {
+		if ( pad & PAD_UP )  {
+			checkPlayerLadderCollision();
+		}
 
-	if ( ( collideBottom ) && ( pad & PAD_DOWN ) && ( collideCheckTile == TILE_LADDER_TOP ) ) {
-		playerY++;
-		checkPlayerLadderCollision();
-	}
+		if ( ( pad & PAD_DOWN ) && ( collideCheckTile == TILE_LADDER_TOP ) ) {
+			playerY++;
+			checkPlayerLadderCollision();
+		}
 
+		if ( ( collideBottom ) && ( !playerJumping ) && ( jumpButtonReset ) && ( pad & PAD_A ) ) {
+			playerVertVel = PLAYER_INIT_JUMP_VEL;
+			playerJumping = 1;
+			playerJumpCounter = 0;
+			jumpButtonReset = 0;
+		} 	
+	}
 
 	// acceleration toward ground
 	// setting max fall speed more than -3 causes falls through the floor - why?
@@ -701,12 +713,6 @@ void updatePlayerVerticalAcceleration(void) {
 		playerJumpCounter = 0;
 	}
 
-	if ( ( collideBottom ) && ( !playerJumping ) && ( jumpButtonReset ) && ( pad & PAD_A ) ) {
-		playerVertVel = PLAYER_INIT_JUMP_VEL;
-		playerJumping = 1;
-		playerJumpCounter = 0;
-		jumpButtonReset = 0;
-	} 	
 
 	++playerJumpCounter;
 }
@@ -840,7 +846,7 @@ void __fastcall__ updatePotionMovement(void) {
 	}
 }
 
-void __fastcall__ simpleUpdatePotionMovement(void) {
+void simpleUpdatePotionMovement(void) {
 	u8 potionCollided = 0;
 	if ( potionIsActive ) {
 		/* horizontal movement */
@@ -877,7 +883,8 @@ void main(void)
 	// TODO next:
 
 	// - animate player/monster walks properly
-	// - add ladders
+	// - dumb jump
+	// - optimize (max enemies onscreen before slowdown = 4)
 
 	// - study enemy behavior in games
 
