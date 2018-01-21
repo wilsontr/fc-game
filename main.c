@@ -482,27 +482,37 @@ void checkPlayerLadderCollision(void) {
 	u16 checkLeft;
 	u16 checkRight;
 
-	leftSide = playerX + 2;
-	rightSide = playerX + 14;
-	topSide = playerY + 4;
-	bottomSide = playerY + 14;
+	leftSide = playerX + 3;
+	rightSide = playerX + 11;
+	topSide = playerY + 9;
+	bottomSide = playerY + 16;
 
-	getCollisionIndex(leftSide, topSide);
+	getCollisionIndex(leftSide, bottomSide);
 	checkLeft = collisionIndex;
 
 	getCollisionIndex(rightSide, bottomSide);
 	checkRight = collisionIndex;
 
-	if ( ( collisionMap[checkLeft] == TILE_LADDER ) && ( collisionMap[checkRight] == TILE_LADDER ) ) {
+	if (
+		( ( collisionMap[checkLeft] == TILE_LADDER )  || ( collisionMap[checkLeft] == TILE_LADDER_TOP ) ) &&
+		( ( collisionMap[checkRight] == TILE_LADDER ) || ( collisionMap[checkRight] == TILE_LADDER_TOP ) ) 
+		)
+	{
 		playerState = PLAYER_STATE_CLIMBING;
-		playerX = playerX & 0xf8;
+		if ( collisionMap[checkLeft] == TILE_LADDER ) {
+			playerX = ( playerX + 3)  & 0xf8;	
+		} else if ( collisionMap[checkRight] == TILE_LADDER ) {
+			playerX = ( playerX - 3 ) & 0xf8;
+		}
+	} else {
+		playerState = PLAYER_STATE_NORMAL;
 	}
 }
 
 void collideCheckHorizontal(u8 originX, u8 originY, u8 direction) {
 
-	leftSide = originX + 0;
-	rightSide = originX + 15;
+	leftSide = originX;
+	rightSide = originX + 16;
 	topSide = originY + 4;
 	bottomSide = originY + 12;
 
@@ -674,7 +684,12 @@ void updatePlayerVerticalAcceleration(void) {
 		}			
 	}
 
-	if ( ( pad & PAD_UP ) && ( collideBottom ) /* && ( collideCheckTile == TILE_ALLCOLLIDE ) */ ) {
+	if ( ( collideBottom ) && ( pad & PAD_UP ) ) {
+		checkPlayerLadderCollision();
+	}
+
+	if ( ( collideBottom ) && ( pad & PAD_DOWN ) && ( collideCheckTile == TILE_LADDER_TOP ) ) {
+		playerY++;
 		checkPlayerLadderCollision();
 	}
 
@@ -686,7 +701,7 @@ void updatePlayerVerticalAcceleration(void) {
 		playerJumpCounter = 0;
 	}
 
-	if ( ( pad & PAD_A ) && ( !playerJumping ) && ( collideBottom ) && ( jumpButtonReset ) ) {
+	if ( ( collideBottom ) && ( !playerJumping ) && ( jumpButtonReset ) && ( pad & PAD_A ) ) {
 		playerVertVel = PLAYER_INIT_JUMP_VEL;
 		playerJumping = 1;
 		playerJumpCounter = 0;
@@ -697,7 +712,21 @@ void updatePlayerVerticalAcceleration(void) {
 }
 
 void updatePlayerClimbing(void) {
+	u8 collideCheckTile;
 
+	checkPlayerLadderCollision();
+	
+	if ( pad & PAD_UP ) { 
+		--playerY;
+	} else if ( pad & PAD_DOWN ) {
+		++playerY;
+		collideCheckTile = collideCheckVertical(playerX, playerY + 4, PAD_DOWN);
+		if ( ( collideCheckTile == TILE_ALLCOLLIDE ) || ( collideCheckTile == TILE_LADDER_TOP ) ) { 	
+			playerState = PLAYER_STATE_NORMAL;
+		}	
+	}
+
+	
 }
 
 void updatePlayerVerticalMovement(void) {
