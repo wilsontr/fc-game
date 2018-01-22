@@ -114,6 +114,7 @@ u8 playerSpriteData[17] = {
 	128
 };
 
+u8 * nametableUpdateList;
 
 /* Potion */
 
@@ -401,6 +402,31 @@ void updatePotionSprite(void) {
 	oamSpriteIndex = oam_meta_spr(potionX, potionY, oamSpriteIndex, potionSpriteData);	
 }
 
+void drawScoreboard(void) {
+	// TODO: flesh this out
+	// TODO: set correct pal color (any bg pal entry with white as color #1)
+	// CONSIDER: using separate nametable with sprite zero hit trick
+
+	//pal_col(1,0x30); //set while color
+	vram_adr(NTADR_A(0, 1));
+	vram_fill(0x10, 5);
+}
+
+u8 updateListData[8] = { 
+	MSB(NTADR_A(0, 1)) | NT_UPD_HORZ, // MSB
+	LSB(NTADR_A(0, 1)),  // LSB
+	4, // Byte count
+	0xA1, 0xA2, 0xA3, 0xA4, // Bytes to write
+	NT_UPD_EOF // EOF
+};
+
+u8 updateList[8];
+
+void updateScoreboard(void) {
+	memcpy(updateList, updateListData, sizeof(updateListData));
+
+	set_vram_update(updateList);
+}
 /*********** Collision Checking ***********/
 
 void __fastcall__ four_Sides(u8 originX, u8 originY) {
@@ -900,6 +926,8 @@ void main(void)
 	vram_adr(NAMETABLE_A); //unpack nametable into VRAM
 	vram_unrle(map1);	
 
+	drawScoreboard();
+
 	ppu_on_all(); //enable rendering
 
 	//set initial coords
@@ -931,6 +959,8 @@ void main(void)
 
 		// update player movement
 		pad = pad_poll(i);
+
+		updateScoreboard();
 
 		updatePlayerSprite();
 		updateEnemySprites();
