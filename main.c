@@ -1010,9 +1010,8 @@ void main(void)
 	// TODO next:
 
 	// - animate player/monster walks properly
-	// - dumb jump
-	// - optimize (max enemies onscreen before slowdown = 4)
-
+	// - build a proper level
+	// - add dying/lives/level reset
 	// - study enemy behavior in games
 
 
