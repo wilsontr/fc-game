@@ -36,6 +36,10 @@ typedef uint16_t u16;
 #define PLAYER_STATE_NORMAL		 0
 #define PLAYER_STATE_DEAD		 1
 #define PLAYER_STATE_CLIMBING	 2
+#define PLAYER_STATE_JUMPING	 3
+#define PLAYER_STATE_FALLING	 4
+
+#define PLAYER_FALL_SPEED		 3
 
 #define PLAYER_FRAME_CLIMBING	 2
 
@@ -87,6 +91,12 @@ static u8 palSprites[4];
 static u8 palBG[4];
 
 static u8 horizontalCollideCheck;
+static u8 verticalCollideCheck;
+
+static u8 jumpCollideCheckTile;
+static u8 collideBottom;
+
+static u8 collisionLeft, collisionRight;
 
 
 /* Player */
@@ -269,11 +279,24 @@ void setupMap(void) {
 
 /*********** Sprite Management ***********/
 
+static u8 sSpriteIndex, sFrameIndex;
+static u8 * sSpritePtr, sFramePtr;
+
 void __fastcall__ setSpriteFrame(u8 *sprite, const u8 *frame) {
+	sSpriteIndex = 2;
+	sFrameIndex = 0;
+
+	*(sprite + 2) = *(frame);
+	*(sprite + 6) = *(frame + 1);
+	*(sprite + 10) = *(frame + 2);
+	*(sprite + 14) = *(frame + 3);
+
+	/*
 	sprite[2] = frame[0];
 	sprite[6] = frame[1];
 	sprite[10] = frame[2];
 	sprite[14] = frame[3];
+	*/
 }
 
 void __fastcall__ setSpritePalette(u8 *sprite, u8 palette) {
@@ -328,29 +351,30 @@ void __fastcall__ flipSprite(u8 *sprite, u8 flip) {
 }
 
 
-u8 __fastcall__ spriteCount(void) {
-	++enemySpriteCount;
-	if ( enemySpriteCount >= numEnemies ) {
+void spriteCount(void) {
+	if ( ++enemySpriteCount >= numEnemies ) {
 		enemySpriteCount = 0;
-	}
-	return enemySpriteCount;
+	}	
 }
+
 
 
 void updateEnemySprites(void) {
 	// update enemy sprites
 	for ( i = 0; i < numEnemies; ++i ) {
 
-		spriteFlickerIndex = spriteCount();
+		spriteCount();
+		spriteFlickerIndex = enemySpriteCount;
 
 		currentEnemy = &(enemyData[spriteFlickerIndex]);
-		//currentEnemySprite = &(enemySpriteData[spriteFlickerIndex]);
+		//currentEnemySprite = &(enemySpriteData[spriteFlickerIndex][0]);
 		
 		if ( (*currentEnemy).state == ENEMY_STATE_NORMAL ) {
 			// animate
 			if ( ( frameCount & 0x0F ) == 0x0F ) {
 				(*currentEnemy).frame ^= 1;
 				setSpriteFrame(enemySpriteData[spriteFlickerIndex], enemyFrames[(*currentEnemy).frame]);
+				//setSpriteFrame(currentEnemySprite, enemyFrames[(*currentEnemy).frame]);
 			}
 
 			if ( (*currentEnemy).collidingWithPotion ) {
@@ -359,12 +383,12 @@ void updateEnemySprites(void) {
 				setSpritePalette(enemySpriteData[spriteFlickerIndex], 0x3);
 			}			
 
-			setSpritePriority(enemySpriteData[i], sprPriorityToggle);
-			sprPriorityToggle ^= 1;
+			//setSpritePriority(enemySpriteData[i], sprPriorityToggle);
+			//sprPriorityToggle ^= 1;
 			oamSpriteIndex = oam_meta_spr((*currentEnemy).x, (*currentEnemy).y, oamSpriteIndex, enemySpriteData[spriteFlickerIndex]);				
 		} else if ( (*currentEnemy).state == ENEMY_STATE_MUSHROOM ) {
-			setSpritePriority(enemySpriteData[i], sprPriorityToggle);
-			sprPriorityToggle ^= 1;
+			//setSpritePriority(enemySpriteData[i], sprPriorityToggle);
+			//sprPriorityToggle ^= 1;
 			oamSpriteIndex = oam_meta_spr((*currentEnemy).x, (*currentEnemy).y, oamSpriteIndex, mushroomSpriteDataTemplate);							
 		}
 		
@@ -459,15 +483,16 @@ u8 __fastcall__ smallCollideCheckVertical(u8 originX, u8 originY, u8 direction) 
 
 	collisionIndex = 0;
 
-	if ( ( (direction & PAD_UP) != 0) ) {
-		getCollisionIndex(rightSide, topSide);
+	if ( direction == PAD_UP ) {
+		collisionIndex = ( rightSide >> 3 ) + ( ( topSide & 0xF8 ) << 2);
 		if ( collisionMap[collisionIndex] != TILE_ALLCOLLIDE ) {
-			getCollisionIndex(leftSide, topSide);
+			collisionIndex = ( leftSide >> 3 ) + ( ( topSide & 0xF8 ) << 2);
 		}
-	} else if ( (direction & PAD_DOWN) != 0 ) {
-		getCollisionIndex(rightSide, bottomSide);
+	} else if ( direction == PAD_DOWN ) {
+		collisionIndex = ( rightSide >> 3 ) + ( ( bottomSide & 0xF8 ) << 2);
 		if ( collisionMap[collisionIndex] != TILE_ALLCOLLIDE ) {
-			getCollisionIndex(leftSide, bottomSide);
+			//getCollisionIndex(leftSide, bottomSide);
+			collisionIndex = ( leftSide >> 3 ) + ( ( bottomSide & 0xF8 ) << 2);
 		}
 	}
 
@@ -480,7 +505,7 @@ u8 __fastcall__ smallCollideCheckVertical(u8 originX, u8 originY, u8 direction) 
 }
 
 
-u8 __fastcall__ collideCheckVertical(u8 originX, u8 originY, u8 direction) {
+void __fastcall__ collideCheckVertical(u8 originX, u8 originY, u8 direction) {
 
 	leftSide = originX + 2;
 	rightSide = originX + 14;
@@ -489,28 +514,44 @@ u8 __fastcall__ collideCheckVertical(u8 originX, u8 originY, u8 direction) {
 
 	collisionIndex = 0;
 
-	if ( ( (direction & PAD_UP) != 0) ) {
-		getCollisionIndex(rightSide, topSide);
+	if ( ( (direction == PAD_UP) ) ) {
+		collisionIndex = ( rightSide >> 3 ) + ( ( topSide & 0xF8 ) << 2);
 		if ( collisionMap[collisionIndex] != TILE_ALLCOLLIDE )  {
-			getCollisionIndex(leftSide, topSide);
+			collisionIndex = ( leftSide >> 3 ) + ( ( topSide & 0xF8 ) << 2);
 		}
-	} else if ( (direction & PAD_DOWN) != 0 ) {
-		getCollisionIndex(rightSide, bottomSide);
+	} else if ( (direction == PAD_DOWN) ) {
+		collisionIndex = ( rightSide >> 3 ) + ( ( bottomSide & 0xF8 ) << 2);
 		if ( collisionMap[collisionIndex] != TILE_ALLCOLLIDE ) {
-			getCollisionIndex(leftSide, bottomSide);
+			collisionIndex = ( leftSide >> 3 ) + ( ( bottomSide & 0xF8 ) << 2);
 		}
 	}
 
-	if ( collisionIndex ) {
-		return collisionMap[collisionIndex];	
-	} else {
-		return 0;
-	}	
+	verticalCollideCheck = collisionMap[collisionIndex];	
+}
+
+void __fastcall__ collideCheckHorizontal(u8 originX, u8 originY, u8 direction) {
+
+	leftSide = originX;
+	rightSide = originX + 16;
+	topSide = originY + 4;
+	bottomSide = originY + 12;
+
+	if ( direction == PAD_LEFT ) {
+		collisionIndex = ( leftSide >> 3 ) + ( ( topSide & 0xF8 ) << 2);
+		if ( collisionMap[collisionIndex] == TILE_NOCOLLIDE ) {
+			collisionIndex = ( leftSide >> 3 ) + ( ( bottomSide & 0xF8 ) << 2);
+		}
+	} else if ( direction == PAD_RIGHT ) {
+		getCollisionIndex(rightSide, topSide);
+		if ( collisionMap[collisionIndex] == TILE_NOCOLLIDE ) {
+			collisionIndex = ( rightSide >> 3 ) + ( ( bottomSide & 0xF8 ) << 2);
+		}
+	}
+
+	horizontalCollideCheck = collisionMap[collisionIndex];
 }
 
 void checkPlayerLadderCollision(void) {
-	u16 checkLeft;
-	u16 checkRight;
 
 	leftSide = playerX + 3;
 	rightSide = playerX + 11;
@@ -518,20 +559,20 @@ void checkPlayerLadderCollision(void) {
 	bottomSide = playerY + 16;
 
 	getCollisionIndex(leftSide, bottomSide);
-	checkLeft = collisionIndex;
+	collisionLeft = collisionMap[collisionIndex];
 
 	getCollisionIndex(rightSide, bottomSide);
-	checkRight = collisionIndex;
+	collisionRight = collisionMap[collisionIndex];
 
 	if (
-		( ( collisionMap[checkLeft] == TILE_LADDER )  || ( collisionMap[checkLeft] == TILE_LADDER_TOP ) ) &&
-		( ( collisionMap[checkRight] == TILE_LADDER ) || ( collisionMap[checkRight] == TILE_LADDER_TOP ) ) 
+		( ( collisionLeft == TILE_LADDER )  || ( collisionLeft == TILE_LADDER_TOP ) ) &&
+		( ( collisionRight == TILE_LADDER ) || ( collisionRight == TILE_LADDER_TOP ) ) 
 		)
 	{
 		playerState = PLAYER_STATE_CLIMBING;
-		if ( collisionMap[checkLeft] == TILE_LADDER ) {
-			playerX = ( playerX + 3)  & 0xf8;	
-		} else if ( collisionMap[checkRight] == TILE_LADDER ) {
+		if ( collisionLeft == TILE_LADDER ) {
+			playerX = ( playerX + 3 ) & 0xf8;	
+		} else if ( collisionRight == TILE_LADDER ) {
 			playerX = ( playerX - 3 ) & 0xf8;
 		}
 	} else {
@@ -539,45 +580,20 @@ void checkPlayerLadderCollision(void) {
 	}
 }
 
-void collideCheckHorizontal(u8 originX, u8 originY, u8 direction) {
-
-	leftSide = originX;
-	rightSide = originX + 16;
-	topSide = originY + 4;
-	bottomSide = originY + 12;
-
-	if ( ( (direction & PAD_LEFT) != 0 ) ) {
-		getCollisionIndex(leftSide, topSide);
-		if ( collisionMap[collisionIndex] == TILE_NOCOLLIDE ) {
-			getCollisionIndex(leftSide, bottomSide);
-		}
-	} else if ( (direction & PAD_RIGHT) != 0 ) {
-		getCollisionIndex(rightSide, topSide);
-		if ( collisionMap[collisionIndex] == TILE_NOCOLLIDE ) {
-			getCollisionIndex(rightSide, bottomSide);
-		}
-	}
-
-	horizontalCollideCheck = collisionMap[collisionIndex];
-}
-
-
-u8 __fastcall__ bgVertCollideCheck(u8 *x, u8 *y, u8 dir) {
-	u8 colliding = collideCheckVertical(*x, *y, dir);
-	if ( colliding == 1 ) {
+void __fastcall__ bgVertCollideCheck(u8 *x, u8 *y, u8 dir) {
+	collideCheckVertical(*x, *y, dir);
+	if ( verticalCollideCheck ) {
 		if ( dir & PAD_UP ) {
 			*y = (*y & 0xf8) + 7;
-		//} else if ( dir & PAD_DOWN ) {
 		} else {
 			*y = (*y & 0xf8) - 1;
 		}
 	}
-	return colliding;
 }
 
 void __fastcall__ bgHorizCollideCheck(u8 *x, u8 *y, u8 dir) {
 	collideCheckHorizontal(*x, *y, dir);
-	if ( horizontalCollideCheck == 1 ) {
+	if ( horizontalCollideCheck == TILE_ALLCOLLIDE ) {
 		if ( dir & PAD_LEFT ) {
 			*x = (*x & 0xf8) + 7;
 		} else if ( dir & PAD_RIGHT ) {
@@ -615,9 +631,7 @@ void enemyCollideCheck(void) {
 					break;
 				case ENEMY_STATE_DEAD:
 					break;
-
 			}
-			
 		}		
 		++enemyIndex;
 	}
@@ -650,8 +664,8 @@ void updateEnemyMovement(void) {
 		if ( (*currentEnemy).state == ENEMY_STATE_MUSHROOM ) {
 			continue;
 		}
-		enemyVertCollide = collideCheckVertical((*currentEnemy).x, (*currentEnemy).y + 1, PAD_DOWN);
-		if ( enemyVertCollide != TILE_ALLCOLLIDE ) {
+		collideCheckVertical((*currentEnemy).x, (*currentEnemy).y + 1, PAD_DOWN);
+		if ( verticalCollideCheck != TILE_ALLCOLLIDE ) {
 			(*currentEnemy).y += 1;
 		} else {
 			if ( (*currentEnemy).direction == PAD_RIGHT ) {
@@ -674,15 +688,9 @@ void updateEnemyMovement(void) {
 
 }
 
-void playerStartClimbingUp(void) {
-
-}
-
+/*
 
 void updatePlayerVerticalAcceleration(void) {
-
-	u8 collideBottom = 1;
-	u8 collideCheckTile;
 
 	if ( !(pad & PAD_A ) ) {
 		jumpButtonReset = 1;
@@ -697,14 +705,15 @@ void updatePlayerVerticalAcceleration(void) {
 	if ( playerJumping && ( playerVertVel > 0 ) ) {
 		// moving up, jumping
 		playerY -= playerVertVel;
-		if ( collideCheckVertical(playerX, playerY, PAD_UP) == TILE_ALLCOLLIDE ) { 
+		collideCheckVertical(playerX, playerY, PAD_UP);
+		if ( verticalCollideCheck == TILE_ALLCOLLIDE ) { 
 			playerY = (playerY & 0xF8) + 8;
 		}			
 		collideBottom = 0;
 	} else {
 		// falling
-		collideCheckTile = collideCheckVertical(playerX, playerY + 2, PAD_DOWN);
-		if ( ( collideCheckTile == TILE_ALLCOLLIDE ) || ( collideCheckTile == TILE_LADDER_TOP ) ) { 
+		collideCheckVertical(playerX, playerY + 2, PAD_DOWN);
+		if ( ( verticalCollideCheck == TILE_ALLCOLLIDE ) || ( verticalCollideCheck == TILE_LADDER_TOP ) ) { 
 			playerY = (playerY & 0xF8) + 7;
 			playerJumping = 0;
 			collideBottom = 1;			
@@ -719,12 +728,12 @@ void updatePlayerVerticalAcceleration(void) {
 			checkPlayerLadderCollision();
 		}
 
-		if ( ( pad & PAD_DOWN ) && ( collideCheckTile == TILE_LADDER_TOP ) ) {
+		if ( ( pad & PAD_DOWN ) && ( jumpCollideCheckTile == TILE_LADDER_TOP ) ) {
 			playerY++;
 			checkPlayerLadderCollision();
 		}
 
-		if ( ( collideBottom ) && ( !playerJumping ) && ( jumpButtonReset ) && ( pad & PAD_A ) ) {
+		if ( ( !playerJumping ) && ( jumpButtonReset ) && ( pad & PAD_A ) ) {
 			playerVertVel = PLAYER_INIT_JUMP_VEL;
 			playerJumping = 1;
 			playerJumpCounter = 0;
@@ -742,23 +751,59 @@ void updatePlayerVerticalAcceleration(void) {
 
 	++playerJumpCounter;
 }
+*/
+
+void simpleUpdatePlayerJumpFall(void) {
+	if ( playerJumping ) {
+
+	} else {
+		collideCheckVertical(playerX, playerY + 2, PAD_DOWN);
+		if ( ( verticalCollideCheck == TILE_ALLCOLLIDE ) || ( verticalCollideCheck == TILE_LADDER_TOP ) ) { 
+			playerY = (playerY & 0xF8) + 7;
+			collideBottom = 1;
+			playerState = PLAYER_STATE_NORMAL;			
+
+			if ( pad & PAD_UP )  {
+				checkPlayerLadderCollision();
+			}
+
+			if ( ( pad & PAD_DOWN ) && ( verticalCollideCheck == TILE_LADDER_TOP ) ) {
+				playerY++;
+				checkPlayerLadderCollision();
+			}
+
+			/*
+			if ( ( jumpButtonReset ) && ( pad & PAD_A ) ) {
+				playerVertVel = PLAYER_INIT_JUMP_VEL;
+				playerJumping = 1;
+				playerJumpCounter = 0;
+				jumpButtonReset = 0;
+			} 
+			*/	
+
+		} else {
+			playerY += PLAYER_FALL_SPEED;
+			playerState = PLAYER_STATE_FALLING;
+			collideBottom = 0;
+		}	
+	}
+}
 
 void updatePlayerClimbing(void) {
-	u8 collideCheckTile;
+	u8 jumpCollideCheckTile;
 
 	checkPlayerLadderCollision();
+	
 	
 	if ( pad & PAD_UP ) { 
 		--playerY;
 	} else if ( pad & PAD_DOWN ) {
 		++playerY;
-		collideCheckTile = collideCheckVertical(playerX, playerY + 4, PAD_DOWN);
-		if ( ( collideCheckTile == TILE_ALLCOLLIDE ) || ( collideCheckTile == TILE_LADDER_TOP ) ) { 	
+		collideCheckVertical(playerX, playerY + 4, PAD_DOWN);
+		if ( ( verticalCollideCheck == TILE_ALLCOLLIDE ) || ( verticalCollideCheck == TILE_LADDER_TOP ) ) { 	
 			playerState = PLAYER_STATE_NORMAL;
 		}	
 	}
-
-	
 }
 
 void updatePlayerVerticalMovement(void) {
@@ -766,12 +811,12 @@ void updatePlayerVerticalMovement(void) {
 	if ( playerState == PLAYER_STATE_CLIMBING ) {
 		updatePlayerClimbing(); 
 	} else {
-		updatePlayerVerticalAcceleration();
+		simpleUpdatePlayerJumpFall();
 	}
 }
 
 void playerMoveHorizontal(void) {	
-	if ( playerState == PLAYER_STATE_CLIMBING ) {
+	if ( playerState != PLAYER_STATE_NORMAL ) {
 		return;
 	}
 
