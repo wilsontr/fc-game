@@ -11,7 +11,7 @@ main.s: main.c
 	ca65 $<
 
 map1: 
-	node csv2header.js map1
+	node csv2header.js newmap
 
 #stage1:
 #	node coll_rle.js test_nam_coll

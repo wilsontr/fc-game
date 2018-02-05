@@ -10,4 +10,5 @@
   </properties>
  </tile>
  <tile id="4" type="enemy start"/>
+ <tile id="5" type="ladder"/>
 </tileset>

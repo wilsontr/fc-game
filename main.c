@@ -2,8 +2,8 @@
 
 #include <stdint.h>
 #include "neslib.h"
-#include "map1.h"
-#include "map1_coll.h"
+#include "newmap.h"
+#include "newmap_coll.h"
 
 
 void __fastcall__ memcpy(void *dst, void *src, unsigned int len);
@@ -25,7 +25,8 @@ typedef uint16_t u16;
 
 #define MAX_JUMP_HEIGHT			 100
 
-#define COLLISION_MAP_SIZE 	     960
+// TODO Think about RLE-encoding collision maps again
+#define COLLISION_MAP_SIZE 	     204
 
 #define POTION_HORIZ_VELOCITY	 2
 #define POTION_INIT_VERTICAL_VEL 2
@@ -241,7 +242,7 @@ void setupMap(void) {
 	potionX = -8;
 	potionY = -8;
 
-	collisionMap = (u8 *) map1_coll;
+	collisionMap = (u8 *) newmap_coll;
 
 	enemyIndex = 0;
 	
@@ -249,14 +250,14 @@ void setupMap(void) {
 		collByte = collisionMap[index];
 
 		if ( collByte == TILE_PLAYERSTART ) {
-			playerX = mapX << 3;
-			playerY = (mapY << 3) - 1;
+			playerX = mapX << 4;
+			playerY = (mapY << 4) - 1;
 		}
 		
 		if ( ( collByte == TILE_ENEMY1START_RIGHT ) || ( collByte == TILE_ENEMY1START_LEFT ) ) {
 			enemyData[enemyIndex] = newEnemy;
-			enemyData[enemyIndex].x = mapX << 3;
-			enemyData[enemyIndex].y = (mapY << 3) - 1;
+			enemyData[enemyIndex].x = mapX << 4;
+			enemyData[enemyIndex].y = (mapY << 4) - 1;
 			enemyData[enemyIndex].direction = ( collByte == TILE_ENEMY1START_RIGHT ) ? PAD_RIGHT : PAD_LEFT;
 			enemyData[enemyIndex].collidingWithPotion = 0;
 			enemyData[enemyIndex].state = ENEMY_STATE_NORMAL;
@@ -270,7 +271,7 @@ void setupMap(void) {
 		}
 
 		++mapX;
-		if ( mapX >= 32 ) {
+		if ( mapX >= 16 ) {
 			mapX = 0;
 			++mapY;
 		}
@@ -475,7 +476,8 @@ void __fastcall__ four_SidesSmall(u8 originX, u8 originY) {
 }
 
 void __fastcall__ getCollisionIndex(u8 screenX, u8 screenY) {
-	collisionIndex = ( screenX >> 3 ) + ( ( screenY & 0xF8 ) << 2);
+	//collisionIndex = ( screenX >> 3 ) + ( ( screenY & 0xF8 ) << 2);
+	collisionIndex = ((screenX & 0xf0) >> 4) + (screenY & 0xf0);
 }
 
 
@@ -489,15 +491,18 @@ u8 __fastcall__ smallCollideCheckVertical(u8 originX, u8 originY, u8 direction) 
 	collisionIndex = 0;
 
 	if ( direction & PAD_UP ) {
-		collisionIndex = ( rightSide >> 3 ) + ( ( topSide & 0xF8 ) << 2);
+		//collisionIndex = ( rightSide >> 3 ) + ( ( topSide & 0xF8 ) << 2);
+		getCollisionIndex(rightSide, topSide);
 		if ( collisionMap[collisionIndex] != TILE_ALLCOLLIDE ) {
-			collisionIndex = ( leftSide >> 3 ) + ( ( topSide & 0xF8 ) << 2);
+			//collisionIndex = ( leftSide >> 3 ) + ( ( topSide & 0xF8 ) << 2);
+			getCollisionIndex(leftSide, topSide);
 		}
 	} else if ( direction & PAD_DOWN ) {
-		collisionIndex = ( rightSide >> 3 ) + ( ( bottomSide & 0xF8 ) << 2);
+		//collisionIndex = ( rightSide >> 3 ) + ( ( bottomSide & 0xF8 ) << 2);
+		getCollisionIndex(rightSide, bottomSide);
 		if ( collisionMap[collisionIndex] != TILE_ALLCOLLIDE ) {
-			//getCollisionIndex(leftSide, bottomSide);
-			collisionIndex = ( leftSide >> 3 ) + ( ( bottomSide & 0xF8 ) << 2);
+			//collisionIndex = ( leftSide >> 3 ) + ( ( bottomSide & 0xF8 ) << 2);
+			getCollisionIndex(leftSide, bottomSide);
 		}
 	}
 
@@ -520,14 +525,18 @@ void __fastcall__ collideCheckVertical(u8 originX, u8 originY, u8 direction) {
 	collisionIndex = 0;
 
 	if ( direction & PAD_UP ) {
-		collisionIndex = ( rightSide >> 3 ) + ( ( topSide & 0xF8 ) << 2);
+		//collisionIndex = ( rightSide >> 3 ) + ( ( topSide & 0xF8 ) << 2);
+		getCollisionIndex(rightSide, topSide);
 		if ( collisionMap[collisionIndex] != TILE_ALLCOLLIDE )  {
-			collisionIndex = ( leftSide >> 3 ) + ( ( topSide & 0xF8 ) << 2);
+			//collisionIndex = ( leftSide >> 3 ) + ( ( topSide & 0xF8 ) << 2);
+			getCollisionIndex(leftSide, topSide);
 		}
 	} else if ( direction & PAD_DOWN ) {
-		collisionIndex = ( rightSide >> 3 ) + ( ( bottomSide & 0xF8 ) << 2);
+		//collisionIndex = ( rightSide >> 3 ) + ( ( bottomSide & 0xF8 ) << 2);
+		getCollisionIndex(rightSide, bottomSide);
 		if ( collisionMap[collisionIndex] != TILE_ALLCOLLIDE ) {
-			collisionIndex = ( leftSide >> 3 ) + ( ( bottomSide & 0xF8 ) << 2);
+			//collisionIndex = ( leftSide >> 3 ) + ( ( bottomSide & 0xF8 ) << 2);
+			getCollisionIndex(leftSide, bottomSide);
 		}
 	}
 
@@ -536,47 +545,69 @@ void __fastcall__ collideCheckVertical(u8 originX, u8 originY, u8 direction) {
 
 void __fastcall__ collideCheckHorizontal(u8 originX, u8 originY, u8 direction) {
 
-	leftSide = originX;
-	rightSide = originX + 16;
+	leftSide = originX + 1;
+	rightSide = originX + 15;
 	topSide = originY + 4;
 	bottomSide = originY + 12;
 
 	if ( direction & PAD_LEFT ) {
-		collisionIndex = ( leftSide >> 3 ) + ( ( topSide & 0xF8 ) << 2);
+		//collisionIndex = ( leftSide >> 3 ) + ( ( topSide & 0xF8 ) << 2);
+		getCollisionIndex(leftSide, topSide);
 		if ( collisionMap[collisionIndex] == TILE_NOCOLLIDE ) {
-			collisionIndex = ( leftSide >> 3 ) + ( ( bottomSide & 0xF8 ) << 2);
+			//collisionIndex = ( leftSide >> 3 ) + ( ( bottomSide & 0xF8 ) << 2);
+			getCollisionIndex(leftSide, bottomSide);
 		}
 	} else if ( direction & PAD_RIGHT ) {
 		getCollisionIndex(rightSide, topSide);
 		if ( collisionMap[collisionIndex] == TILE_NOCOLLIDE ) {
-			collisionIndex = ( rightSide >> 3 ) + ( ( bottomSide & 0xF8 ) << 2);
+			//collisionIndex = ( rightSide >> 3 ) + ( ( bottomSide & 0xF8 ) << 2);
+			getCollisionIndex(rightSide, bottomSide);
 		}
 	}
 
 	horizontalCollideCheck = collisionMap[collisionIndex];
 }
 
-void checkPlayerLadderCollision(void) {
+void __fastcall__ bgHorizCollideCheck(u8 *x, u8 *y, u8 dir) {
+	collideCheckHorizontal(*x, *y, dir);
+	if ( horizontalCollideCheck == TILE_ALLCOLLIDE ) {
+		if ( dir & PAD_LEFT ) {
+			*x = (*x & 0xf8) + 6;
+		} else if ( dir & PAD_RIGHT ) {
+			*x = (*x & 0xf8);
+		}		
+	}
+}
 
+void checkPlayerLadderCollision(void) {
+	
 	leftSide = playerX + 3;
 	rightSide = playerX + 11;
 	topSide = playerY + 9;
 	bottomSide = playerY + 16;
+	
 
-	collisionLeft = collisionMap[( leftSide >> 3 ) + ( ( bottomSide & 0xF8 ) << 2)];
-	collisionRight = collisionMap[( rightSide >> 3 ) + ( ( bottomSide & 0xF8 ) << 2)];
+	//collisionLeft = collisionMap[( leftSide >> 3 ) + ( ( bottomSide & 0xF8 ) << 2)];
+	//collisionRight = collisionMap[( rightSide >> 3 ) + ( ( bottomSide & 0xF8 ) << 2)];
+	getCollisionIndex(leftSide, bottomSide);
+	collisionLeft = collisionMap[collisionIndex];
+	getCollisionIndex(rightSide, bottomSide);
+	collisionRight = collisionMap[collisionIndex];
+
 
 	if (
-		( ( collisionLeft == TILE_LADDER )  || ( collisionLeft == TILE_LADDER_TOP ) ) &&
+		( ( collisionLeft == TILE_LADDER ) || ( collisionLeft == TILE_LADDER_TOP ) ) &&
 		( ( collisionRight == TILE_LADDER ) || ( collisionRight == TILE_LADDER_TOP ) ) 
 		)
 	{
 		playerState = PLAYER_STATE_CLIMBING;
-		if ( collisionLeft == TILE_LADDER ) {
-			playerX = ( playerX + 3 ) & 0xf8;	
-		} else if ( collisionRight == TILE_LADDER ) {
-			playerX = ( playerX - 3 ) & 0xf8;
+		
+		if ( ( collisionLeft == TILE_LADDER ) || ( collisionLeft == TILE_LADDER_TOP ) ) {
+			playerX = ( playerX + 3 ) & 0xf0;	
+		} else if ( ( collisionRight == TILE_LADDER )  || ( collisionRight == TILE_LADDER_TOP ) ) {
+			playerX = ( playerX - 3 ) & 0xf0;
 		}
+		
 	} else {
 		playerState = PLAYER_STATE_NORMAL;
 	}
@@ -586,23 +617,14 @@ void __fastcall__ bgVertCollideCheck(u8 *x, u8 *y, u8 dir) {
 	collideCheckVertical(*x, *y, dir);
 	if ( verticalCollideCheck ) {
 		if ( dir & PAD_UP ) {
-			*y = (*y & 0xf8) + 7;
+			*y = (*y & 0xf8) + 15;
 		} else {
-			*y = (*y & 0xf8) - 1;
+			*y = (*y & 0xf8);
 		}
 	}
 }
 
-void __fastcall__ bgHorizCollideCheck(u8 *x, u8 *y, u8 dir) {
-	collideCheckHorizontal(*x, *y, dir);
-	if ( horizontalCollideCheck == TILE_ALLCOLLIDE ) {
-		if ( dir & PAD_LEFT ) {
-			*x = (*x & 0xf8) + 7;
-		} else if ( dir & PAD_RIGHT ) {
-			*x = (*x & 0xf8);
-		}		
-	}
-}
+
 
 
 void enemyCollideCheck(void) {
@@ -639,20 +661,20 @@ void enemyCollideCheck(void) {
 	}
 }
 
-void potionEnemyCollideCheck(void) {
-	enemyColliding = 0;
+// void potionEnemyCollideCheck(void) {
+// 	enemyColliding = 0;
 
-	if ( potionIsActive ) {
-		four_SidesSmall(potionX, potionY);
-		enemyCollideCheck();
-		if ( enemyColliding ) {
-			killPotion();
-			enemyData[enemyCollidedIndex].state = ENEMY_STATE_MUSHROOM;
-		}
-	}
+// 	if ( potionIsActive ) {
+// 		four_SidesSmall(potionX, potionY);
+// 		enemyCollideCheck();
+// 		if ( enemyColliding ) {
+// 			killPotion();
+// 			enemyData[enemyCollidedIndex].state = ENEMY_STATE_MUSHROOM;
+// 		}
+// 	}
 
-	enemyColliding = 0;
-}
+// 	enemyColliding = 0;
+// }
 
 
 
@@ -667,7 +689,7 @@ void updateEnemyMovement(void) {
 			continue;
 		}
 		collideCheckVertical((*currentEnemy).x, (*currentEnemy).y + 1, PAD_DOWN);
-		if ( verticalCollideCheck != TILE_ALLCOLLIDE ) {
+		if ( ( verticalCollideCheck != TILE_ALLCOLLIDE ) && ( verticalCollideCheck != TILE_LADDER_TOP ) ) {
 			(*currentEnemy).y += 1;
 		} else {
 			if ( (*currentEnemy).direction == PAD_RIGHT ) {
@@ -705,7 +727,6 @@ void updatePlayerJumpFall(void) {
 		playerVertVel = 0;
 	}
 
-
 	if ( playerState == PLAYER_STATE_JUMPING ) {
 		// moving up, jumping
 		playerY -= playerVertVel;
@@ -713,7 +734,7 @@ void updatePlayerJumpFall(void) {
 			collideCheckVertical(playerX, playerY, PAD_UP);
 			// check collision above
 			if ( verticalCollideCheck == TILE_ALLCOLLIDE ) { 
-				playerY = (playerY & 0xF8) + 8;
+				playerY = (playerY & 0xF8) + 6;
 			}			
 		} else {
 			collideCheckVertical(playerX, playerY + 2, PAD_DOWN);
@@ -912,95 +933,95 @@ void  updatePlayerAttack(void) {
 	}
 }
 
-void __fastcall__ updatePotionMovement(void) {
-	u8 potionCollided = 0;
-	if ( potionTossTimer > 0 ) {
-		++potionTossTimer;
-		if ( potionTossTimer >= POTION_TOSS_WAIT_TIME ) {
-			potionTossTimer = 0;
-		}
-	}
-	if ( potionIsActive ) {
-		/* horizontal movement */
-		if ( potionDirection == PAD_LEFT ) {
-			potionX -= POTION_HORIZ_VELOCITY;
-		} else {
-			potionX += POTION_HORIZ_VELOCITY;
-		}
+// void __fastcall__ updatePotionMovement(void) {
+// 	u8 potionCollided = 0;
+// 	if ( potionTossTimer > 0 ) {
+// 		++potionTossTimer;
+// 		if ( potionTossTimer >= POTION_TOSS_WAIT_TIME ) {
+// 			potionTossTimer = 0;
+// 		}
+// 	}
+// 	if ( potionIsActive ) {
+// 		/* horizontal movement */
+// 		if ( potionDirection == PAD_LEFT ) {
+// 			potionX -= POTION_HORIZ_VELOCITY;
+// 		} else {
+// 			potionX += POTION_HORIZ_VELOCITY;
+// 		}
 
-		if ( ( potionX <= 8 ) || ( potionX >= 248 ) ) {
-			potionCollided = 1;
-		}
+// 		if ( ( potionX <= 8 ) || ( potionX >= 248 ) ) {
+// 			potionCollided = 1;
+// 		}
 
-		/* vertical movement */
+// 		/* vertical movement */
 
-		if ( potionVerticalVel > 0 ) {
-			// moving up in arc 
-			if ( smallCollideCheckVertical(potionX, potionY + 8, PAD_UP) == TILE_ALLCOLLIDE ) { 
-				/* collided with ceiling */
-				potionCollided = 1;				
-			} else {
-				potionY -= potionVerticalVel;
-			}
+// 		if ( potionVerticalVel > 0 ) {
+// 			// moving up in arc 
+// 			if ( smallCollideCheckVertical(potionX, potionY + 8, PAD_UP) == TILE_ALLCOLLIDE ) { 
+// 				/* collided with ceiling */
+// 				potionCollided = 1;				
+// 			} else {
+// 				potionY -= potionVerticalVel;
+// 			}
 			
-		} else {
-			// falling
-			if ( smallCollideCheckVertical(potionX, potionY, PAD_DOWN) == TILE_ALLCOLLIDE ) { 
-				/* collided with ground */
-				potionCollided = 1;				
-			} else {
-				potionY -= potionVerticalVel;
-			}		
-		}
+// 		} else {
+// 			// falling
+// 			if ( smallCollideCheckVertical(potionX, potionY, PAD_DOWN) == TILE_ALLCOLLIDE ) { 
+// 				/* collided with ground */
+// 				potionCollided = 1;				
+// 			} else {
+// 				potionY -= potionVerticalVel;
+// 			}		
+// 		}
 
-		if ( potionY >= 240 ) {
-			potionCollided = 1;
-		}			
+// 		if ( potionY >= 240 ) {
+// 			potionCollided = 1;
+// 		}			
 
-		// acceleration toward ground
-		if ( ( potionVerticalVel >= -3 ) && ( potionMoveCounter == 3 ) ) {
-			potionVerticalVel -= 1; 
-			potionMoveCounter = 0;
-		}		
+// 		// acceleration toward ground
+// 		if ( ( potionVerticalVel >= -3 ) && ( potionMoveCounter == 3 ) ) {
+// 			potionVerticalVel -= 1; 
+// 			potionMoveCounter = 0;
+// 		}		
 
-		++potionMoveCounter;
+// 		++potionMoveCounter;
 
-		if ( potionCollided ) {
-			potionIsActive = 0;
-			potionX = -8;
-			potionY = -8;
-		}
-	}
-}
+// 		if ( potionCollided ) {
+// 			potionIsActive = 0;
+// 			potionX = -8;
+// 			potionY = -8;
+// 		}
+// 	}
+// }
 
-void simpleUpdatePotionMovement(void) {
-	u8 potionCollided = 0;
-	if ( potionIsActive ) {
-		/* horizontal movement */
-		if ( potionDirection == PAD_LEFT ) {
-			potionX -= POTION_HORIZ_VELOCITY;
-		} else {
-			potionX += POTION_HORIZ_VELOCITY;
-		}
+// void simpleUpdatePotionMovement(void) {
+// 	u8 potionCollided = 0;
+// 	if ( potionIsActive ) {
+// 		/* horizontal movement */
+// 		if ( potionDirection == PAD_LEFT ) {
+// 			potionX -= POTION_HORIZ_VELOCITY;
+// 		} else {
+// 			potionX += POTION_HORIZ_VELOCITY;
+// 		}
 
-		if ( ( potionX <= 8 ) || ( potionX >= 248 ) ) {
-			potionCollided = 1;
-		}
+// 		if ( ( potionX <= 8 ) || ( potionX >= 248 ) ) {
+// 			potionCollided = 1;
+// 		}
 
-		++potionMoveCounter;
+// 		++potionMoveCounter;
 
-		if ( potionCollided ) {
-			killPotion();
-		}		
+// 		if ( potionCollided ) {
+// 			killPotion();
+// 		}		
 
-	}
-}
+// 	}
+// }
 
-void killPotion(void) {
-	potionIsActive = 0;
-	potionX = -8;
-	potionY = -8;
-}
+// void killPotion(void) {
+// 	potionIsActive = 0;
+// 	potionX = -8;
+// 	potionY = -8;
+// }
 
 /*********** Main ***********/
 
@@ -1024,7 +1045,7 @@ void main(void)
 	pal_bg(palBG);
 
 	vram_adr(NAMETABLE_A); //unpack nametable into VRAM
-	vram_unrle(map1);	
+	vram_unrle(newmap);	
 
 	drawScoreboard();
 
@@ -1064,20 +1085,20 @@ void main(void)
 
 		updatePlayerSprite();
 		updateEnemySprites();
-		updatePotionSprite();
+		//updatePotionSprite();
 		spriteCount();
 
 		updateEnemyMovement();
 		playerMoveHorizontal();
 		updatePlayerVerticalMovement();
 		updatePlayerAttack();
-		updatePotionMovement();
+		//updatePotionMovement();
 
 		enemyColliding = 0;
 		four_Sides(playerX, playerY);
 		enemyCollideCheck();
 		playerEnemyColliding = enemyColliding;
-		potionEnemyCollideCheck();
+		//potionEnemyCollideCheck();
 
 		
 		if ( playerEnemyColliding ) {
