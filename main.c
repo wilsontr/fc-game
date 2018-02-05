@@ -43,6 +43,8 @@ typedef uint16_t u16;
 #define PLAYER_MOVE_VEL			 1
 
 #define PLAYER_FALL_SPEED		 3
+#define PLAYER_JUMP_COUNTER_INTERVAL 6
+#define GRAVITY_ACCELERATION 	 2
 
 #define PLAYER_FRAME_CLIMBING	 2
 
@@ -709,10 +711,7 @@ void updateEnemyMovement(void) {
 			}			
 		}
 	}
-
 }
-
-
 
 void updatePlayerJumpFall(void) {
 
@@ -733,7 +732,7 @@ void updatePlayerJumpFall(void) {
 		if ( playerVertVel > 0 ) {
 			collideCheckVertical(playerX, playerY, PAD_UP);
 			// check collision above
-			if ( verticalCollideCheck == TILE_ALLCOLLIDE ) { 
+			if ( ( verticalCollideCheck == TILE_ALLCOLLIDE ) || ( verticalCollideCheck == TILE_LADDER_TOP ) ) { 
 				playerY = (playerY & 0xF8) + 6;
 			}			
 		} else {
@@ -782,85 +781,14 @@ void updatePlayerJumpFall(void) {
 
 	// update velocity
 	// acceleration toward ground
-	if ( ( playerVertVel > -3 ) && ( playerJumpCounter == 4 ) ) {
-		playerVertVel -= 1; 
+	if ( ( playerVertVel > -3 ) && ( playerJumpCounter == PLAYER_JUMP_COUNTER_INTERVAL ) ) {
+		playerVertVel -= GRAVITY_ACCELERATION; 
 		playerJumpCounter = 0;
 	}
 
 	++playerJumpCounter;
 }
 
-/*
-void simpleUpdatePlayerJumpFall(void) {
-	if ( !(pad & PAD_A ) ) {
-		jumpButtonReset = 1;
-	}
-
-	if ( playerState == PLAYER_STATE_JUMPING ) {
-
-		
-		if ( playerJumpCounter <= 12 ) {
-			playerY -= playerVertVel;
-		} else if ( playerJumpCounter <= 24 ) {
-			playerY += playerVertVel;
-		} else {
-			playerJumpCounter = 0;
-			playerState = PLAYER_STATE_NORMAL;
-		}
-
-
-		switch ( playerJumpDirection ) {
-			case PAD_LEFT: playerX -= PLAYER_MOVE_VEL; break;
-			case PAD_RIGHT: playerX += PLAYER_MOVE_VEL; break;
-		}
-
-		++playerJumpCounter;
-
-		//if ( playerY >= initPlayerJumpY ) {
-		// playerState = PLAYER_STATE_NORMAL;
-		// 		}
-
-	} else {
-		collideCheckVertical(playerX, playerY + 2, PAD_DOWN);
-		if ( ( verticalCollideCheck == TILE_ALLCOLLIDE ) || ( verticalCollideCheck == TILE_LADDER_TOP ) ) { 
-			playerY = (playerY & 0xF8) + 7;
-			collideBottom = 1;
-			playerState = PLAYER_STATE_NORMAL;			
-
-			if ( pad & PAD_UP )  {
-				checkPlayerLadderCollision();
-			}
-
-			if ( ( pad & PAD_DOWN ) && ( verticalCollideCheck == TILE_LADDER_TOP ) ) {
-				playerY++;
-				checkPlayerLadderCollision();
-			}
-
-			
-			if ( ( jumpButtonReset ) && ( pad & PAD_A ) ) {
-				if ( pad & PAD_LEFT ) {
-					playerJumpDirection = PAD_LEFT;
-				} else if ( pad & PAD_RIGHT ) {
-					playerJumpDirection = PAD_RIGHT;
-				} else {
-					playerJumpDirection = 0;
-				}
-				//playerVertVel = PLAYER_INIT_JUMP_VEL;
-				playerVertVel = 3;
-				playerState = PLAYER_STATE_JUMPING;
-				playerJumpCounter = 0;
-				jumpButtonReset = 0;
-				initPlayerJumpY = 0;
-			}
-
-		} else {
-			playerY += PLAYER_FALL_SPEED;
-			playerState = PLAYER_STATE_FALLING;
-			collideBottom = 0;
-		}	
-	}
-}
-*/
 void updatePlayerClimbing(void) {
 	u8 jumpCollideCheckTile;
 

@@ -1141,7 +1141,7 @@ L0347:	jcs     L0342
 ; if ( collByte == TILE_PLAYERSTART ) {
 ;
 	cmp     #$03
-	bne     L0762
+	bne     L0765
 ;
 ; playerX = mapX << 4;
 ;
@@ -1168,15 +1168,15 @@ L0347:	jcs     L0342
 ; if ( ( collByte == TILE_ENEMY1START_RIGHT ) || ( collByte == TILE_ENEMY1START_LEFT ) ) {
 ;
 	ldy     #$0B
-L0762:	lda     (sp),y
+L0765:	lda     (sp),y
 	cmp     #$05
-	beq     L0763
+	beq     L0766
 	cmp     #$04
 	jne     L0354
 ;
 ; enemyData[enemyIndex] = newEnemy;
 ;
-L0763:	ldx     #$00
+L0766:	ldx     #$00
 	lda     _enemyIndex
 	jsr     mulax6
 	clc
@@ -1254,11 +1254,11 @@ L035C:	jsr     pushax
 	ldy     #$0B
 	lda     (sp),y
 	cmp     #$05
-	bne     L0764
+	bne     L0767
 	lda     #$80
-	jmp     L0765
-L0764:	lda     #$40
-L0765:	ldy     #$03
+	jmp     L0768
+L0767:	lda     #$40
+L0768:	ldy     #$03
 	sta     (ptr1),y
 ;
 ; enemyData[enemyIndex].collidingWithPotion = 0;
@@ -1294,10 +1294,10 @@ L0765:	ldy     #$03
 ; for ( k = 0; k < ENEMY_DATA_SIZE; ++k ) {
 ;
 	ldy     #$0A
-L0760:	sta     (sp),y
+L0763:	sta     (sp),y
 	lda     (sp),y
 	cmp     #$11
-	bcs     L0766
+	bcs     L0769
 ;
 ; enemySpriteData[enemyIndex][k] = enemySpriteDataTemplate[k];
 ;
@@ -1316,9 +1316,9 @@ L0760:	sta     (sp),y
 	clc
 	adc     ptr1
 	ldx     ptr1+1
-	bcc     L075F
+	bcc     L0762
 	inx
-L075F:	jsr     pushax
+L0762:	jsr     pushax
 	ldy     #$0C
 	lda     (sp),y
 	tay
@@ -1332,11 +1332,11 @@ L075F:	jsr     pushax
 	clc
 	lda     #$01
 	adc     (sp),y
-	jmp     L0760
+	jmp     L0763
 ;
 ; setSpriteFrame(enemySpriteData[enemyIndex], enemyFrames[0]);
 ;
-L0766:	lda     _enemyIndex
+L0769:	lda     _enemyIndex
 	jsr     pusha0
 	lda     #$11
 	jsr     tosmula0
@@ -1546,7 +1546,7 @@ L03A7:	jsr     pushax
 	jsr     decsp1
 	lda     #$03
 	ldy     #$00
-L0767:	sta     (sp),y
+L076A:	sta     (sp),y
 	cmp     #$10
 	bcs     L03AD
 ;
@@ -1596,7 +1596,7 @@ L0767:	sta     (sp),y
 	lda     (sp),y
 	clc
 	adc     #$04
-	jmp     L0767
+	jmp     L076A
 ;
 ; }
 ;
@@ -1678,7 +1678,7 @@ L03AD:	jmp     incsp4
 ;
 ; } else {
 ;
-	jmp     L0768
+	jmp     L076B
 ;
 ; sprite[3] &= ~OAM_BEHIND;
 ;
@@ -1730,7 +1730,7 @@ L03BE:	ldy     #$02
 	ldy     #$0F
 	lda     (ptr1),y
 	and     #$DF
-L0768:	sta     (ptr1),y
+L076B:	sta     (ptr1),y
 ;
 ; }
 ;
@@ -1860,7 +1860,7 @@ L0768:	sta     (ptr1),y
 ;
 ; } else {
 ;
-	jmp     L0769
+	jmp     L076C
 ;
 ; sprite[0] = 0;
 ;
@@ -1960,7 +1960,7 @@ L03DA:	ldy     #$02
 	ldy     #$0F
 	lda     (ptr1),y
 	and     #$BF
-L0769:	sta     (ptr1),y
+L076C:	sta     (ptr1),y
 ;
 ; }
 ;
@@ -2012,9 +2012,9 @@ L040E:	rts
 ;
 	lda     #$00
 	sta     _i
-L076C:	lda     _i
+L076F:	lda     _i
 	cmp     _numEnemies
-	bcc     L0770
+	bcc     L0773
 ;
 ; }
 ;
@@ -2022,7 +2022,7 @@ L076C:	lda     _i
 ;
 ; spriteCount();
 ;
-L0770:	jsr     _spriteCount
+L0773:	jsr     _spriteCount
 ;
 ; spriteFlickerIndex = enemySpriteCount;
 ;
@@ -2109,7 +2109,7 @@ L0425:	lda     _currentEnemy
 	sta     ptr1+1
 	ldy     #$04
 	lda     (ptr1),y
-	beq     L076D
+	beq     L0770
 ;
 ; setSpritePalette(enemySpriteData[spriteFlickerIndex], 0x0);
 ;
@@ -2129,11 +2129,11 @@ L0425:	lda     _currentEnemy
 ;
 ; } else {
 ;
-	jmp     L076A
+	jmp     L076D
 ;
 ; setSpritePalette(enemySpriteData[spriteFlickerIndex], 0x3);
 ;
-L076D:	lda     _spriteFlickerIndex
+L0770:	lda     _spriteFlickerIndex
 	jsr     pusha0
 	lda     #$11
 	jsr     tosmula0
@@ -2146,7 +2146,7 @@ L076D:	lda     _spriteFlickerIndex
 	tya
 	jsr     pushax
 	lda     #$03
-L076A:	jsr     _setSpritePalette
+L076D:	jsr     _setSpritePalette
 ;
 ; oamSpriteIndex = oam_meta_spr((*currentEnemy).x, (*currentEnemy).y, oamSpriteIndex, enemySpriteData[spriteFlickerIndex]);    
 ;
@@ -2183,14 +2183,14 @@ L076A:	jsr     _setSpritePalette
 ;
 ; } else if ( (*currentEnemy).state == ENEMY_STATE_MUSHROOM ) {
 ;
-	jmp     L076F
+	jmp     L0772
 L0422:	lda     _currentEnemy
 	sta     ptr1
 	lda     _currentEnemy+1
 	sta     ptr1+1
 	lda     (ptr1),y
 	cmp     #$01
-	bne     L076E
+	bne     L0771
 ;
 ; oamSpriteIndex = oam_meta_spr((*currentEnemy).x, (*currentEnemy).y, oamSpriteIndex, mushroomSpriteDataTemplate);       
 ;
@@ -2215,13 +2215,13 @@ L0422:	lda     _currentEnemy
 	sta     (sp),y
 	lda     #<(_mushroomSpriteDataTemplate)
 	ldx     #>(_mushroomSpriteDataTemplate)
-L076F:	jsr     _oam_meta_spr
+L0772:	jsr     _oam_meta_spr
 	sta     _oamSpriteIndex
 ;
 ; for ( i = 0; i < numEnemies; ++i ) {
 ;
-L076E:	inc     _i
-	jmp     L076C
+L0771:	inc     _i
+	jmp     L076F
 
 .endproc
 
@@ -2239,15 +2239,15 @@ L076E:	inc     _i
 ; if ( ( playerState == PLAYER_STATE_NORMAL ) || ( playerState == PLAYER_STATE_JUMPING ) ) {
 ;
 	lda     _playerState
-	beq     L0772
+	beq     L0775
 	cmp     #$03
-	bne     L0774
+	bne     L0777
 ;
 ; if ( pad & PAD_RIGHT ) {
 ;
-L0772:	lda     _pad
+L0775:	lda     _pad
 	and     #$80
-	beq     L0773
+	beq     L0776
 ;
 ; flipSprite(playerSpriteData, 1);
 ;
@@ -2258,8 +2258,8 @@ L0772:	lda     _pad
 ;
 ; } else if ( pad & PAD_LEFT ) {
 ;
-	jmp     L0771
-L0773:	lda     _pad
+	jmp     L0774
+L0776:	lda     _pad
 	and     #$40
 	beq     L045F
 ;
@@ -2269,7 +2269,7 @@ L0773:	lda     _pad
 	ldx     #>(_playerSpriteData)
 	jsr     pushax
 	lda     #$00
-L0771:	jsr     _flipSprite
+L0774:	jsr     _flipSprite
 ;
 ; setSpriteFrame(playerSpriteData, playerFrames[playerFrame]);
 ;
@@ -2321,7 +2321,7 @@ L045F:	lda     #<(_playerSpriteData)
 ; } else if ( playerState == PLAYER_STATE_CLIMBING ) {
 ;
 	jmp     L0479
-L0774:	lda     _playerState
+L0777:	lda     _playerState
 	cmp     #$02
 	bne     L0479
 ;
@@ -2594,9 +2594,9 @@ L04BA:	lda     _updateListData,y
 	and     #$F0
 	clc
 	adc     ptr1
-	bcc     L0775
+	bcc     L0778
 	inx
-L0775:	sta     _collisionIndex
+L0778:	sta     _collisionIndex
 	stx     _collisionIndex+1
 ;
 ; }
@@ -2657,7 +2657,7 @@ L0775:	sta     _collisionIndex
 	dey
 	lda     (sp),y
 	and     #$10
-	beq     L0778
+	beq     L077B
 ;
 ; getCollisionIndex(rightSide, topSide);
 ;
@@ -2688,8 +2688,8 @@ L0775:	sta     _collisionIndex
 ;
 ; } else if ( direction & PAD_DOWN ) {
 ;
-	jmp     L0776
-L0778:	lda     (sp),y
+	jmp     L0779
+L077B:	lda     (sp),y
 	and     #$20
 	beq     L04F9
 ;
@@ -2719,7 +2719,7 @@ L0778:	lda     (sp),y
 	lda     _leftSide
 	jsr     pusha
 	lda     _bottomSide
-L0776:	jsr     _getCollisionIndex
+L0779:	jsr     _getCollisionIndex
 ;
 ; if ( collisionIndex ) {
 ;
@@ -2806,7 +2806,7 @@ L04FF:	tax
 	dey
 	lda     (sp),y
 	and     #$10
-	beq     L077B
+	beq     L077E
 ;
 ; getCollisionIndex(rightSide, topSide);
 ;
@@ -2837,8 +2837,8 @@ L04FF:	tax
 ;
 ; } else if ( direction & PAD_DOWN ) {
 ;
-	jmp     L0779
-L077B:	lda     (sp),y
+	jmp     L077C
+L077E:	lda     (sp),y
 	and     #$20
 	beq     L0525
 ;
@@ -2868,7 +2868,7 @@ L077B:	lda     (sp),y
 	lda     _leftSide
 	jsr     pusha
 	lda     _bottomSide
-L0779:	jsr     _getCollisionIndex
+L077C:	jsr     _getCollisionIndex
 ;
 ; verticalCollideCheck = collisionMap[collisionIndex]; 
 ;
@@ -2939,7 +2939,7 @@ L0525:	lda     _collisionMap
 	dey
 	lda     (sp),y
 	and     #$40
-	beq     L077E
+	beq     L0781
 ;
 ; getCollisionIndex(leftSide, topSide);
 ;
@@ -2967,8 +2967,8 @@ L0525:	lda     _collisionMap
 ;
 ; } else if ( direction & PAD_RIGHT ) {
 ;
-	jmp     L0780
-L077E:	lda     (sp),y
+	jmp     L0783
+L0781:	lda     (sp),y
 	and     #$80
 	beq     L054C
 ;
@@ -2995,7 +2995,7 @@ L077E:	lda     (sp),y
 ; getCollisionIndex(rightSide, bottomSide);
 ;
 	lda     _rightSide
-L0780:	jsr     pusha
+L0783:	jsr     pusha
 	lda     _bottomSide
 	jsr     _getCollisionIndex
 ;
@@ -3070,7 +3070,7 @@ L054C:	lda     _collisionMap
 	ldy     #$00
 	lda     (sp),y
 	and     #$40
-	beq     L0783
+	beq     L0786
 ;
 ; *x = (*x & 0xf8) + 6;
 ;
@@ -3090,8 +3090,8 @@ L054C:	lda     _collisionMap
 ;
 ; } else if ( dir & PAD_RIGHT ) {
 ;
-	jmp     L0781
-L0783:	lda     (sp),y
+	jmp     L0784
+L0786:	lda     (sp),y
 	and     #$80
 	beq     L0563
 ;
@@ -3108,7 +3108,7 @@ L0783:	lda     (sp),y
 	ldy     #$00
 	lda     (ptr1),y
 	and     #$F8
-L0781:	jsr     staspidx
+L0784:	jsr     staspidx
 ;
 ; }
 ;
@@ -3199,38 +3199,38 @@ L0563:	jmp     incsp5
 ;
 	lda     _collisionLeft
 	cmp     #$06
-	beq     L0784
+	beq     L0787
 	cmp     #$07
-	beq     L0784
+	beq     L0787
 	tya
-	jmp     L078F
+	jmp     L0792
 ;
 ; ( ( collisionRight == TILE_LADDER ) || ( collisionRight == TILE_LADDER_TOP ) ) 
 ;
-L0784:	lda     _collisionRight
+L0787:	lda     _collisionRight
 	cmp     #$06
-	beq     L078A
+	beq     L078D
 	cmp     #$07
-	beq     L078A
+	beq     L078D
 	tya
-	jmp     L078F
+	jmp     L0792
 ;
 ; playerState = PLAYER_STATE_CLIMBING;
 ;
-L078A:	lda     #$02
+L078D:	lda     #$02
 	sta     _playerState
 ;
 ; if ( ( collisionLeft == TILE_LADDER ) || ( collisionLeft == TILE_LADDER_TOP ) ) {
 ;
 	lda     _collisionLeft
 	cmp     #$06
-	beq     L078B
+	beq     L078E
 	cmp     #$07
-	bne     L078C
+	bne     L078F
 ;
 ; playerX = ( playerX + 3 ) & 0xf0; 
 ;
-L078B:	lda     _playerX
+L078E:	lda     _playerX
 	clc
 	adc     #$03
 	and     #$F0
@@ -3239,15 +3239,15 @@ L078B:	lda     _playerX
 ; } else if ( ( collisionRight == TILE_LADDER )  || ( collisionRight == TILE_LADDER_TOP ) ) {
 ;
 	rts
-L078C:	lda     _collisionRight
+L078F:	lda     _collisionRight
 	cmp     #$06
-	beq     L078D
+	beq     L0790
 	cmp     #$07
 	bne     L0599
 ;
 ; playerX = ( playerX - 3 ) & 0xf0;
 ;
-L078D:	lda     _playerX
+L0790:	lda     _playerX
 	sec
 	sbc     #$03
 	and     #$F0
@@ -3259,7 +3259,7 @@ L0599:	rts
 ;
 ; playerState = PLAYER_STATE_NORMAL;
 ;
-L078F:	sta     _playerState
+L0792:	sta     _playerState
 ;
 ; }
 ;
@@ -3338,7 +3338,7 @@ L078F:	sta     _playerState
 ;
 ; } else {
 ;
-	jmp     L0790
+	jmp     L0793
 ;
 ; *y = (*y & 0xf8);
 ;
@@ -3353,7 +3353,7 @@ L05AC:	ldy     #$04
 	ldy     #$00
 	lda     (ptr1),y
 	and     #$F8
-L0790:	jsr     staspidx
+L0793:	jsr     staspidx
 ;
 ; }
 ;
@@ -3391,7 +3391,7 @@ L05B2:	jmp     incsp5
 ;
 ; currentEnemy = &(enemyData[enemyIndex]);
 ;
-L0792:	lda     _enemyIndex
+L0795:	lda     _enemyIndex
 	jsr     mulax6
 	clc
 	adc     #<(_enemyData)
@@ -3451,30 +3451,30 @@ L0792:	lda     _enemyIndex
 ;
 	lda     _rightSide
 	cmp     _enemyLeft
-	bcc     L0793
+	bcc     L0796
 ;
 ; leftSide   >= enemyRight || 
 ;
 	lda     _leftSide
 	cmp     _enemyRight
-	bcs     L0793
+	bcs     L0796
 ;
 ; bottomSide <  enemyTop   || 
 ;
 	lda     _bottomSide
 	cmp     _enemyTop
-	bcc     L0793
+	bcc     L0796
 ;
 ; topSide    >= enemyBottom ) ) {
 ;
 	lda     _topSide
 	cmp     _enemyBottom
-	bcs     L0793
+	bcs     L0796
 	tya
 	jmp     L05DB
-L0793:	lda     #$01
+L0796:	lda     #$01
 L05DB:	jsr     bnega
-	beq     L0795
+	beq     L0798
 ;
 ; switch ( (*currentEnemy).state ) {
 ;
@@ -3487,16 +3487,16 @@ L05DB:	jsr     bnega
 ;
 ; }
 ;
-	beq     L0794
+	beq     L0797
 	cmp     #$01
 	beq     L05E7
 	cmp     #$03
-	beq     L0795
-	jmp     L0795
+	beq     L0798
+	jmp     L0798
 ;
 ; enemyColliding = 1;
 ;
-L0794:	lda     #$01
+L0797:	lda     #$01
 	sta     _enemyColliding
 ;
 ; enemyCollidedIndex = enemyIndex;
@@ -3506,7 +3506,7 @@ L0794:	lda     #$01
 ;
 ; break;
 ;
-	jmp     L0795
+	jmp     L0798
 ;
 ; (*currentEnemy).state = ENEMY_STATE_DEAD;
 ;
@@ -3519,17 +3519,17 @@ L05E7:	lda     _currentEnemy
 ;
 ; ++enemyIndex;
 ;
-L0795:	inc     _enemyIndex
+L0798:	inc     _enemyIndex
 ;
 ; while ( !enemyColliding && ( enemyIndex < numEnemies ) ) {
 ;
 L05BF:	lda     _enemyColliding
-	bne     L0796
+	bne     L0799
 	tax
 	lda     _enemyIndex
 	cmp     _numEnemies
-	jcc     L0792
-L0796:	rts
+	jcc     L0795
+L0799:	rts
 
 .endproc
 
@@ -3549,9 +3549,9 @@ L0796:	rts
 	lda     #$00
 	sta     _i
 	tax
-L0799:	lda     _i
+L079C:	lda     _i
 	cmp     _numEnemies
-	bcc     L07A3
+	bcc     L07A6
 ;
 ; }
 ;
@@ -3559,7 +3559,7 @@ L0799:	lda     _i
 ;
 ; currentEnemy = &(enemyData[i]);
 ;
-L07A3:	jsr     mulax6
+L07A6:	jsr     mulax6
 	clc
 	adc     #<(_enemyData)
 	tay
@@ -3581,7 +3581,7 @@ L07A3:	jsr     mulax6
 ;
 ; continue;
 ;
-	jeq     L07A2
+	jeq     L07A5
 ;
 ; collideCheckVertical((*currentEnemy).x, (*currentEnemy).y + 1, PAD_DOWN);
 ;
@@ -3626,7 +3626,7 @@ L07A3:	jsr     mulax6
 ;
 ; } else {
 ;
-	jmp     L0798
+	jmp     L079B
 ;
 ; if ( (*currentEnemy).direction == PAD_RIGHT ) {
 ;
@@ -3676,13 +3676,13 @@ L0605:	lda     _currentEnemy
 	ldx     #$00
 	lda     _horizontalCollideCheck
 	cmp     #$01
-	beq     L079E
+	beq     L07A1
 	cmp     #$02
-	jne     L07A2
+	jne     L07A5
 ;
 ; flipSprite(enemySpriteData[i], 0);
 ;
-L079E:	lda     _i
+L07A1:	lda     _i
 	jsr     pusha0
 	lda     #$11
 	jsr     tosmula0
@@ -3710,7 +3710,7 @@ L079E:	lda     _i
 ;
 ; } else {
 ;
-	jmp     L07A2
+	jmp     L07A5
 ;
 ; (*currentEnemy).x -= 1;
 ;
@@ -3749,13 +3749,13 @@ L060F:	lda     _currentEnemy
 	ldx     #$00
 	lda     _horizontalCollideCheck
 	cmp     #$01
-	beq     L07A1
+	beq     L07A4
 	cmp     #$02
-	bne     L07A2
+	bne     L07A5
 ;
 ; flipSprite(enemySpriteData[i], 1);
 ;
-L07A1:	lda     _i
+L07A4:	lda     _i
 	jsr     pusha0
 	lda     #$11
 	jsr     tosmula0
@@ -3778,16 +3778,16 @@ L07A1:	lda     _i
 	sta     ptr1+1
 	lda     #$80
 	ldy     #$03
-L0798:	sta     (ptr1),y
+L079B:	sta     (ptr1),y
 ;
 ; for ( i = 0; i < numEnemies; i++ ) {
 ;
 	ldx     #$00
-L07A2:	lda     _i
+L07A5:	lda     _i
 	clc
 	adc     #$01
 	sta     _i
-	jmp     L0799
+	jmp     L079C
 
 .endproc
 
@@ -3811,7 +3811,7 @@ L07A2:	lda     _i
 ;
 	lda     _pad
 	and     #$01
-	bne     L07A5
+	bne     L07A8
 ;
 ; jumpButtonReset = 1;
 ;
@@ -3820,17 +3820,17 @@ L07A2:	lda     _i
 ;
 ; if ( !( pad & PAD_A ) && playerJumping && ( playerVertVel > 0 ) ) {
 ;
-L07A5:	lda     _pad
+L07A8:	lda     _pad
 	and     #$01
-	bne     L07A9
+	bne     L07AC
 	lda     _playerJumping
-	beq     L07A9
+	beq     L07AC
 	lda     _playerVertVel
 	sec
 	sbc     #$01
 	bvs     L064B
 	eor     #$80
-L064B:	bpl     L07A9
+L064B:	bpl     L07AC
 ;
 ; playerVertVel = 0;
 ;
@@ -3839,9 +3839,9 @@ L064B:	bpl     L07A9
 ;
 ; if ( playerState == PLAYER_STATE_JUMPING ) {
 ;
-L07A9:	lda     _playerState
+L07AC:	lda     _playerState
 	cmp     #$03
-	bne     L064F
+	jne     L064F
 ;
 ; playerY -= playerVertVel;
 ;
@@ -3872,15 +3872,17 @@ L0657:	bpl     L0654
 	lda     #$10
 	jsr     _collideCheckVertical
 ;
-; if ( verticalCollideCheck == TILE_ALLCOLLIDE ) { 
+; if ( ( verticalCollideCheck == TILE_ALLCOLLIDE ) || ( verticalCollideCheck == TILE_LADDER_TOP ) ) { 
 ;
 	lda     _verticalCollideCheck
 	cmp     #$01
-	jne     L0688
+	beq     L07B1
+	cmp     #$07
+	jne     L068B
 ;
 ; playerY = (playerY & 0xF8) + 6;
 ;
-	lda     _playerY
+L07B1:	lda     _playerY
 	and     #$F8
 	clc
 	adc     #$06
@@ -3888,7 +3890,7 @@ L0657:	bpl     L0654
 ;
 ; } else {
 ;
-	jmp     L0688
+	jmp     L068B
 ;
 ; collideCheckVertical(playerX, playerY + 2, PAD_DOWN);
 ;
@@ -3908,13 +3910,13 @@ L0654:	jsr     decsp2
 ;
 	lda     _verticalCollideCheck
 	cmp     #$01
-	beq     L07AE
+	beq     L07B4
 	cmp     #$07
-	bne     L0688
+	bne     L068B
 ;
 ; playerY = (playerY & 0xF8) + 7;
 ;
-L07AE:	lda     _playerY
+L07B4:	lda     _playerY
 	and     #$F8
 	clc
 	adc     #$07
@@ -3931,7 +3933,7 @@ L07AE:	lda     _playerY
 ;
 ; } else {
 ;
-	jmp     L07A4
+	jmp     L07A7
 ;
 ; collideCheckVertical(playerX, playerY + 2, PAD_DOWN);
 ;
@@ -3951,13 +3953,13 @@ L064F:	jsr     decsp2
 ;
 	lda     _verticalCollideCheck
 	cmp     #$01
-	beq     L07B1
+	beq     L07B7
 	cmp     #$07
-	bne     L07B2
+	bne     L07B8
 ;
 ; playerY = (playerY & 0xF8) + 7;
 ;
-L07B1:	lda     _playerY
+L07B7:	lda     _playerY
 	and     #$F8
 	clc
 	adc     #$07
@@ -3974,11 +3976,11 @@ L07B1:	lda     _playerY
 ;
 ; } else {
 ;
-	jmp     L07A4
+	jmp     L07A7
 ;
 ; playerY += PLAYER_FALL_SPEED;
 ;
-L07B2:	lda     #$03
+L07B8:	lda     #$03
 	clc
 	adc     _playerY
 	sta     _playerY
@@ -3991,18 +3993,18 @@ L07B2:	lda     #$03
 ; playerState = PLAYER_STATE_FALLING;
 ;
 	lda     #$04
-L07A4:	sta     _playerState
+L07A7:	sta     _playerState
 ;
 ; if ( collideBottom ) {
 ;
-L0688:	lda     _collideBottom
-	beq     L07B8
+L068B:	lda     _collideBottom
+	beq     L07BE
 ;
 ; if ( pad & PAD_UP )  {
 ;
 	lda     _pad
 	and     #$10
-	beq     L07B3
+	beq     L07B9
 ;
 ; checkPlayerLadderCollision();
 ;
@@ -4010,12 +4012,12 @@ L0688:	lda     _collideBottom
 ;
 ; if ( ( pad & PAD_DOWN ) && ( verticalCollideCheck == TILE_LADDER_TOP ) ) {
 ;
-L07B3:	lda     _pad
+L07B9:	lda     _pad
 	and     #$20
-	beq     L0694
+	beq     L0697
 	lda     _verticalCollideCheck
 	cmp     #$07
-	bne     L0694
+	bne     L0697
 ;
 ; playerY++;
 ;
@@ -4030,11 +4032,11 @@ L07B3:	lda     _pad
 ;
 ; if ( ( jumpButtonReset ) && ( pad & PAD_A ) ) {
 ;
-L0694:	lda     _jumpButtonReset
-	beq     L07B8
+L0697:	lda     _jumpButtonReset
+	beq     L07BE
 	lda     _pad
 	and     #$01
-	beq     L07B8
+	beq     L07BE
 ;
 ; playerVertVel = PLAYER_INIT_JUMP_VEL;
 ;
@@ -4054,21 +4056,24 @@ L0694:	lda     _jumpButtonReset
 ;
 	sta     _jumpButtonReset
 ;
-; if ( ( playerVertVel > -3 ) && ( playerJumpCounter == 4 ) ) {
+; if ( ( playerVertVel > -3 ) && ( playerJumpCounter == PLAYER_JUMP_COUNTER_INTERVAL ) ) {
 ;
-L07B8:	lda     _playerVertVel
+L07BE:	lda     _playerVertVel
 	sec
 	sbc     #$FE
-	bvs     L06AE
+	bvs     L06B1
 	eor     #$80
-L06AE:	bpl     L07BD
+L06B1:	bpl     L07C3
 	lda     _playerJumpCounter
-	cmp     #$04
-	bne     L07BD
+	cmp     #$06
+	bne     L07C3
 ;
-; playerVertVel -= 1; 
+; playerVertVel -= GRAVITY_ACCELERATION; 
 ;
-	dec     _playerVertVel
+	lda     _playerVertVel
+	sec
+	sbc     #$02
+	sta     _playerVertVel
 ;
 ; playerJumpCounter = 0;
 ;
@@ -4077,7 +4082,7 @@ L06AE:	bpl     L07BD
 ;
 ; ++playerJumpCounter;
 ;
-L07BD:	inc     _playerJumpCounter
+L07C3:	inc     _playerJumpCounter
 ;
 ; }
 ;
@@ -4105,7 +4110,7 @@ L07BD:	inc     _playerJumpCounter
 ;
 	lda     _pad
 	and     #$10
-	beq     L07BE
+	beq     L07C4
 ;
 ; --playerY;
 ;
@@ -4114,9 +4119,9 @@ L07BD:	inc     _playerJumpCounter
 ; } else if ( pad & PAD_DOWN ) {
 ;
 	jmp     incsp1
-L07BE:	lda     _pad
+L07C4:	lda     _pad
 	and     #$20
-	beq     L06C6
+	beq     L06C9
 ;
 ; ++playerY;
 ;
@@ -4140,18 +4145,18 @@ L07BE:	lda     _pad
 ;
 	lda     _verticalCollideCheck
 	cmp     #$01
-	beq     L07C1
+	beq     L07C7
 	cmp     #$07
 	jne     incsp1
 ;
 ; playerState = PLAYER_STATE_NORMAL;
 ;
-L07C1:	lda     #$00
+L07C7:	lda     #$00
 	sta     _playerState
 ;
 ; }
 ;
-L06C6:	jmp     incsp1
+L06C9:	jmp     incsp1
 
 .endproc
 
@@ -4195,9 +4200,9 @@ L06C6:	jmp     incsp1
 ; if ( ( playerState != PLAYER_STATE_NORMAL ) && ( playerState != PLAYER_STATE_JUMPING ) ) {
 ;
 	lda     _playerState
-	beq     L07C6
+	beq     L07CC
 	cmp     #$03
-	beq     L07C6
+	beq     L07CC
 ;
 ; return;
 ;
@@ -4205,18 +4210,18 @@ L06C6:	jmp     incsp1
 ;
 ; if ( pad & PAD_DOWN ) {
 ;
-L07C6:	lda     _pad
+L07CC:	lda     _pad
 	and     #$20
 ;
 ; return;
 ;
-	bne     L06D3
+	bne     L06D6
 ;
 ; if ( pad & PAD_LEFT ) {
 ;
 	lda     _pad
 	and     #$40
-	beq     L07C7
+	beq     L07CD
 ;
 ; playerDir = PAD_LEFT;
 ;
@@ -4226,7 +4231,7 @@ L07C6:	lda     _pad
 ; if ( playerX > 0 ) {
 ;
 	lda     _playerX
-	beq     L06E9
+	beq     L06EC
 ;
 ; playerX -= PLAYER_MOVE_VEL;
 ;
@@ -4234,10 +4239,10 @@ L07C6:	lda     _pad
 ;
 ; } else if ( pad & PAD_RIGHT ) {
 ;
-	jmp     L06E9
-L07C7:	lda     _pad
+	jmp     L06EC
+L07CD:	lda     _pad
 	and     #$80
-	beq     L06E9
+	beq     L06EC
 ;
 ; playerDir = PAD_RIGHT;
 ;
@@ -4248,7 +4253,7 @@ L07C7:	lda     _pad
 ;
 	lda     _playerX
 	cmp     #$F0
-	bcs     L06E9
+	bcs     L06EC
 ;
 ; playerX += PLAYER_MOVE_VEL;
 ;
@@ -4256,7 +4261,7 @@ L07C7:	lda     _pad
 ;
 ; bgHorizCollideCheck(&playerX, &playerY, pad);
 ;
-L06E9:	jsr     decsp4
+L06EC:	jsr     decsp4
 	lda     #<(_playerX)
 	ldy     #$02
 	sta     (sp),y
@@ -4274,7 +4279,7 @@ L06E9:	jsr     decsp4
 ;
 ; }
 ;
-L06D3:	rts
+L06D6:	rts
 
 .endproc
 
@@ -4293,15 +4298,15 @@ L06D3:	rts
 ;
 	lda     _pad
 	and     #$02
-	beq     L07CA
+	beq     L07D0
 	lda     _potionTossTimer
-	beq     L07CB
-L07CA:	rts
+	beq     L07D1
+L07D0:	rts
 ;
 ; if ( !potionIsActive ) {
 ;
-L07CB:	lda     _potionIsActive
-	bne     L06F8
+L07D1:	lda     _potionIsActive
+	bne     L06FB
 ;
 ; potionIsActive = 1;
 ;
@@ -4324,7 +4329,7 @@ L07CB:	lda     _potionIsActive
 ;
 	lda     _playerDir
 	cmp     #$80
-	bne     L07CC
+	bne     L07D2
 ;
 ; potionX = playerX + 12;
 ;
@@ -4334,14 +4339,14 @@ L07CB:	lda     _potionIsActive
 ;
 ; } else {
 ;
-	jmp     L07C8
+	jmp     L07CE
 ;
 ; potionX = playerX - 4;
 ;
-L07CC:	lda     _playerX
+L07D2:	lda     _playerX
 	sec
 	sbc     #$04
-L07C8:	sta     _potionX
+L07CE:	sta     _potionX
 ;
 ; potionDirection = playerDir;
 ;
@@ -4359,7 +4364,7 @@ L07C8:	sta     _potionX
 ;
 ; }
 ;
-L06F8:	rts
+L06FB:	rts
 
 .endproc
 
@@ -4377,18 +4382,18 @@ L06F8:	rts
 ; memcpy(palSprites, paldat, 16);
 ;
 	ldy     #$0F
-L0714:	lda     _paldat,y
+L0717:	lda     _paldat,y
 	sta     _palSprites,y
 	dey
-	bpl     L0714
+	bpl     L0717
 ;
 ; memcpy(palBG, paldat + 16, 4);
 ;
 	ldy     #$03
-L0719:	lda     _paldat+16,y
+L071C:	lda     _paldat+16,y
 	sta     _palBG,y
 	dey
-	bpl     L0719
+	bpl     L071C
 ;
 ; pal_spr(palSprites);
 ;
@@ -4472,7 +4477,7 @@ L0719:	lda     _paldat+16,y
 ;
 ; ppu_wait_frame(); // wait for next TV frame
 ;
-L0735:	jsr     _ppu_wait_frame
+L0738:	jsr     _ppu_wait_frame
 ;
 ; oamSpriteIndex = 0;
 ;
@@ -4551,7 +4556,7 @@ L0735:	jsr     _ppu_wait_frame
 ; if ( playerEnemyColliding ) {
 ;
 	lda     _playerEnemyColliding
-	beq     L0753
+	beq     L0756
 ;
 ; setSpritePalette(playerSpriteData, 0x0);
 ;
@@ -4562,15 +4567,15 @@ L0735:	jsr     _ppu_wait_frame
 ;
 ; } else {
 ;
-	jmp     L07CD
+	jmp     L07D3
 ;
 ; setSpritePalette(playerSpriteData, 0x3);
 ;
-L0753:	lda     #<(_playerSpriteData)
+L0756:	lda     #<(_playerSpriteData)
 	ldx     #>(_playerSpriteData)
 	jsr     pushax
 	lda     #$03
-L07CD:	jsr     _setSpritePalette
+L07D3:	jsr     _setSpritePalette
 ;
 ; oam_hide_rest(oamSpriteIndex);
 ;
@@ -4583,7 +4588,7 @@ L07CD:	jsr     _setSpritePalette
 ;
 ; while ( 1 )
 ;
-	jmp     L0735
+	jmp     L0738
 
 .endproc
 
