@@ -585,8 +585,8 @@ void checkPlayerLadderCollision(void) {
 	
 	leftSide = playerX + 3;
 	rightSide = playerX + 11;
-	topSide = playerY + 9;
-	bottomSide = playerY + 16;
+	//topSide = playerY + 9;
+	bottomSide = playerY + 15;
 	
 
 	//collisionLeft = collisionMap[( leftSide >> 3 ) + ( ( bottomSide & 0xF8 ) << 2)];
@@ -747,7 +747,7 @@ void updatePlayerJumpFall(void) {
 		
 	} else {
 		// check collision below
-		collideCheckVertical(playerX, playerY + 2, PAD_DOWN);
+		collideCheckVertical(playerX, playerY + 4, PAD_DOWN);
 		if ( ( verticalCollideCheck == TILE_ALLCOLLIDE ) || ( verticalCollideCheck == TILE_LADDER_TOP ) ) { 
 			// sitting on the ground
 			playerY = (playerY & 0xF8) + 7;
@@ -799,8 +799,8 @@ void updatePlayerClimbing(void) {
 		--playerY;
 	} else if ( pad & PAD_DOWN ) {
 		++playerY;
-		collideCheckVertical(playerX, playerY + 4, PAD_DOWN);
-		if ( ( verticalCollideCheck == TILE_ALLCOLLIDE ) || ( verticalCollideCheck == TILE_LADDER_TOP ) ) { 	
+		collideCheckVertical(playerX, playerY + 1, PAD_DOWN);
+		if ( ( verticalCollideCheck == TILE_ALLCOLLIDE ) ) { 	
 			playerState = PLAYER_STATE_NORMAL;
 		}	
 	}
