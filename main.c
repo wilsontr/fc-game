@@ -58,13 +58,20 @@ typedef uint16_t u16;
 
 #define POTION_TOSS_WAIT_TIME	60
 
+#define SFX_JUMP			0
+
+#define CHANNEL_SQUARE1 	0
+#define CHANNEL_SQUARE2 	1
+#define CHANNEL_TRIANGLE 	2
+#define CHANNEL_NOISE	 	3
+
 
 #pragma bss-name (push, "ZEROPAGE")
 #pragma data-name (push, "ZEROPAGE")
 
 u8 oam_off;
-static u8 playerX;
-static u8 playerY;
+static u8 playerX = 0;
+static u8 playerY = 0;
 static u8 enemyIndex = 0;
 static u8 frameCount;
 static u8 enemyColliding = 0;
@@ -83,6 +90,8 @@ static uint8_t * collisionMap;
 
 /* Commonly-used test variables */
 
+static u8 playerStartX = 50;
+static u8 playerStartY = 50;
 
 
 /* Bookkeeping and state */
@@ -236,7 +245,7 @@ void setupMap(void) {
 	u8 collByte, k;
 	u8 mapX = 0;
 	u8 mapY = 0;
-	u16 index = 0;
+	u8 index = 0;
 	enemy newEnemy = { 0, 0, 0, PAD_LEFT };
 	potionTossTimer = 0;
 
@@ -247,15 +256,16 @@ void setupMap(void) {
 
 	enemyIndex = 0;
 	
-	for ( index; index <= COLLISION_MAP_SIZE; ++index ) {
+	for ( index; index < COLLISION_MAP_SIZE; ++index ) {
 		collByte = collisionMap[index];
 
 		if ( collByte == TILE_PLAYERSTART ) {
-			playerX = mapX << 4;
-			playerY = (mapY << 4) - 1;
-		}
-		
-		if ( ( collByte == TILE_ENEMY1START_RIGHT ) || ( collByte == TILE_ENEMY1START_LEFT ) ) {
+			
+			playerStartX = mapX << 4;
+			playerStartY = (mapY << 4) - 1;
+			
+		} else if ( ( collByte == TILE_ENEMY1START_RIGHT ) || ( collByte == TILE_ENEMY1START_LEFT ) ) {
+			
 			enemyData[enemyIndex] = newEnemy;
 			enemyData[enemyIndex].x = mapX << 4;
 			enemyData[enemyIndex].y = (mapY << 4) - 1;
@@ -295,13 +305,6 @@ void __fastcall__ setSpriteFrame(u8 *sprite, const u8 *frame) {
 	*(sprite + 6) = *(frame + 1);
 	*(sprite + 10) = *(frame + 2);
 	*(sprite + 14) = *(frame + 3);
-
-	/*
-	sprite[2] = frame[0];
-	sprite[6] = frame[1];
-	sprite[10] = frame[2];
-	sprite[14] = frame[3];
-	*/
 }
 
 void __fastcall__ setSpritePalette(u8 *sprite, u8 palette) {
@@ -372,14 +375,12 @@ void updateEnemySprites(void) {
 		spriteFlickerIndex = enemySpriteCount;
 
 		currentEnemy = &(enemyData[spriteFlickerIndex]);
-		//currentEnemySprite = &(enemySpriteData[spriteFlickerIndex][0]);
 		
 		if ( (*currentEnemy).state == ENEMY_STATE_NORMAL ) {
 			// animate
 			if ( ( frameCount & 0x0F ) == 0x0F ) {
 				(*currentEnemy).frame ^= 1;
 				setSpriteFrame(enemySpriteData[spriteFlickerIndex], enemyFrames[(*currentEnemy).frame]);
-				//setSpriteFrame(currentEnemySprite, enemyFrames[(*currentEnemy).frame]);
 			}
 
 			if ( (*currentEnemy).collidingWithPotion ) {
@@ -454,7 +455,7 @@ void drawScoreboard(void) {
 	// TODO: set correct pal color (any bg pal entry with white as color #1)
 	// CONSIDER: using separate nametable with sprite zero hit trick
 
-	//pal_col(1,0x30); //set while color
+	//pal_col(1,0x30); //set white color
 	vram_adr(NTADR_A(0, 1));
 	vram_fill(0x10, 5);
 }
@@ -493,7 +494,6 @@ void __fastcall__ four_SidesSmall(u8 originX, u8 originY) {
 }
 
 void __fastcall__ getCollisionIndex(u8 screenX, u8 screenY) {
-	//collisionIndex = ( screenX >> 3 ) + ( ( screenY & 0xF8 ) << 2);
 	collisionIndex = ((screenX & 0xf0) >> 4) + (screenY & 0xf0);
 }
 
@@ -508,17 +508,13 @@ u8 __fastcall__ smallCollideCheckVertical(u8 originX, u8 originY, u8 direction) 
 	collisionIndex = 0;
 
 	if ( direction & PAD_UP ) {
-		//collisionIndex = ( rightSide >> 3 ) + ( ( topSide & 0xF8 ) << 2);
 		getCollisionIndex(rightSide, topSide);
 		if ( collisionMap[collisionIndex] != TILE_ALLCOLLIDE ) {
-			//collisionIndex = ( leftSide >> 3 ) + ( ( topSide & 0xF8 ) << 2);
 			getCollisionIndex(leftSide, topSide);
 		}
 	} else if ( direction & PAD_DOWN ) {
-		//collisionIndex = ( rightSide >> 3 ) + ( ( bottomSide & 0xF8 ) << 2);
 		getCollisionIndex(rightSide, bottomSide);
 		if ( collisionMap[collisionIndex] != TILE_ALLCOLLIDE ) {
-			//collisionIndex = ( leftSide >> 3 ) + ( ( bottomSide & 0xF8 ) << 2);
 			getCollisionIndex(leftSide, bottomSide);
 		}
 	}
@@ -542,17 +538,13 @@ void __fastcall__ collideCheckVertical(u8 originX, u8 originY, u8 direction) {
 	collisionIndex = 0;
 
 	if ( direction & PAD_UP ) {
-		//collisionIndex = ( rightSide >> 3 ) + ( ( topSide & 0xF8 ) << 2);
 		getCollisionIndex(rightSide, topSide);
 		if ( collisionMap[collisionIndex] != TILE_ALLCOLLIDE )  {
-			//collisionIndex = ( leftSide >> 3 ) + ( ( topSide & 0xF8 ) << 2);
 			getCollisionIndex(leftSide, topSide);
 		}
 	} else if ( direction & PAD_DOWN ) {
-		//collisionIndex = ( rightSide >> 3 ) + ( ( bottomSide & 0xF8 ) << 2);
 		getCollisionIndex(rightSide, bottomSide);
 		if ( collisionMap[collisionIndex] != TILE_ALLCOLLIDE ) {
-			//collisionIndex = ( leftSide >> 3 ) + ( ( bottomSide & 0xF8 ) << 2);
 			getCollisionIndex(leftSide, bottomSide);
 		}
 	}
@@ -568,16 +560,13 @@ void __fastcall__ collideCheckHorizontal(u8 originX, u8 originY, u8 direction) {
 	bottomSide = originY + 12;
 
 	if ( direction & PAD_LEFT ) {
-		//collisionIndex = ( leftSide >> 3 ) + ( ( topSide & 0xF8 ) << 2);
 		getCollisionIndex(leftSide, topSide);
 		if ( collisionMap[collisionIndex] == TILE_NOCOLLIDE ) {
-			//collisionIndex = ( leftSide >> 3 ) + ( ( bottomSide & 0xF8 ) << 2);
 			getCollisionIndex(leftSide, bottomSide);
 		}
 	} else if ( direction & PAD_RIGHT ) {
 		getCollisionIndex(rightSide, topSide);
 		if ( collisionMap[collisionIndex] == TILE_NOCOLLIDE ) {
-			//collisionIndex = ( rightSide >> 3 ) + ( ( bottomSide & 0xF8 ) << 2);
 			getCollisionIndex(rightSide, bottomSide);
 		}
 	}
@@ -604,8 +593,6 @@ void checkPlayerLadderCollision(void) {
 	bottomSide = playerY + 15;
 	
 
-	//collisionLeft = collisionMap[( leftSide >> 3 ) + ( ( bottomSide & 0xF8 ) << 2)];
-	//collisionRight = collisionMap[( rightSide >> 3 ) + ( ( bottomSide & 0xF8 ) << 2)];
 	getCollisionIndex(leftSide, bottomSide);
 	collisionLeft = collisionMap[collisionIndex];
 	getCollisionIndex(rightSide, bottomSide);
@@ -800,7 +787,7 @@ void updatePlayerJumpFall(void) {
 			playerJumpCounter = 0;
 			jumpButtonReset = 0;
 
-			sfx_play(0,0);
+			sfx_play(SFX_JUMP, CHANNEL_SQUARE1);
 
 		} else if ( pad & PAD_UP ) {
 
@@ -1005,8 +992,6 @@ void main(void)
 	ppu_on_all(); //enable rendering
 
 	//set initial coords
-	playerX = 0;
-	playerY = 0;
 	playerDir = PAD_LEFT;
 
 	//init other vars
@@ -1017,6 +1002,9 @@ void main(void)
 	
 	setSpriteFrame(playerSpriteData, playerFrames[playerFrame]);
 	setupMap();
+
+	playerX = playerStartX;
+	playerY = playerStartY;
 
 	// now the main loop
 
