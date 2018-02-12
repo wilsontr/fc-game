@@ -800,6 +800,8 @@ void updatePlayerJumpFall(void) {
 			playerJumpCounter = 0;
 			jumpButtonReset = 0;
 
+			sfx_play(0,0);
+
 		} else if ( pad & PAD_UP ) {
 
 			// *** See if we can move up a ladder
@@ -845,10 +847,6 @@ void updatePlayerVerticalMovement(void) {
 
 void updatePlayerHorizontalMovement(void) {	
 	if ( ( playerState != PLAYER_STATE_NORMAL ) && ( playerState != PLAYER_STATE_JUMPING ) ) {
-		return;
-	}
-
-	if ( pad & PAD_DOWN ) {
 		return;
 	}
 
