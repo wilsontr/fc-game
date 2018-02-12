@@ -22,6 +22,7 @@ typedef uint16_t u16;
 #define TILE_ENEMY1START_RIGHT	5	
 #define TILE_LADDER				6
 #define TILE_LADDER_TOP			7
+#define TILE_GLUE				8
 
 #define MAX_JUMP_HEIGHT			 100
 
@@ -59,6 +60,7 @@ typedef uint16_t u16;
 #define POTION_TOSS_WAIT_TIME	60
 
 #define SFX_JUMP			0
+#define SFX_GLUEDROP		1
 
 #define CHANNEL_SQUARE1 	0
 #define CHANNEL_SQUARE2 	1
@@ -109,9 +111,7 @@ static u8 palBG[4];
 
 static u8 horizontalCollideCheck;
 static u8 verticalCollideCheck;
-
 static u8 collideBottom;
-
 static u8 collisionLeft, collisionRight;
 
 
@@ -142,8 +142,32 @@ u8 playerSpriteData[17] = {
 
 u8 * nametableUpdateList;
 
-/* Potion */
+/* Glue */
 
+struct glueStruct {
+	u8 x;
+	u8 y;
+};
+
+typedef struct glueStruct glue;
+
+glue glueData[10];
+
+const u8 glueSpriteDataTemplate[17] = {
+	0, 0, 0x46, 0x0,
+	8, 0, 0x47, 0x0,
+	0, 8, 0x56, 0x0,
+	8, 8, 0x57, 0x0,
+	128
+};
+
+const u8 glueTileData[4] = {
+	0x46, 0x47, 0x56, 0x57
+};
+
+
+/* Potion */
+/*
 static u8 potionIsActive = 0;
 static u8 potionDirection;
 static signed char potionVerticalVel = 0;
@@ -153,9 +177,11 @@ u8 potionSpriteData[5] = {
 	0, 0, 0x2A, 0x0,
 	128
 };
+*/
 
 /* Mushroom */
 
+/*
 const u8 mushroomSpriteDataTemplate[17] = {
 	0, 0, 0x2B, 0x2,
 	8, 0, 0x2C, 0x2,
@@ -163,6 +189,7 @@ const u8 mushroomSpriteDataTemplate[17] = {
 	8, 8, 0x3C, 0x2,
 	128
 };
+*/
 
 /* Enemies */
 
@@ -189,7 +216,7 @@ struct enemyStruct {
 
 typedef struct enemyStruct enemy;
 
-enemy enemyData[20];
+enemy enemyData[8];
 
 const u8 enemyFrames[2][4] = {
 	{ 0x06, 0x07, 0x16, 0x17 },
@@ -263,7 +290,7 @@ void setupMap(void) {
 			
 			playerStartX = mapX << 4;
 			playerStartY = (mapY << 4) - 1;
-			
+
 		} else if ( ( collByte == TILE_ENEMY1START_RIGHT ) || ( collByte == TILE_ENEMY1START_LEFT ) ) {
 			
 			enemyData[enemyIndex] = newEnemy;
@@ -392,12 +419,7 @@ void updateEnemySprites(void) {
 			//setSpritePriority(enemySpriteData[i], sprPriorityToggle);
 			//sprPriorityToggle ^= 1;
 			oamSpriteIndex = oam_meta_spr((*currentEnemy).x, (*currentEnemy).y, oamSpriteIndex, enemySpriteData[spriteFlickerIndex]);				
-		} else if ( (*currentEnemy).state == ENEMY_STATE_MUSHROOM ) {
-			//setSpritePriority(enemySpriteData[i], sprPriorityToggle);
-			//sprPriorityToggle ^= 1;
-			oamSpriteIndex = oam_meta_spr((*currentEnemy).x, (*currentEnemy).y, oamSpriteIndex, mushroomSpriteDataTemplate);							
-		}
-		
+		} 
 	}	
 }
 
@@ -444,10 +466,6 @@ void updatePlayerSprite(void) {
 	
 	// update player sprite
 	oamSpriteIndex = oam_meta_spr(playerX, playerY, oamSpriteIndex, playerSpriteData);	
-}
-
-void updatePotionSprite(void) {
-	oamSpriteIndex = oam_meta_spr(potionX, potionY, oamSpriteIndex, potionSpriteData);	
 }
 
 void drawScoreboard(void) {
@@ -853,6 +871,7 @@ void updatePlayerHorizontalMovement(void) {
 }
 
 
+/*
 
 void  updatePlayerAttack(void) {
 	if ( ( pad & PAD_B ) && ( potionTossTimer == 0 ) ) {
@@ -873,95 +892,53 @@ void  updatePlayerAttack(void) {
 	}
 }
 
-// void __fastcall__ updatePotionMovement(void) {
-// 	u8 potionCollided = 0;
-// 	if ( potionTossTimer > 0 ) {
-// 		++potionTossTimer;
-// 		if ( potionTossTimer >= POTION_TOSS_WAIT_TIME ) {
-// 			potionTossTimer = 0;
-// 		}
-// 	}
-// 	if ( potionIsActive ) {
-// 		/* horizontal movement */
-// 		if ( potionDirection == PAD_LEFT ) {
-// 			potionX -= POTION_HORIZ_VELOCITY;
-// 		} else {
-// 			potionX += POTION_HORIZ_VELOCITY;
-// 		}
+*/
 
-// 		if ( ( potionX <= 8 ) || ( potionX >= 248 ) ) {
-// 			potionCollided = 1;
-// 		}
+const u8 tileUpdateListInit[3 + 3 + 3 + 3 + 1] = {
+	MSB(NTADR_A(0, 0)), LSB(NTADR_A(0, 0)), 0,//non-sequental updates
+	MSB(NTADR_A(1, 0)), LSB(NTADR_A(1, 0)), 0,
+	MSB(NTADR_A(0, 1)), LSB(NTADR_A(0, 1)), 0,
+	MSB(NTADR_A(1, 1)), LSB(NTADR_A(1, 1)), 0,
+	NT_UPD_EOF
+};
 
-// 		/* vertical movement */
+static u8 tileUpdateList[3 + 3 + 3 + 1];
 
-// 		if ( potionVerticalVel > 0 ) {
-// 			// moving up in arc 
-// 			if ( smallCollideCheckVertical(potionX, potionY + 8, PAD_UP) == TILE_ALLCOLLIDE ) { 
-// 				/* collided with ceiling */
-// 				potionCollided = 1;				
-// 			} else {
-// 				potionY -= potionVerticalVel;
-// 			}
-			
-// 		} else {
-// 			// falling
-// 			if ( smallCollideCheckVertical(potionX, potionY, PAD_DOWN) == TILE_ALLCOLLIDE ) { 
-// 				/* collided with ground */
-// 				potionCollided = 1;				
-// 			} else {
-// 				potionY -= potionVerticalVel;
-// 			}		
-// 		}
 
-// 		if ( potionY >= 240 ) {
-// 			potionCollided = 1;
-// 		}			
+void updatePlayerGlue(void) {
+	u8 glueX, glueY;
+	u8 glueTileX, glueTileY;
+	if ( pad & PAD_B ) {
+		glueY = (((playerY + 8) & 0xf0) >> 4);
+		if ( playerDir == PAD_RIGHT ) {
+			glueX = (((playerX + 8) & 0xf0) >> 4) + 1;
+		} else {
+			glueX = (((playerX + 8) & 0xf0) >> 4) - 1;
+		}
 
-// 		// acceleration toward ground
-// 		if ( ( potionVerticalVel >= -3 ) && ( potionMoveCounter == 3 ) ) {
-// 			potionVerticalVel -= 1; 
-// 			potionMoveCounter = 0;
-// 		}		
+		getCollisionIndex(glueX, glueY);
+		collisionMap[collisionIndex] = TILE_GLUE;
 
-// 		++potionMoveCounter;
+		glueTileX = glueX << 1;
+		glueTileY = glueY << 1;
 
-// 		if ( potionCollided ) {
-// 			potionIsActive = 0;
-// 			potionX = -8;
-// 			potionY = -8;
-// 		}
-// 	}
-// }
+		tileUpdateList[0] = MSB(NTADR_A(glueTileX, glueTileY));
+		tileUpdateList[1] = LSB(NTADR_A(glueTileX, glueTileY));
 
-// void simpleUpdatePotionMovement(void) {
-// 	u8 potionCollided = 0;
-// 	if ( potionIsActive ) {
-// 		/* horizontal movement */
-// 		if ( potionDirection == PAD_LEFT ) {
-// 			potionX -= POTION_HORIZ_VELOCITY;
-// 		} else {
-// 			potionX += POTION_HORIZ_VELOCITY;
-// 		}
+		tileUpdateList[3] = MSB(NTADR_A(glueTileX + 1, glueTileY));
+		tileUpdateList[4] = LSB(NTADR_A(glueTileX + 1, glueTileY));
 
-// 		if ( ( potionX <= 8 ) || ( potionX >= 248 ) ) {
-// 			potionCollided = 1;
-// 		}
+		tileUpdateList[6] = MSB(NTADR_A(glueTileX, glueTileY + 1));
+		tileUpdateList[7] = LSB(NTADR_A(glueTileX, glueTileY + 1));
 
-// 		++potionMoveCounter;
+		tileUpdateList[9] = MSB(NTADR_A(glueTileX + 1, glueTileY + 1));
+		tileUpdateList[10] = LSB(NTADR_A(glueTileX + 1, glueTileY + 1));
 
-// 		if ( potionCollided ) {
-// 			killPotion();
-// 		}		
+		set_vram_update(tileUpdateList);
 
-// 	}
-// }
-
-// void killPotion(void) {
-// 	potionIsActive = 0;
-// 	potionX = -8;
-// 	potionY = -8;
-// }
+		sfx_play(SFX_GLUEDROP, CHANNEL_SQUARE1);
+	}
+}
 
 /*********** Main ***********/
 
@@ -978,6 +955,13 @@ void main(void)
 
 	memcpy(palSprites, paldat, 16);
 	memcpy(palBG, paldat + 16, 4);
+
+	memcpy(tileUpdateList, tileUpdateListInit, sizeof(tileUpdateListInit));
+	tileUpdateList[2] = glueTileData[0];
+	tileUpdateList[5] = glueTileData[1];
+	tileUpdateList[8] = glueTileData[2];
+	tileUpdateList[11] = glueTileData[3];
+
 
 	//unrleCollision();
 
@@ -1033,6 +1017,7 @@ void main(void)
 		updatePlayerHorizontalMovement();
 		updatePlayerVerticalMovement();
 		//updatePlayerAttack();
+		updatePlayerGlue();
 		//updatePotionMovement();
 
 
