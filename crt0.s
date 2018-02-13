@@ -272,3 +272,5 @@ sounds_data:
 
 	.incbin "fcgame.chr"
 
+.segment "ONCE"
+

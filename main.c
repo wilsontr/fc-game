@@ -1,12 +1,14 @@
 
 
 #include <stdint.h>
+#include <stdlib.h>
 #include "neslib.h"
 #include "newmap.h"
 #include "newmap_coll.h"
 
 
 void __fastcall__ memcpy(void *dst, void *src, unsigned int len);
+
 
 typedef uint8_t u8;
 typedef uint16_t u16;
@@ -33,6 +35,9 @@ typedef uint16_t u16;
 #define POTION_INIT_VERTICAL_VEL 2
 
 #define PLAYER_INIT_JUMP_VEL 	 3
+
+#define GLUE_INIT_LIFESPAN	 	 240
+#define MAX_GLUE_COUNT 			 5
 
 
 #define PLAYER_STATE_NORMAL		 0
@@ -132,7 +137,7 @@ const u8 playerFrames[4][4] = {
 	{ 0x48, 0x49, 0x58, 0x59 }
 };
 
-u8 playerSpriteData[17] = {
+static u8 playerSpriteData[17] = {
 	0, 0, 0x08, 0x3,
 	8, 0, 0x09, 0x3,
 	0, 8, 0x18, 0x3,
@@ -140,18 +145,22 @@ u8 playerSpriteData[17] = {
 	128
 };
 
-u8 * nametableUpdateList;
+static u8 * nametableUpdateList;
 
 /* Glue */
 
 struct glueStruct {
 	u8 x;
 	u8 y;
+	u8 timeLeft;
+	u8 active;
+	u8 spriteData[17];
 };
 
 typedef struct glueStruct glue;
 
-glue glueData[10];
+static glue glueData[MAX_GLUE_COUNT];
+static glue *gluePointer;
 
 const u8 glueSpriteDataTemplate[17] = {
 	0, 0, 0x46, 0x0,
@@ -282,8 +291,19 @@ void setupMap(void) {
 	collisionMap = (u8 *) newmap_coll;
 
 	enemyIndex = 0;
+
+
+	// initialize glue data
+
+	for ( index = 0; index < sizeof(MAX_GLUE_COUNT); ++index ) {
+		gluePointer = &(glueData[index]);
+		gluePointer->active = 0;
+	}
+
 	
-	for ( index; index < COLLISION_MAP_SIZE; ++index ) {
+	// populate the screen based on the collision map
+
+	for ( index = 0; index < COLLISION_MAP_SIZE; ++index ) {
 		collByte = collisionMap[index];
 
 		if ( collByte == TILE_PLAYERSTART ) {
@@ -403,14 +423,14 @@ void updateEnemySprites(void) {
 
 		currentEnemy = &(enemyData[spriteFlickerIndex]);
 		
-		if ( (*currentEnemy).state == ENEMY_STATE_NORMAL ) {
+		if ( currentEnemy->state == ENEMY_STATE_NORMAL ) {
 			// animate
 			if ( ( frameCount & 0x0F ) == 0x0F ) {
-				(*currentEnemy).frame ^= 1;
-				setSpriteFrame(enemySpriteData[spriteFlickerIndex], enemyFrames[(*currentEnemy).frame]);
+				currentEnemy->frame ^= 1;
+				setSpriteFrame(enemySpriteData[spriteFlickerIndex], enemyFrames[currentEnemy->frame]);
 			}
 
-			if ( (*currentEnemy).collidingWithPotion ) {
+			if ( currentEnemy->collidingWithPotion ) {
 				setSpritePalette(enemySpriteData[spriteFlickerIndex], 0x0);
 			} else {
 				setSpritePalette(enemySpriteData[spriteFlickerIndex], 0x3);
@@ -418,9 +438,23 @@ void updateEnemySprites(void) {
 
 			//setSpritePriority(enemySpriteData[i], sprPriorityToggle);
 			//sprPriorityToggle ^= 1;
-			oamSpriteIndex = oam_meta_spr((*currentEnemy).x, (*currentEnemy).y, oamSpriteIndex, enemySpriteData[spriteFlickerIndex]);				
+			oamSpriteIndex = oam_meta_spr(currentEnemy->x, currentEnemy->y, oamSpriteIndex, enemySpriteData[spriteFlickerIndex]);				
 		} 
 	}	
+}
+
+void updateGlueSprites(void) {
+	
+	
+
+	for ( i = 0; i < MAX_GLUE_COUNT; ++i ) {
+		gluePointer = &(glueData[i]);
+		if ( gluePointer->active == 1 ) {
+			oamSpriteIndex = oam_meta_spr(gluePointer->x, gluePointer->y, oamSpriteIndex, glueSpriteDataTemplate);	
+		}
+	}
+	
+	
 }
 
 void updatePlayerSprite(void) {
@@ -654,23 +688,23 @@ void enemyCollideCheck(void) {
 
 	while ( !enemyColliding && ( enemyIndex < numEnemies ) ) {
 		currentEnemy = &(enemyData[enemyIndex]);
-		enemyTop = (*currentEnemy).y + 2;
-		enemyBottom = (*currentEnemy).y + 14;
-		enemyLeft = (*currentEnemy).x + 2;
-		enemyRight = (*currentEnemy).x + 14;
+		enemyTop = currentEnemy->y + 2;
+		enemyBottom = currentEnemy->y + 14;
+		enemyLeft = currentEnemy->x + 2;
+		enemyRight = currentEnemy->x + 14;
 
 		if ( !( rightSide  <  enemyLeft  || 
 				leftSide   >= enemyRight || 
 				bottomSide <  enemyTop   || 
 				topSide    >= enemyBottom ) ) {
 
-			switch ( (*currentEnemy).state ) {
+			switch ( currentEnemy->state ) {
 				case ENEMY_STATE_NORMAL: 
 					enemyColliding = 1;
 					enemyCollidedIndex = enemyIndex;
 					break;
 				case ENEMY_STATE_MUSHROOM:
-					(*currentEnemy).state = ENEMY_STATE_DEAD;
+					currentEnemy->state = ENEMY_STATE_DEAD;
 					break;
 				case ENEMY_STATE_DEAD:
 					break;
@@ -704,26 +738,26 @@ void updateEnemyMovement(void) {
 
 	for ( i = 0; i < numEnemies; i++ ) {
 		currentEnemy = &(enemyData[i]);
-		if ( (*currentEnemy).state == ENEMY_STATE_MUSHROOM ) {
+		if ( currentEnemy->state == ENEMY_STATE_MUSHROOM ) {
 			continue;
 		}
-		collideCheckVertical((*currentEnemy).x, (*currentEnemy).y + 1, PAD_DOWN);
+		collideCheckVertical(currentEnemy->x, currentEnemy->y + 1, PAD_DOWN);
 		if ( ( verticalCollideCheck != TILE_ALLCOLLIDE ) && ( verticalCollideCheck != TILE_LADDER_TOP ) ) {
-			(*currentEnemy).y += 1;
+			currentEnemy->y += 1;
 		} else {
-			if ( (*currentEnemy).direction == PAD_RIGHT ) {
-				(*currentEnemy).x += 1;
-				 collideCheckHorizontal((*currentEnemy).x, (*currentEnemy).y, PAD_RIGHT);
+			if ( currentEnemy->direction == PAD_RIGHT ) {
+				currentEnemy->x += 1;
+				 collideCheckHorizontal(currentEnemy->x, currentEnemy->y, PAD_RIGHT);
 				if ( ( horizontalCollideCheck == TILE_ALLCOLLIDE ) || ( horizontalCollideCheck == TILE_ENEMYCOLLIDE ) ) {
 					flipSprite(enemySpriteData[i], 0);
-					(*currentEnemy).direction = PAD_LEFT;
+					currentEnemy->direction = PAD_LEFT;
 				}
 			} else {
-				(*currentEnemy).x -= 1;
-				collideCheckHorizontal((*currentEnemy).x, (*currentEnemy).y, PAD_LEFT);
+				currentEnemy->x -= 1;
+				collideCheckHorizontal(currentEnemy->x, currentEnemy->y, PAD_LEFT);
 				if ( ( horizontalCollideCheck == TILE_ALLCOLLIDE ) || ( horizontalCollideCheck == TILE_ENEMYCOLLIDE ) ) {
 					flipSprite(enemySpriteData[i], 1);
-					(*currentEnemy).direction = PAD_RIGHT;
+					currentEnemy->direction = PAD_RIGHT;
 				}
 			}			
 		}
@@ -907,18 +941,33 @@ static u8 tileUpdateList[3 + 3 + 3 + 1];
 
 void updatePlayerGlue(void) {
 	u8 glueX, glueY;
-	u8 glueTileX, glueTileY;
 	if ( pad & PAD_B ) {
-		glueY = (((playerY + 8) & 0xf0) >> 4);
+
+		glueY = ((playerY + 8) & 0xf0) >> 4;
 		if ( playerDir == PAD_RIGHT ) {
 			glueX = (((playerX + 8) & 0xf0) >> 4) + 1;
 		} else {
-			glueX = (((playerX + 8) & 0xf0) >> 4) - 1;
+			glueX = (((playerX + 8) & 0xf0) >> 4 ) - 1;
 		}
 
 		getCollisionIndex(glueX, glueY);
-		collisionMap[collisionIndex] = TILE_GLUE;
 
+		if ( ( collisionMap[collisionIndex] == TILE_NOCOLLIDE ) || ( collisionMap[collisionIndex] == TILE_ENEMYCOLLIDE ) ) {
+			// Create glue sprite
+			// TODO: Add animation
+
+
+			gluePointer = &(glueData[0]);
+			gluePointer->x = glueX << 4;
+			gluePointer->y = (glueY << 4) - 2;
+			gluePointer->active = 1;
+			gluePointer->timeLeft = GLUE_INIT_LIFESPAN;
+
+			sfx_play(SFX_GLUEDROP, CHANNEL_SQUARE1);				
+
+		}
+
+		/*
 		glueTileX = glueX << 1;
 		glueTileY = glueY << 1;
 
@@ -935,8 +984,9 @@ void updatePlayerGlue(void) {
 		tileUpdateList[10] = LSB(NTADR_A(glueTileX + 1, glueTileY + 1));
 
 		set_vram_update(tileUpdateList);
+		*/
 
-		sfx_play(SFX_GLUEDROP, CHANNEL_SQUARE1);
+		
 	}
 }
 
@@ -1010,22 +1060,21 @@ void main(void)
 
 		updatePlayerSprite();
 		updateEnemySprites();
-		//updatePotionSprite();
+		updateGlueSprites();
 		spriteCount();
 
 		updateEnemyMovement();
 		updatePlayerHorizontalMovement();
 		updatePlayerVerticalMovement();
-		//updatePlayerAttack();
 		updatePlayerGlue();
-		//updatePotionMovement();
 
 
 		enemyColliding = 0;
 		four_Sides(playerX, playerY);
 		enemyCollideCheck();
 		playerEnemyColliding = enemyColliding;
-		//potionEnemyCollideCheck();
+		//gluePlayerCollideCheck();
+		//glueEnemyCollideCheck();
 
 		
 		if ( playerEnemyColliding ) {
