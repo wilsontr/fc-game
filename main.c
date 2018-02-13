@@ -128,6 +128,7 @@ static u8 playerJumpCounter = 0;
 static u8 playerState = PLAYER_STATE_NORMAL;
 static signed char playerVertVel = 0;
 static u8 jumpButtonReset = 1;
+static u8 glueButtonReset = 1;
 
 
 const u8 playerFrames[4][4] = {
@@ -153,7 +154,8 @@ struct glueStruct {
 	u8 x;
 	u8 y;
 	u8 timeLeft;
-	u8 active;
+	u8 isActive;
+	u8 collisionIndex;
 	u8 spriteData[17];
 };
 
@@ -297,7 +299,7 @@ void setupMap(void) {
 
 	for ( index = 0; index < sizeof(MAX_GLUE_COUNT); ++index ) {
 		gluePointer = &(glueData[index]);
-		gluePointer->active = 0;
+		gluePointer->isActive = 0;
 	}
 
 	
@@ -449,7 +451,7 @@ void updateGlueSprites(void) {
 
 	for ( i = 0; i < MAX_GLUE_COUNT; ++i ) {
 		gluePointer = &(glueData[i]);
-		if ( gluePointer->active == 1 ) {
+		if ( gluePointer->isActive == 1 ) {
 			oamSpriteIndex = oam_meta_spr(gluePointer->x, gluePointer->y, oamSpriteIndex, glueSpriteDataTemplate);	
 		}
 	}
@@ -941,29 +943,60 @@ static u8 tileUpdateList[3 + 3 + 3 + 1];
 
 void updatePlayerGlue(void) {
 	u8 glueX, glueY;
-	if ( pad & PAD_B ) {
+	u8 newGlueIndex = 255;
+	u8 duplicateFound = 0;
 
+	if ( ! ( pad & PAD_B ) ) {
+		glueButtonReset = 1;
+	}
+
+	if ( ( pad & PAD_B ) && ( glueButtonReset == 1 ) ) {
+		glueButtonReset = 0;
+
+
+		/*
 		glueY = ((playerY + 8) & 0xf0) >> 4;
 		if ( playerDir == PAD_RIGHT ) {
 			glueX = (((playerX + 8) & 0xf0) >> 4) + 1;
 		} else {
 			glueX = (((playerX + 8) & 0xf0) >> 4 ) - 1;
+		}*/
+
+		glueY = ((playerY + 8) & 0xf0);
+		if ( playerDir == PAD_RIGHT ) {
+			glueX = (((playerX + 8) & 0xf0)) + 16;
+		} else {
+			glueX = (((playerX + 8) & 0xf0)) - 16;
 		}
 
 		getCollisionIndex(glueX, glueY);
 
-		if ( ( collisionMap[collisionIndex] == TILE_NOCOLLIDE ) || ( collisionMap[collisionIndex] == TILE_ENEMYCOLLIDE ) ) {
+		if ( ( collisionMap[collisionIndex] != TILE_ALLCOLLIDE ) && ( collisionMap[collisionIndex] != TILE_LADDER_TOP ) ) {
 			// Create glue sprite
 			// TODO: Add animation
 
+			i = 0;
+			do {
+				if ( glueData[i].isActive == 0 ) {
+					newGlueIndex = i;	
+				} else if ( glueData[i].collisionIndex == collisionIndex ) {
+					duplicateFound = 1;
+				}
+				++i;
+			} while ( ( newGlueIndex == 255 ) && ( i < MAX_GLUE_COUNT ) && !duplicateFound );
 
-			gluePointer = &(glueData[0]);
-			gluePointer->x = glueX << 4;
-			gluePointer->y = (glueY << 4) - 2;
-			gluePointer->active = 1;
-			gluePointer->timeLeft = GLUE_INIT_LIFESPAN;
+			if ( newGlueIndex < 255 ) {
+				gluePointer = &(glueData[newGlueIndex]);
+				gluePointer->x = glueX;
+				gluePointer->y = glueY - 1;
+				gluePointer->isActive = 1;
+				gluePointer->timeLeft = GLUE_INIT_LIFESPAN;
+				gluePointer->collisionIndex = collisionIndex;
 
-			sfx_play(SFX_GLUEDROP, CHANNEL_SQUARE1);				
+				collisionMap[collisionIndex] = TILE_GLUE;
+
+				sfx_play(SFX_GLUEDROP, CHANNEL_SQUARE1);								
+			}
 
 		}
 
@@ -987,6 +1020,19 @@ void updatePlayerGlue(void) {
 		*/
 
 		
+	}
+}
+
+void updateGlues(void) {
+	for ( i = 0; i < MAX_GLUE_COUNT; ++i ) {
+		gluePointer = &(glueData[i]);
+		if ( gluePointer->isActive ) {
+			--(gluePointer->timeLeft); 
+			if ( gluePointer->timeLeft <= 0 ) {
+				gluePointer->isActive = 0;
+				gluePointer->collisionIndex = 0;
+			}
+		} 
 	}
 }
 
@@ -1067,6 +1113,7 @@ void main(void)
 		updatePlayerHorizontalMovement();
 		updatePlayerVerticalMovement();
 		updatePlayerGlue();
+		updateGlues();
 
 
 		enemyColliding = 0;
