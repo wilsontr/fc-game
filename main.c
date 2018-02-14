@@ -970,14 +970,17 @@ void updatePlayerGlue(void) {
 			glueX = (((playerX + 8) & 0xf0) >> 4 ) - 1;
 		}*/
 
-		glueY = ((playerY + 8) & 0xf0);
+		//glueY = ((playerY + 8) & 0xf0);
+		glueY = ((playerY + 1));
 		if ( playerDir == PAD_RIGHT ) {
-			glueX = (((playerX + 8) & 0xf0)) + 16;
+			//glueX = (((playerX + 8) & 0xf0)) + 16;
+			glueX = (((playerX))) + 16;
 		} else {
-			glueX = (((playerX + 8) & 0xf0)) - 16;
+			////glueX = (((playerX + 8) & 0xf0)) - 16;
+			glueX = (((playerX))) - 16;
 		}
 
-		getCollisionIndex(glueX, glueY);
+		getCollisionIndex(glueX + 8, glueY + 8);
 
 		if ( ( collisionMap[collisionIndex] != TILE_ALLCOLLIDE ) && 
 			 ( collisionMap[collisionIndex] != TILE_LADDER_TOP ) ) {
@@ -1045,18 +1048,23 @@ void updateGlues(void) {
 			} else {
 				// make glue fall 
 
-				four_Sides(gluePointer->x, gluePointer->y + 2);
+				
 				getCollisionIndex(gluePointer->x + 8, gluePointer->y + 18);
-				glueCollideCheck();
-
-				if ( glueColliding && ( glueCollidedIndex != i ) ) {
-					// clear glue if it's colliding with another glue
-					gluePointer->isActive = 0;
-					gluePointer->collisionIndex = 0;
-				} else if ( ( collisionMap[collisionIndex] != TILE_ALLCOLLIDE ) && ( collisionMap[collisionIndex] != TILE_LADDER_TOP ) ) {
-					gluePointer->y += 2;
-				} else {
+				
+				if ( ( collisionMap[collisionIndex] == TILE_ALLCOLLIDE ) || ( collisionMap[collisionIndex] == TILE_LADDER_TOP ) ) {
 					gluePointer->collisionIndex = collisionIndex;
+					gluePointer->y = ((gluePointer->y + 8 ) & 0xF0) - 1;
+				} else {
+					four_Sides(gluePointer->x, gluePointer->y + 2);
+					glueCollideCheck();
+				 	if ( glueColliding && ( glueCollidedIndex != i ) ) {
+						// clear glue if it's colliding with another glue
+						gluePointer->isActive = 0;
+						gluePointer->collisionIndex = 0;
+					} else {
+						gluePointer->y += 2;
+					}					
+
 				}
 
 			}
