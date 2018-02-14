@@ -37,7 +37,7 @@ typedef uint16_t u16;
 #define PLAYER_INIT_JUMP_VEL 	 3
 
 #define GLUE_INIT_LIFESPAN	 	 240
-#define MAX_GLUE_COUNT 			 5
+#define MAX_GLUE_COUNT 			 3
 
 
 #define PLAYER_STATE_NORMAL		 0
@@ -66,6 +66,7 @@ typedef uint16_t u16;
 
 #define SFX_JUMP			0
 #define SFX_GLUEDROP		1
+#define SFX_BEEP			2
 
 #define CHANNEL_SQUARE1 	0
 #define CHANNEL_SQUARE2 	1
@@ -176,31 +177,6 @@ const u8 glueTileData[4] = {
 	0x46, 0x47, 0x56, 0x57
 };
 
-
-/* Potion */
-/*
-static u8 potionIsActive = 0;
-static u8 potionDirection;
-static signed char potionVerticalVel = 0;
-static u8 potionMoveCounter = 0;
-
-u8 potionSpriteData[5] = {
-	0, 0, 0x2A, 0x0,
-	128
-};
-*/
-
-/* Mushroom */
-
-/*
-const u8 mushroomSpriteDataTemplate[17] = {
-	0, 0, 0x2B, 0x2,
-	8, 0, 0x2C, 0x2,
-	0, 8, 0x3B, 0x2,
-	8, 8, 0x3C, 0x2,
-	128
-};
-*/
 
 /* Enemies */
 
@@ -446,17 +422,12 @@ void updateEnemySprites(void) {
 }
 
 void updateGlueSprites(void) {
-	
-	
-
 	for ( i = 0; i < MAX_GLUE_COUNT; ++i ) {
 		gluePointer = &(glueData[i]);
 		if ( gluePointer->isActive == 1 ) {
 			oamSpriteIndex = oam_meta_spr(gluePointer->x, gluePointer->y, oamSpriteIndex, glueSpriteDataTemplate);	
 		}
 	}
-	
-	
 }
 
 void updatePlayerSprite(void) {
@@ -716,21 +687,58 @@ void enemyCollideCheck(void) {
 	}
 }
 
-// void potionEnemyCollideCheck(void) {
-// 	enemyColliding = 0;
+static u8 glueIndex;
+static u8 glueColliding;
+static u8 glueCollidedIndex;
+static glue * currentGlue;
+static u8 glueTop;
+static u8 glueLeft;
+static u8 glueRight;
+static u8 glueBottom;
 
-// 	if ( potionIsActive ) {
-// 		four_SidesSmall(potionX, potionY);
-// 		enemyCollideCheck();
-// 		if ( enemyColliding ) {
-// 			killPotion();
-// 			enemyData[enemyCollidedIndex].state = ENEMY_STATE_MUSHROOM;
-// 		}
-// 	}
+void glueCollideCheck(void) {
 
-// 	enemyColliding = 0;
-// }
+	glueIndex = 0;
+	glueColliding = 0;
+	glueCollidedIndex = 0;
 
+	while ( !glueColliding && ( glueIndex < MAX_GLUE_COUNT ) ) {
+		currentGlue = &(glueData[glueIndex]);
+		if ( currentGlue->isActive ) {
+			glueTop = currentGlue->y + 2;
+			glueBottom = currentGlue->y + 14;
+			glueLeft = currentGlue->x + 2;
+			glueRight = currentGlue->x + 14;
+
+			if ( !( rightSide  <  glueLeft  || 
+					leftSide   >= glueRight || 
+					bottomSide <  glueTop   || 
+					topSide    >= glueBottom ) ) {
+				
+				glueColliding = 1;
+				glueCollidedIndex = glueIndex;				
+			}					
+		}
+		++glueIndex;
+	}
+}
+
+/*
+void glueEnemyCollideCheck(void) {
+	enemyColliding = 0;
+
+	if ( potionIsActive ) {
+		four_SidesSmall(potionX, potionY);
+		enemyCollideCheck();
+		if ( enemyColliding ) {
+			killPotion();
+			enemyData[enemyCollidedIndex].state = ENEMY_STATE_MUSHROOM;
+		}
+	}
+
+	enemyColliding = 0;
+}
+*/
 
 
 
@@ -971,11 +979,13 @@ void updatePlayerGlue(void) {
 
 		getCollisionIndex(glueX, glueY);
 
-		if ( ( collisionMap[collisionIndex] != TILE_ALLCOLLIDE ) && ( collisionMap[collisionIndex] != TILE_LADDER_TOP ) ) {
+		if ( ( collisionMap[collisionIndex] != TILE_ALLCOLLIDE ) && 
+			 ( collisionMap[collisionIndex] != TILE_LADDER_TOP ) ) {
 			// Create glue sprite
 			// TODO: Add animation
 
 			i = 0;
+		
 			do {
 				if ( glueData[i].isActive == 0 ) {
 					newGlueIndex = i;	
@@ -984,6 +994,7 @@ void updatePlayerGlue(void) {
 				}
 				++i;
 			} while ( ( newGlueIndex == 255 ) && ( i < MAX_GLUE_COUNT ) && !duplicateFound );
+			
 
 			if ( newGlueIndex < 255 ) {
 				gluePointer = &(glueData[newGlueIndex]);
@@ -991,9 +1002,7 @@ void updatePlayerGlue(void) {
 				gluePointer->y = glueY - 1;
 				gluePointer->isActive = 1;
 				gluePointer->timeLeft = GLUE_INIT_LIFESPAN;
-				gluePointer->collisionIndex = collisionIndex;
-
-				collisionMap[collisionIndex] = TILE_GLUE;
+				
 
 				sfx_play(SFX_GLUEDROP, CHANNEL_SQUARE1);								
 			}
@@ -1028,9 +1037,28 @@ void updateGlues(void) {
 		gluePointer = &(glueData[i]);
 		if ( gluePointer->isActive ) {
 			--(gluePointer->timeLeft); 
+
 			if ( gluePointer->timeLeft <= 0 ) {
+				// *** clear glue if its time has run out
 				gluePointer->isActive = 0;
 				gluePointer->collisionIndex = 0;
+			} else {
+				// make glue fall 
+
+				four_Sides(gluePointer->x, gluePointer->y + 2);
+				getCollisionIndex(gluePointer->x + 8, gluePointer->y + 18);
+				glueCollideCheck();
+
+				if ( glueColliding && ( glueCollidedIndex != i ) ) {
+					// clear glue if it's colliding with another glue
+					gluePointer->isActive = 0;
+					gluePointer->collisionIndex = 0;
+				} else if ( ( collisionMap[collisionIndex] != TILE_ALLCOLLIDE ) && ( collisionMap[collisionIndex] != TILE_LADDER_TOP ) ) {
+					gluePointer->y += 2;
+				} else {
+					gluePointer->collisionIndex = collisionIndex;
+				}
+
 			}
 		} 
 	}
