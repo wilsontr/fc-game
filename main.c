@@ -38,6 +38,7 @@ typedef uint16_t u16;
 
 #define GLUE_INIT_LIFESPAN	 	 240
 #define MAX_GLUE_COUNT 			 3
+#define GLUE_INIT_DURATION		 255
 
 #define GLUE_FRAME_BIG			 0
 #define GLUE_FRAME_MEDIUM		 1
@@ -63,7 +64,7 @@ typedef uint16_t u16;
 #define PLAYER_WALK_ANIMATE_INTERVAL 0x07
 
 #define ENEMY_STATE_NORMAL 		 0
-#define ENEMY_STATE_MUSHROOM	 1
+#define ENEMY_STATE_GLUED		 1
 #define ENEMY_STATE_DEAD		 3
 
 #define POTION_TOSS_WAIT_TIME	60
@@ -206,6 +207,7 @@ struct enemyStruct {
 	u8 direction;
 	u8 collidingWithPotion;
 	u8 state;
+	u8 glueTimeLeft;
 };
 
 typedef struct enemyStruct enemy;
@@ -415,12 +417,11 @@ void updateEnemySprites(void) {
 				setSpriteFrame(enemySpriteData[spriteFlickerIndex], enemyFrames[currentEnemy->frame]);
 			}
 
-			if ( currentEnemy->collidingWithPotion ) {
-				setSpritePalette(enemySpriteData[spriteFlickerIndex], 0x0);
-			} else {
-				setSpritePalette(enemySpriteData[spriteFlickerIndex], 0x3);
-			}			
+			setSpritePalette(enemySpriteData[spriteFlickerIndex], 0x3);
+		}
+			
 
+		if ( ( currentEnemy->state == ENEMY_STATE_NORMAL ) || ( currentEnemy->state == ENEMY_STATE_GLUED ) ) {
 			//setSpritePriority(enemySpriteData[i], sprPriorityToggle);
 			//sprPriorityToggle ^= 1;
 			oamSpriteIndex = oam_meta_spr(currentEnemy->x, currentEnemy->y, oamSpriteIndex, enemySpriteData[spriteFlickerIndex]);				
@@ -693,14 +694,32 @@ void enemyCollideCheck(void) {
 					enemyColliding = 1;
 					enemyCollidedIndex = enemyIndex;
 					break;
-				case ENEMY_STATE_MUSHROOM:
-					currentEnemy->state = ENEMY_STATE_DEAD;
-					break;
 				case ENEMY_STATE_DEAD:
 					break;
 			}
 		}		
 		++enemyIndex;
+	}
+}
+
+void glueEnemyCollideCheck(void) {
+	for ( i = 0; i < MAX_GLUE_COUNT; ++i ) {
+		gluePointer = &(glueData[i]);
+		if ( gluePointer->isActive ) {
+			four_Sides(gluePointer->x, gluePointer->y);
+			enemyCollideCheck();
+			if ( enemyColliding ) {
+				// kill glue
+				gluePointer->isActive = 0;
+				gluePointer->x = 0;
+				gluePointer->y = 0;
+
+				// freeze enemy
+				currentEnemy = &(enemyData[enemyCollidedIndex]);
+				currentEnemy->state = ENEMY_STATE_GLUED;
+				currentEnemy->glueTimeLeft = GLUE_INIT_DURATION;
+			}
+		}
 	}
 }
 
@@ -740,24 +759,6 @@ void glueCollideCheck(void) {
 	}
 }
 
-/*
-void glueEnemyCollideCheck(void) {
-	enemyColliding = 0;
-
-	if ( potionIsActive ) {
-		four_SidesSmall(potionX, potionY);
-		enemyCollideCheck();
-		if ( enemyColliding ) {
-			killPotion();
-			enemyData[enemyCollidedIndex].state = ENEMY_STATE_MUSHROOM;
-		}
-	}
-
-	enemyColliding = 0;
-}
-*/
-
-
 
 /*********** State Management ***********/
 
@@ -765,7 +766,11 @@ void updateEnemyMovement(void) {
 
 	for ( i = 0; i < numEnemies; i++ ) {
 		currentEnemy = &(enemyData[i]);
-		if ( currentEnemy->state == ENEMY_STATE_MUSHROOM ) {
+		if ( currentEnemy->state == ENEMY_STATE_GLUED ) {
+			--(currentEnemy->glueTimeLeft);
+			if ( currentEnemy->glueTimeLeft <= 0 ) {
+				currentEnemy->state = ENEMY_STATE_NORMAL;
+			}
 			continue;
 		}
 		collideCheckVertical(currentEnemy->x, currentEnemy->y + 1, PAD_DOWN);
@@ -1158,7 +1163,7 @@ void main(void)
 		enemyCollideCheck();
 		playerEnemyColliding = enemyColliding;
 		//gluePlayerCollideCheck();
-		//glueEnemyCollideCheck();
+		glueEnemyCollideCheck();
 
 		
 		if ( playerEnemyColliding ) {
