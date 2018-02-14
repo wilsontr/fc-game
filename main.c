@@ -39,6 +39,10 @@ typedef uint16_t u16;
 #define GLUE_INIT_LIFESPAN	 	 240
 #define MAX_GLUE_COUNT 			 3
 
+#define GLUE_FRAME_BIG			 0
+#define GLUE_FRAME_MEDIUM		 1
+#define GLUE_FRAME_SMALL		 2
+
 
 #define PLAYER_STATE_NORMAL		 0
 #define PLAYER_STATE_DEAD		 1
@@ -156,6 +160,7 @@ struct glueStruct {
 	u8 y;
 	u8 timeLeft;
 	u8 isActive;
+	u8 frame;
 	u8 collisionIndex;
 	u8 spriteData[17];
 };
@@ -173,8 +178,10 @@ const u8 glueSpriteDataTemplate[17] = {
 	128
 };
 
-const u8 glueTileData[4] = {
-	0x46, 0x47, 0x56, 0x57
+const u8 glueFrames[3][4] = {
+	{ 0x46, 0x47, 0x56, 0x57 },
+	{ 0x66, 0x67, 0x76, 0x77 },
+	{ 0x86, 0x87, 0x96, 0x97 }
 };
 
 
@@ -425,7 +432,17 @@ void updateGlueSprites(void) {
 	for ( i = 0; i < MAX_GLUE_COUNT; ++i ) {
 		gluePointer = &(glueData[i]);
 		if ( gluePointer->isActive == 1 ) {
-			oamSpriteIndex = oam_meta_spr(gluePointer->x, gluePointer->y, oamSpriteIndex, glueSpriteDataTemplate);	
+			if ( ( frameCount & 0x1F ) == 0x1F ) {
+				gluePointer->frame ^= 1;
+				flipSprite(gluePointer->spriteData, gluePointer->frame);
+			}
+			if ( gluePointer->timeLeft < 60 ) {
+				setSpriteFrame(gluePointer->spriteData, glueFrames[GLUE_FRAME_SMALL]);
+			} else if ( gluePointer->timeLeft < 120 ) {
+				setSpriteFrame(gluePointer->spriteData, glueFrames[GLUE_FRAME_MEDIUM]);
+			}
+
+			oamSpriteIndex = oam_meta_spr(gluePointer->x, gluePointer->y, oamSpriteIndex, gluePointer->spriteData);	
 		}
 	}
 }
@@ -859,7 +876,7 @@ void updatePlayerJumpFall(void) {
 		} else if ( ( pad & PAD_DOWN ) && ( verticalCollideCheck == TILE_LADDER_TOP ) ) {
 
 			// *** Climb a little down the ladder and see if we've reached the bottom
-			playerY++;
+			playerY += 2;
 			checkPlayerLadderCollision();
 		} 
 	} 
@@ -869,10 +886,10 @@ void updatePlayerClimbing(void) {
 	checkPlayerLadderCollision();
 	
 	if ( pad & PAD_UP ) { 
-		// *** Climb down
+		// *** Climb up
 		--playerY;
 	} else if ( pad & PAD_DOWN ) {
-		// *** Climb up
+		// *** Climb down
 		++playerY;
 		collideCheckVertical(playerX, playerY + 1, PAD_DOWN);
 		if ( ( verticalCollideCheck == TILE_ALLCOLLIDE ) ) { 	
@@ -938,16 +955,6 @@ void  updatePlayerAttack(void) {
 
 */
 
-const u8 tileUpdateListInit[3 + 3 + 3 + 3 + 1] = {
-	MSB(NTADR_A(0, 0)), LSB(NTADR_A(0, 0)), 0,//non-sequental updates
-	MSB(NTADR_A(1, 0)), LSB(NTADR_A(1, 0)), 0,
-	MSB(NTADR_A(0, 1)), LSB(NTADR_A(0, 1)), 0,
-	MSB(NTADR_A(1, 1)), LSB(NTADR_A(1, 1)), 0,
-	NT_UPD_EOF
-};
-
-static u8 tileUpdateList[3 + 3 + 3 + 1];
-
 
 void updatePlayerGlue(void) {
 	u8 glueX, glueY;
@@ -1003,8 +1010,10 @@ void updatePlayerGlue(void) {
 				gluePointer = &(glueData[newGlueIndex]);
 				gluePointer->x = glueX;
 				gluePointer->y = glueY - 1;
+				gluePointer->frame = 0;
 				gluePointer->isActive = 1;
 				gluePointer->timeLeft = GLUE_INIT_LIFESPAN;
+				memcpy(gluePointer->spriteData, glueSpriteDataTemplate, sizeof(glueSpriteDataTemplate));
 				
 
 				sfx_play(SFX_GLUEDROP, CHANNEL_SQUARE1);								
@@ -1047,7 +1056,6 @@ void updateGlues(void) {
 				gluePointer->collisionIndex = 0;
 			} else {
 				// make glue fall 
-
 				
 				getCollisionIndex(gluePointer->x + 8, gluePointer->y + 18);
 				
@@ -1087,13 +1095,6 @@ void main(void)
 
 	memcpy(palSprites, paldat, 16);
 	memcpy(palBG, paldat + 16, 4);
-
-	memcpy(tileUpdateList, tileUpdateListInit, sizeof(tileUpdateListInit));
-	tileUpdateList[2] = glueTileData[0];
-	tileUpdateList[5] = glueTileData[1];
-	tileUpdateList[8] = glueTileData[2];
-	tileUpdateList[11] = glueTileData[3];
-
 
 	//unrleCollision();
 
