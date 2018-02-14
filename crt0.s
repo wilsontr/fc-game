@@ -253,7 +253,7 @@ music_data:
 
 .if(FT_SFX_ENABLE)
 sounds_data:
-	.include "sounds/jump.s"
+	.include "sounds/sfx.s"
 .endif
 
 .segment "SAMPLES"

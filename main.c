@@ -72,6 +72,7 @@ typedef uint16_t u16;
 #define SFX_JUMP			0
 #define SFX_GLUEDROP		1
 #define SFX_BEEP			2
+#define SFX_GLUESTUCK		3
 
 #define CHANNEL_SQUARE1 	0
 #define CHANNEL_SQUARE2 	1
@@ -718,6 +719,8 @@ void glueEnemyCollideCheck(void) {
 				currentEnemy = &(enemyData[enemyCollidedIndex]);
 				currentEnemy->state = ENEMY_STATE_GLUED;
 				currentEnemy->glueTimeLeft = GLUE_INIT_DURATION;
+
+				sfx_play(SFX_GLUESTUCK, CHANNEL_SQUARE1);
 			}
 		}
 	}
