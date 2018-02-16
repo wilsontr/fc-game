@@ -2981,11 +2981,11 @@ L0570:	tax
 	adc     #$06
 	sta     _leftSide
 ;
-; rightSide = originX + 9;
+; rightSide = originX + 10;
 ;
 	lda     (sp),y
 	clc
-	adc     #$09
+	adc     #$0A
 	sta     _rightSide
 ;
 ; topSide = originY + 10;
@@ -3120,11 +3120,11 @@ L0596:	lda     _collisionMap
 	adc     #$06
 	sta     _leftSide
 ;
-; rightSide = originX + 9;
+; rightSide = originX + 10;
 ;
 	lda     (sp),y
 	clc
-	adc     #$09
+	adc     #$0A
 	sta     _rightSide
 ;
 ; topSide = originY + 10;
@@ -3303,7 +3303,7 @@ L08B8:	lda     (sp),y
 	and     #$80
 	beq     L05D4
 ;
-; *x = (*x & 0xf0) + 6;
+; *x = (*x & 0xf0) + 5;
 ;
 	ldy     #$06
 	jsr     pushwysp
@@ -3317,7 +3317,7 @@ L08B8:	lda     (sp),y
 	lda     (ptr1),y
 	and     #$F0
 	clc
-	adc     #$06
+	adc     #$05
 L08B6:	jsr     staspidx
 ;
 ; }
@@ -4346,15 +4346,12 @@ L08EA:	lda     _playerVertVel
 	eor     #$80
 L070D:	bpl     L08EF
 	lda     _playerJumpCounter
-	cmp     #$06
+	cmp     #$04
 	bne     L08EF
 ;
 ; playerVertVel -= GRAVITY_ACCELERATION; 
 ;
-	lda     _playerVertVel
-	sec
-	sbc     #$02
-	sta     _playerVertVel
+	dec     _playerVertVel
 ;
 ; playerJumpCounter = 0;
 ;

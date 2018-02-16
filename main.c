@@ -31,10 +31,7 @@ typedef uint16_t u16;
 // TODO Think about RLE-encoding collision maps again
 #define COLLISION_MAP_SIZE 	     204
 
-#define POTION_HORIZ_VELOCITY	 2
-#define POTION_INIT_VERTICAL_VEL 2
 
-#define PLAYER_INIT_JUMP_VEL 	 3
 
 #define GLUE_INIT_LIFESPAN	 	 240
 #define MAX_GLUE_COUNT 			 3
@@ -50,12 +47,14 @@ typedef uint16_t u16;
 #define PLAYER_STATE_CLIMBING	 2
 #define PLAYER_STATE_JUMPING	 3
 #define PLAYER_STATE_FALLING	 4
-#define PLAYER_JUMP_VEL   		 2
 #define PLAYER_MOVE_VEL			 1
 
 #define PLAYER_FALL_SPEED		 3
-#define PLAYER_JUMP_COUNTER_INTERVAL 6
-#define GRAVITY_ACCELERATION 	 2
+
+#define PLAYER_JUMP_COUNTER_INTERVAL 4
+#define GRAVITY_ACCELERATION 	 1
+#define PLAYER_INIT_JUMP_VEL 	 3
+
 
 #define PLAYER_FRAME_STANDING 	 0
 #define PLAYER_FRAME_CLIMBING	 2
@@ -575,7 +574,7 @@ u8 __fastcall__ smallCollideCheckVertical(u8 originX, u8 originY, u8 direction) 
 void __fastcall__ collideCheckVertical(u8 originX, u8 originY, u8 direction) {
 
 	leftSide = originX + 6;
-	rightSide = originX + 9;
+	rightSide = originX + 10;
 	topSide = originY + 10;
 	bottomSide = originY + 16;
 
@@ -599,7 +598,7 @@ void __fastcall__ collideCheckVertical(u8 originX, u8 originY, u8 direction) {
 void __fastcall__ collideCheckHorizontal(u8 originX, u8 originY, u8 direction) {
 
 	leftSide = originX + 6;
-	rightSide = originX + 9;
+	rightSide = originX + 10;
 	topSide = originY + 10;
 	bottomSide = originY + 16;
 
@@ -626,7 +625,7 @@ void __fastcall__ bgHorizCollideCheck(u8 *x, u8 *y, u8 dir) {
 			*x = (*x & 0xf0) + 10;
 
 		} else if ( dir & PAD_RIGHT ) {
-			*x = (*x & 0xf0) + 6;
+			*x = (*x & 0xf0) + 5;
 		}		
 	}
 }
