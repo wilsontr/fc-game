@@ -135,6 +135,7 @@ static u8 playerState = PLAYER_STATE_NORMAL;
 static signed char playerVertVel = 0;
 static u8 jumpButtonReset = 1;
 static u8 glueButtonReset = 1;
+static u8 playerSittingOnEnemy = 0;
 
 
 const u8 playerFrames[4][4] = {
@@ -522,9 +523,17 @@ void updateScoreboard(void) {
 
 void __fastcall__ four_Sides(u8 originX, u8 originY) {
 
-	leftSide = originX + 1;
-	rightSide = originX + 15;
-	topSide = originY;
+	leftSide = originX + 2;
+	rightSide = originX + 14;
+	topSide = originY + 4;
+	bottomSide = originY + 15;
+}
+
+void __fastcall__ glueFourSides(u8 originX, u8 originY) {
+
+	leftSide = originX + 6;
+	rightSide = originX + 9;
+	topSide = originY + 6;
 	bottomSide = originY + 14;
 }
 
@@ -632,8 +641,8 @@ void __fastcall__ bgHorizCollideCheck(u8 *x, u8 *y, u8 dir) {
 
 void checkPlayerLadderCollision(void) {
 	
-	leftSide = playerX + 3;
-	rightSide = playerX + 11;
+	leftSide = playerX + 6;
+	rightSide = playerX + 10;
 	//topSide = playerY + 9;
 	bottomSide = playerY + 15;
 	
@@ -652,9 +661,9 @@ void checkPlayerLadderCollision(void) {
 		playerState = PLAYER_STATE_CLIMBING;
 		
 		if ( ( collisionLeft == TILE_LADDER ) || ( collisionLeft == TILE_LADDER_TOP ) ) {
-			playerX = ( playerX + 3 ) & 0xf0;	
+			playerX = ( playerX + 7 ) & 0xf0;	
 		} else if ( ( collisionRight == TILE_LADDER )  || ( collisionRight == TILE_LADDER_TOP ) ) {
-			playerX = ( playerX - 3 ) & 0xf0;
+			playerX = ( playerX + 11 ) & 0xf0;
 		}
 		
 	} else {
@@ -676,7 +685,58 @@ void __fastcall__ bgVertCollideCheck(u8 *x, u8 *y, u8 dir) {
 }
 */
 
-void enemyCollideCheck(void) {
+void playerEnemyCollideCheck(void) {
+
+	enemyIndex = 0;
+	enemyColliding = 0;
+	enemyCollidedIndex = 0;
+	playerSittingOnEnemy = 0;
+
+	while ( !enemyColliding && ( enemyIndex < numEnemies ) ) {
+		currentEnemy = &(enemyData[enemyIndex]);
+		enemyTop = currentEnemy->y + 3;
+		enemyBottom = currentEnemy->y + 13;
+		enemyLeft = currentEnemy->x + 2;
+		enemyRight = currentEnemy->x + 14;
+
+		if ( !( rightSide  <  enemyLeft  || 
+				leftSide   > enemyRight || 
+				bottomSide <  enemyTop   || 
+				topSide    > enemyBottom ) ) {
+
+			switch ( currentEnemy->state ) {
+
+				case ENEMY_STATE_NORMAL: 
+					enemyColliding = 1;
+					enemyCollidedIndex = enemyIndex;
+					break;
+
+				case ENEMY_STATE_GLUED:
+
+
+					if ( ( bottomSide >= (enemyTop) ) && ( bottomSide <= ( enemyTop + 4 ) ) ) {
+						if ( !( pad & PAD_UP ) && ( playerVertVel < 0 ) ) {
+							playerY = ( enemyTop - 15 );
+							playerSittingOnEnemy = 1;
+							playerState = PLAYER_STATE_NORMAL;							
+							playerFrame = PLAYER_FRAME_STANDING;																									
+						}
+					} else if ( ( rightSide > enemyLeft ) && ( leftSide < enemyLeft ) && ( pad & PAD_RIGHT ) ) {
+						playerX = ( enemyLeft - 13 );
+					} else if ( ( leftSide < enemyRight ) && ( rightSide > enemyRight ) && ( pad & PAD_LEFT ) ) { 
+						playerX = ( enemyRight - 3 );
+					} 
+					break;
+
+				case ENEMY_STATE_DEAD:
+					break;
+			}
+		}		
+		++enemyIndex;
+	}
+}
+
+void genericEnemyCollideCheck(void) {
 
 	enemyIndex = 0;
 	enemyColliding = 0;
@@ -711,8 +771,8 @@ void glueEnemyCollideCheck(void) {
 	for ( i = 0; i < MAX_GLUE_COUNT; ++i ) {
 		gluePointer = &(glueData[i]);
 		if ( gluePointer->isActive ) {
-			four_Sides(gluePointer->x, gluePointer->y);
-			enemyCollideCheck();
+			glueFourSides(gluePointer->x, gluePointer->y);
+			genericEnemyCollideCheck();
 			if ( enemyColliding ) {
 				// kill glue
 				gluePointer->isActive = 0;
@@ -867,7 +927,7 @@ void updatePlayerJumpFall(void) {
 		}	
 	}
 
-	if ( collideBottom ) {
+	if ( collideBottom || playerSittingOnEnemy ) {
 		// *** Actions player can take when the player is standing on the ground
 
 		if ( ( jumpButtonReset != 0 ) && ( pad & PAD_A ) ) {
@@ -1167,7 +1227,7 @@ void main(void)
 
 		enemyColliding = 0;
 		four_Sides(playerX, playerY);
-		enemyCollideCheck();
+		playerEnemyCollideCheck();
 		playerEnemyColliding = enemyColliding;
 		//gluePlayerCollideCheck();
 		glueEnemyCollideCheck();
