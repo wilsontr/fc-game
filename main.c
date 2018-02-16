@@ -574,10 +574,10 @@ u8 __fastcall__ smallCollideCheckVertical(u8 originX, u8 originY, u8 direction) 
 
 void __fastcall__ collideCheckVertical(u8 originX, u8 originY, u8 direction) {
 
-	leftSide = originX + 1;
-	rightSide = originX + 15;
-	topSide = originY + 1;
-	bottomSide = originY + 17;
+	leftSide = originX + 6;
+	rightSide = originX + 9;
+	topSide = originY + 10;
+	bottomSide = originY + 16;
 
 	collisionIndex = 0;
 
@@ -598,10 +598,10 @@ void __fastcall__ collideCheckVertical(u8 originX, u8 originY, u8 direction) {
 
 void __fastcall__ collideCheckHorizontal(u8 originX, u8 originY, u8 direction) {
 
-	leftSide = originX + 1;
-	rightSide = originX + 15;
-	topSide = originY + 4;
-	bottomSide = originY + 12;
+	leftSide = originX + 6;
+	rightSide = originX + 9;
+	topSide = originY + 10;
+	bottomSide = originY + 16;
 
 	if ( direction & PAD_LEFT ) {
 		getCollisionIndex(leftSide, topSide);
@@ -622,9 +622,11 @@ void __fastcall__ bgHorizCollideCheck(u8 *x, u8 *y, u8 dir) {
 	collideCheckHorizontal(*x, *y, dir);
 	if ( horizontalCollideCheck == TILE_ALLCOLLIDE ) {
 		if ( dir & PAD_LEFT ) {
-			*x = (*x & 0xf8) + 7;
+			//*x = (*x & 0xf8) + 7;
+			*x = (*x & 0xf0) + 10;
+
 		} else if ( dir & PAD_RIGHT ) {
-			*x = (*x & 0xf8);
+			*x = (*x & 0xf0) + 6;
 		}		
 	}
 }
@@ -661,16 +663,19 @@ void checkPlayerLadderCollision(void) {
 	}
 }
 
+/*
 void __fastcall__ bgVertCollideCheck(u8 *x, u8 *y, u8 dir) {
 	collideCheckVertical(*x, *y, dir);
 	if ( verticalCollideCheck ) {
 		if ( dir & PAD_UP ) {
-			*y = (*y & 0xf8) + 15;
+			// *y = (*y & 0xf8) + 15;
+			*y = (*y & 0xf0);
 		} else {
-			*y = (*y & 0xf8);
+			*y = (*y & 0xf0);
 		}
 	}
 }
+*/
 
 void enemyCollideCheck(void) {
 
@@ -818,7 +823,7 @@ void updatePlayerJumpFall(void) {
 			collideCheckVertical(playerX, playerY, PAD_UP);
 			// check collision above
 			if ( ( verticalCollideCheck == TILE_ALLCOLLIDE ) || ( verticalCollideCheck == TILE_LADDER_TOP ) ) { 
-				playerY = (playerY & 0xF8) + 6;
+				playerY = (playerY & 0xF0) + 6;
 			}			
 		} else {
 			// *** Player is moving down in jump
@@ -828,7 +833,7 @@ void updatePlayerJumpFall(void) {
 			
 			if ( ( verticalCollideCheck == TILE_ALLCOLLIDE ) || ( verticalCollideCheck == TILE_LADDER_TOP ) ) { 
 				// *** Player lands from jump				
-				playerY = (playerY & 0xF8) + 7;
+				playerY =  ( ( playerY + 2 ) & 0xF0 ) - 1;
 				collideBottom = 1;
 				playerState = PLAYER_STATE_NORMAL;							
 				playerFrame = PLAYER_FRAME_STANDING;
@@ -848,11 +853,11 @@ void updatePlayerJumpFall(void) {
 		// *** Player is not jumping
 
 		// check collision below
-		collideCheckVertical(playerX, playerY + 4, PAD_DOWN);
+		collideCheckVertical(playerX, playerY + 2, PAD_DOWN);
 
 		if ( ( verticalCollideCheck == TILE_ALLCOLLIDE ) || ( verticalCollideCheck == TILE_LADDER_TOP ) ) { 
 			// *** Player is standing on the ground
-			playerY = (playerY & 0xF8) + 7;
+			playerY =  ( ( playerY + 2 ) & 0xF0 ) - 1;
 			collideBottom = 1;
 			playerState = PLAYER_STATE_NORMAL;			
 		} else {
