@@ -13,9 +13,6 @@ void __fastcall__ memcpy(void *dst, void *src, unsigned int len);
 typedef uint8_t u8;
 typedef uint16_t u16;
 
-#define ENEMY_DATA_SIZE	17
-#define NUM_ENEMIES 	4
-
 #define TILE_NOCOLLIDE   		0
 #define TILE_ALLCOLLIDE   		1
 #define TILE_ENEMYCOLLIDE 		2
@@ -24,49 +21,45 @@ typedef uint16_t u16;
 #define TILE_ENEMY1START_RIGHT	5	
 #define TILE_LADDER				6
 #define TILE_LADDER_TOP			7
-#define TILE_GLUE				8
-
-#define MAX_JUMP_HEIGHT			 100
 
 // TODO Think about RLE-encoding collision maps again
-#define COLLISION_MAP_SIZE 	     204
+#define COLLISION_MAP_SIZE 	    204
 
+#define PLAYER_STATE_NORMAL		0
+#define PLAYER_STATE_DEAD		1
+#define PLAYER_STATE_CLIMBING	2
+#define PLAYER_STATE_JUMPING	3
+#define PLAYER_STATE_FALLING	4
 
+#define PLAYER_INIT_LIVES		3
 
-#define GLUE_INIT_LIFESPAN	 	 240
-#define MAX_GLUE_COUNT 			 3
-#define GLUE_INIT_DURATION		 255
-
-#define GLUE_FRAME_BIG			 0
-#define GLUE_FRAME_MEDIUM		 1
-#define GLUE_FRAME_SMALL		 2
-
-
-#define PLAYER_STATE_NORMAL		 0
-#define PLAYER_STATE_DEAD		 1
-#define PLAYER_STATE_CLIMBING	 2
-#define PLAYER_STATE_JUMPING	 3
-#define PLAYER_STATE_FALLING	 4
-#define PLAYER_MOVE_VEL			 1
-
-#define PLAYER_FALL_SPEED		 3
-
+#define PLAYER_MOVE_VEL			1
+#define PLAYER_FALL_SPEED		3
 #define PLAYER_JUMP_COUNTER_INTERVAL 4
-#define GRAVITY_ACCELERATION 	 1
-#define PLAYER_INIT_JUMP_VEL 	 3
+#define GRAVITY_ACCELERATION 	1
+#define PLAYER_INIT_JUMP_VEL 	3
 
-
-#define PLAYER_FRAME_STANDING 	 0
-#define PLAYER_FRAME_CLIMBING	 2
-#define PLAYER_FRAME_JUMPING	 3
+#define PLAYER_FRAME_STANDING 	0
+#define PLAYER_FRAME_CLIMBING	2
+#define PLAYER_FRAME_JUMPING	3
+#define PLAYER_FRAME_DEAD		4
 
 #define PLAYER_WALK_ANIMATE_INTERVAL 0x07
 
-#define ENEMY_STATE_NORMAL 		 0
-#define ENEMY_STATE_GLUED		 1
-#define ENEMY_STATE_DEAD		 3
+#define GLUE_INIT_LIFESPAN	 	240
+#define MAX_GLUE_COUNT 			3
+#define GLUE_INIT_DURATION		255
 
-#define POTION_TOSS_WAIT_TIME	60
+#define GLUE_FRAME_BIG			0
+#define GLUE_FRAME_MEDIUM		1
+#define GLUE_FRAME_SMALL		2
+
+#define ENEMY_STATE_NORMAL 		0
+#define ENEMY_STATE_GLUED		1
+#define ENEMY_STATE_DEAD		3
+
+#define ENEMY_DATA_SIZE		17
+#define NUM_ENEMIES 		4
 
 #define SFX_JUMP			0
 #define SFX_GLUEDROP		1
@@ -139,10 +132,11 @@ static u8 playerSittingOnEnemy = 0;
 
 
 const u8 playerFrames[4][4] = {
-	{ 0x08, 0x09, 0x18, 0x19 },
-	{ 0x28, 0x29, 0x38, 0x39 },
-	{ 0x68, 0x69, 0x78, 0x79 },
-	{ 0x48, 0x49, 0x58, 0x59 }
+	{ 0x08, 0x09, 0x18, 0x19 }, // walk 1
+	{ 0x28, 0x29, 0x38, 0x39 }, // walk 2
+	{ 0x0A, 0x0B, 0x1A, 0x1B }, // on ladder
+	{ 0x48, 0x49, 0x58, 0x59 }, // jump
+	{ 0x1A, 0x1B, 0x2A, 0x2B }  // dead
 };
 
 static u8 playerSpriteData[17] = {
@@ -172,18 +166,18 @@ typedef struct glueStruct glue;
 static glue glueData[MAX_GLUE_COUNT];
 static glue *gluePointer;
 
+const u8 glueFrames[3][4] = {
+	{ 0x46, 0x47, 0x56, 0x57 }, // big
+	{ 0x66, 0x67, 0x76, 0x77 }, // medium
+	{ 0x86, 0x87, 0x96, 0x97 }  // small
+};
+
 const u8 glueSpriteDataTemplate[17] = {
 	0, 0, 0x46, 0x0,
 	8, 0, 0x47, 0x0,
 	0, 8, 0x56, 0x0,
 	8, 8, 0x57, 0x0,
 	128
-};
-
-const u8 glueFrames[3][4] = {
-	{ 0x46, 0x47, 0x56, 0x57 },
-	{ 0x66, 0x67, 0x76, 0x77 },
-	{ 0x86, 0x87, 0x96, 0x97 }
 };
 
 
