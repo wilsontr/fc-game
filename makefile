@@ -1,6 +1,6 @@
 NAME=fcgame.nes
 
-$(NAME): nes.cfg map1 crt0.o main.o runtime.lib 
+$(NAME): nes.cfg map2 crt0.o main.o runtime.lib 
 	ld65 -C nes.cfg -o $(NAME) crt0.o main.o runtime.lib nes.lib
 
 main.s: main.c 
@@ -10,8 +10,8 @@ main.s: main.c
 %.o: %.s
 	ca65 $<
 
-map1: 
-	node csv2header.js newmap
+map2: 
+	node csv2header.js maps/map2
 
 clean:
 	rm *.o main.s

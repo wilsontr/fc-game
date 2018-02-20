@@ -1,16 +1,21 @@
 /* RLE compression for a byte array of level data */
 
+const fs = require('fs');
+const _ = require('lodash');
+const path = require('path');
+
 const args = process.argv.slice(2);
-const mapName = args[0];
+const filePath = path.resolve(process.cwd(), args[0]);
+const parsedPath = path.parse(filePath);
+
+const mapName = parsedPath.name;
 if ( !mapName ) {
 	console.error('Error: no map name specified');
 	process.exit(1);
 }
 
 const MAX_COL_LENGTH = 40;
-const filename = `${mapName}.csv`;
-const fs = require('fs');
-const _ = require('lodash');
+const filename = path.resolve(`${filePath}.csv`);
 const fileContents = fs.readFileSync(filename);
 const fileString = fileContents.toString();
 const fileArray = fileString.split('\n');
@@ -43,7 +48,7 @@ let output = `const uint8_t ${mapName}_coll[${arraySize}] = {\n`;
 output += joinedRows;
 output += '\n};\n';
 
-const collFile = `${mapName}_coll.h`;
+const collFile = path.resolve(`${filePath}_coll.h`);
 fs.writeFileSync(collFile, output);
 
 console.log(`Wrote collision map to ${collFile}`);
