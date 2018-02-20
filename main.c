@@ -1203,8 +1203,11 @@ void main(void)
 
 	// - test/fix fruit collisions
 	// 	- limit this to a simple collision index check on player's x + 8, y + 8, every frame?
+	//  - do a similar check with hazard tiles
+	// - scoreboard
+	// - collect the jewel to end the level
+	// - boss
 	// - build a proper level (in progress)
-	// - add dying/lives/level reset
 	// - study enemy behavior in games
 
 
