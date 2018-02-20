@@ -1201,7 +1201,9 @@ void main(void)
 
 	// TODO next:
 
-	// - build a proper level
+	// - test/fix fruit collisions
+	// 	- limit this to a simple collision index check on player's x + 8, y + 8, every frame?
+	// - build a proper level (in progress)
 	// - add dying/lives/level reset
 	// - study enemy behavior in games
 
