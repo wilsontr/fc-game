@@ -1,5 +1,6 @@
 
 
+#include <stdio.h>
 #include <stdint.h>
 #include <stdlib.h>
 #include "neslib.h"
@@ -111,7 +112,9 @@ static u8 collisionMap[COLLISION_MAP_SIZE];
 // imported in crt0.s
 
 extern const u8 paldat[];
-const unsigned char bgPalette[16]={ 0x0f,0x11,0x21,0x30,0x0f,0x01,0x21,0x31,0x0f,0x05,0x29,0x30,0x0f,0x09,0x19,0x29 };
+const unsigned char bgPalette[16]={ 0x0f,0x11,0x21,0x30,0x0f,0x04,0x14,0x34,0x0f,0x16,0x29,0x30,0x0f,0x20,0x28,0x21 };
+
+
 
 
 
@@ -119,7 +122,7 @@ static u8 touch;
 static u8 spriteFlickerIndex = 0;
 static u8 sprPriorityToggle = 0;
 
-static unsigned int playerScore = 0;
+static long playerScore = 0;
 
 static u8 palSprites[4];
 //static u8 palBG[4];
@@ -369,6 +372,47 @@ void setupMap(void) {
 	ppu_on_all(); //enable rendering	
 }
 
+/*********** Nametable/Background Updates ***********/
+
+void __fastcall__ putStr(unsigned int adr, const char *str)
+{
+	vram_adr(adr);
+	while(1)
+	{
+		if(!*str) break;
+		vram_put((*str++) + 0xA0); // +0xA0 because ASCII code 0x20 is placed in tile C0 of the CHR
+	}
+}
+
+void __fastcall__ updateMapTile(u8 mapX, u8 mapY, const u8 * tileFrame) {
+	tileUpdateList[0] = MSB(NTADR_A(mapX, mapY));
+	tileUpdateList[1] = LSB(NTADR_A(mapX, mapY));
+	tileUpdateList[2] = tileFrame[0];
+
+	tileUpdateList[3] = MSB(NTADR_A(mapX + 1, mapY));
+	tileUpdateList[4] = LSB(NTADR_A(mapX + 1, mapY));
+	tileUpdateList[5] = tileFrame[1];
+
+	tileUpdateList[6] = MSB(NTADR_A(mapX, mapY + 1));
+	tileUpdateList[7] = LSB(NTADR_A(mapX, mapY + 1));
+	tileUpdateList[8] = tileFrame[2];
+
+	tileUpdateList[9] = MSB(NTADR_A(mapX + 1, mapY + 1));
+	tileUpdateList[10] = LSB(NTADR_A(mapX + 1, mapY + 1));
+	tileUpdateList[11] = tileFrame[3];
+
+	set_vram_update(tileUpdateList);	
+}
+
+void __fastcall__ putMapTile(u8 mapX, u8 mapY, const u8 * tileFrame) {
+	vram_adr(NTADR_A(mapX, mapY++));
+	vram_put(*tileFrame++);
+	vram_put(*tileFrame++);
+	vram_adr(NTADR_A(mapX, mapY));
+	vram_put(*tileFrame++);
+	vram_put(*tileFrame++);
+}
+
 /*********** Sprite Management ***********/
 
 static u8 sSpriteIndex, sFrameIndex;
@@ -539,27 +583,40 @@ void updatePlayerSprite(void) {
 
 void drawScoreboard(void) {
 	// TODO: flesh this out
-	// TODO: set correct pal color (any bg pal entry with white as color #1)
 	// CONSIDER: using separate nametable with sprite zero hit trick
 
 	//pal_col(1,0x30); //set white color
-	vram_adr(NTADR_A(0, 1));
-	vram_fill(0x10, 5);
+	//vram_adr(NTADR_A(0, 1));
+	// vram_fill(0x10, 5);
+	vram_adr(NTADR_A(2, 2));
+	vram_put(0xDD);
+	putStr(NTADR_A(3, 2), "000000");
 }
 
-u8 updateListData[8] = { 
+u8 updateListData[10] = { 
 	MSB(NTADR_A(0, 1)) | NT_UPD_HORZ, // MSB
 	LSB(NTADR_A(0, 1)),  // LSB
-	4, // Byte count
-	0xA1, 0xA2, 0xA3, 0xA4, // Bytes to write
+	6, // Byte count
+	0, 0, 0, 0, 0, 0,
 	NT_UPD_EOF // EOF
 };
 
-u8 updateList[8];
+static u8 updateList[8];
 
+static u8 playerScoreString[100];
 
 void updateScoreboard(void) {
-	memcpy(updateList, updateListData, sizeof(updateListData));
+	memcpy(updateList, updateListData, sizeof(updateListData));	
+	//sprintf(playerScoreString, "%06d", playerScore);
+	//memcpy(&updateList[2], playerScoreString, 6);
+
+	//itoa(playerScore, playerScoreString, 10);
+
+
+	for ( i = 0; i < 6; ++i ) {
+		//playerScoreString[i] = 0xD0;
+		//updateList[2 + i] = playerScoreString[i];
+	}
 
 	set_vram_update(updateList);
 }
@@ -869,35 +926,6 @@ void glueCollideCheck(void) {
 
 /*********** State Management ***********/
 
-void __fastcall__ updateMapTile(u8 mapX, u8 mapY, const u8 * tileFrame) {
-	tileUpdateList[0] = MSB(NTADR_A(mapX, mapY));
-	tileUpdateList[1] = LSB(NTADR_A(mapX, mapY));
-	tileUpdateList[2] = tileFrame[0];
-
-	tileUpdateList[3] = MSB(NTADR_A(mapX + 1, mapY));
-	tileUpdateList[4] = LSB(NTADR_A(mapX + 1, mapY));
-	tileUpdateList[5] = tileFrame[1];
-
-	tileUpdateList[6] = MSB(NTADR_A(mapX, mapY + 1));
-	tileUpdateList[7] = LSB(NTADR_A(mapX, mapY + 1));
-	tileUpdateList[8] = tileFrame[2];
-
-	tileUpdateList[9] = MSB(NTADR_A(mapX + 1, mapY + 1));
-	tileUpdateList[10] = LSB(NTADR_A(mapX + 1, mapY + 1));
-	tileUpdateList[11] = tileFrame[3];
-
-	set_vram_update(tileUpdateList);	
-}
-
-void __fastcall__ putMapTile(u8 mapX, u8 mapY, const u8 * tileFrame) {
-	vram_adr(NTADR_A(mapX, mapY++));
-	vram_put(*tileFrame++);
-	vram_put(*tileFrame++);
-	vram_adr(NTADR_A(mapX, mapY));
-	vram_put(*tileFrame++);
-	vram_put(*tileFrame++);
-}
-
 void updateEnemyMovement(void) {
 
 	for ( i = 0; i < numEnemies; i++ ) {
@@ -1094,12 +1122,6 @@ void updatePlayerHorizontalMovement(void) {
 	horizontalCollideCheck = TILE_NOCOLLIDE;
 
 	bgHorizCollideCheck(&playerX, &playerY, pad);
-
-	/*
-	if ( horizontalCollideCheck == TILE_FRUIT ) {
-		playerGetFruit();
-	}
-	*/
 }
 
 void updatePlayerGlue(void) {
@@ -1239,7 +1261,7 @@ void main(void)
 	vram_adr(NAMETABLE_A); //unpack nametable into VRAM
 	vram_unrle(map2);	
 
-	drawScoreboard();
+	
 
 	
 
@@ -1259,6 +1281,9 @@ void main(void)
 
 	setupMap();
 
+	ppu_off();
+	drawScoreboard();
+	ppu_on_all();
 
 
 	// now the main loop
