@@ -103,7 +103,7 @@ static u8 playerStartY;
 #pragma data-name(pop)
 #pragma bss-name (pop)
 
-static uint8_t * collisionMap;
+static u8 collisionMap[COLLISION_MAP_SIZE];
 
 /* Bookkeeping and state */
 
@@ -254,14 +254,18 @@ static u8 enemySpriteData[10][17];
 static enemy * currentEnemy;
 
 const u8 tileUpdateListInit[9 * 3 + 1] = {
-	MSB(NTADR_A(2,2)), LSB(NTADR_A(2,2)), 0,//non-sequental updates
-	MSB(NTADR_A(3,2)), LSB(NTADR_A(3,2)), 0,
-	MSB(NTADR_A(4,2)), LSB(NTADR_A(4,2)), 0,
-	MSB(NTADR_A(6,2)), LSB(NTADR_A(6,2)), 0,
-	MSB(NTADR_A(7,2)), LSB(NTADR_A(7,2)), 0,
-	MSB(NTADR_A(8,2)), LSB(NTADR_A(8,2)), 0,
-	MSB(NTADR_A(7,2)), LSB(NTADR_A(7,2)), 0,
-	MSB(NTADR_A(8,2)), LSB(NTADR_A(8,2)), 0,
+
+	0, 0, 0,
+	0, 0, 0,
+	0, 0, 0, 
+
+	0, 0, 0,
+	0, 0, 0,
+	0, 0, 0,
+
+	0, 0, 0, 
+	0, 0, 0,
+	0, 0, 0,
 	
 	NT_UPD_EOF
 };
@@ -273,7 +277,8 @@ u8 tileUpdateList[9 * 3 + 1];
 void setupMap(void);
 void __fastcall__ setSpriteFrame(u8 *sprite, const u8 *frame);
 void __fastcall__ setSpritePalette(u8 *sprite, u8 palette);
-void __fastcall__ setMapTile(u8 mapX, u8 mapY, const u8 * tileFrame);
+void __fastcall__ updateMapTile(u8 mapX, u8 mapY, const u8 * tileFrame);
+void __fastcall__ putMapTile(u8 mapX, u8 mapY, const u8 * tileFrame);
 
 /*********** Unused: utility function for decompressing RLE collision map data ***********/
 
@@ -309,8 +314,10 @@ void setupMap(void) {
 	u8 index = 0;
 
 	enemy newEnemy = { 0, 0, 0, PAD_LEFT };
-	collisionMap = (u8 *) map2_coll;
+	memcpy(collisionMap, map2_coll, COLLISION_MAP_SIZE);
 	enemyIndex = 0;
+
+	ppu_off();
 
 	// initialize glue data
 
@@ -343,8 +350,9 @@ void setupMap(void) {
 
 			setSpriteFrame(enemySpriteData[enemyIndex], enemyFrames[0]);
 			++enemyIndex;
+
 		} else if ( collisionByte == TILE_FRUIT ) {
-			setMapTile(mapX << 4, mapY << 4, fruitFrame);
+			putMapTile(mapX << 1, mapY << 1, fruitFrame);
 		}
 
 		++mapX;
@@ -357,8 +365,9 @@ void setupMap(void) {
 	playerX = playerStartX;
 	playerY = playerStartY;
 	numEnemies = enemyIndex;
-}
 
+	ppu_on_all(); //enable rendering	
+}
 
 /*********** Sprite Management ***********/
 
@@ -614,7 +623,6 @@ u8 __fastcall__ smallCollideCheckVertical(u8 originX, u8 originY, u8 direction) 
 }
 */
 
-
 void __fastcall__ collideCheckVertical(u8 originX, u8 originY, u8 direction) {
 
 	leftSide = originX + 2;
@@ -861,29 +869,33 @@ void glueCollideCheck(void) {
 
 /*********** State Management ***********/
 
-void __fastcall__ setMapTile(u8 mapX, u8 mapY, const u8 * tileFrame) {
-	u8 mapTileX, mapTileY;
-
-	mapTileX = ((mapX & 0xf0) >> 3);
-	mapTileY = ((mapY & 0xf0) >> 3);
-
-	tileUpdateList[0] = MSB(NTADR_A(mapTileX, mapTileY));
-	tileUpdateList[1] = LSB(NTADR_A(mapTileX, mapTileY));
+void __fastcall__ updateMapTile(u8 mapX, u8 mapY, const u8 * tileFrame) {
+	tileUpdateList[0] = MSB(NTADR_A(mapX, mapY));
+	tileUpdateList[1] = LSB(NTADR_A(mapX, mapY));
 	tileUpdateList[2] = tileFrame[0];
 
-	tileUpdateList[3] = MSB(NTADR_A(mapTileX + 1, mapTileY));
-	tileUpdateList[4] = LSB(NTADR_A(mapTileX + 1, mapTileY));
+	tileUpdateList[3] = MSB(NTADR_A(mapX + 1, mapY));
+	tileUpdateList[4] = LSB(NTADR_A(mapX + 1, mapY));
 	tileUpdateList[5] = tileFrame[1];
 
-	tileUpdateList[6] = MSB(NTADR_A(mapTileX, mapTileY + 1));
-	tileUpdateList[7] = LSB(NTADR_A(mapTileX, mapTileY + 1));
+	tileUpdateList[6] = MSB(NTADR_A(mapX, mapY + 1));
+	tileUpdateList[7] = LSB(NTADR_A(mapX, mapY + 1));
 	tileUpdateList[8] = tileFrame[2];
 
-	tileUpdateList[9] = MSB(NTADR_A(mapTileX + 1, mapTileY + 1));
-	tileUpdateList[10] = LSB(NTADR_A(mapTileX + 1, mapTileY + 1));
+	tileUpdateList[9] = MSB(NTADR_A(mapX + 1, mapY + 1));
+	tileUpdateList[10] = LSB(NTADR_A(mapX + 1, mapY + 1));
 	tileUpdateList[11] = tileFrame[3];
 
 	set_vram_update(tileUpdateList);	
+}
+
+void __fastcall__ putMapTile(u8 mapX, u8 mapY, const u8 * tileFrame) {
+	vram_adr(NTADR_A(mapX, mapY++));
+	vram_put(*tileFrame++);
+	vram_put(*tileFrame++);
+	vram_adr(NTADR_A(mapX, mapY));
+	vram_put(*tileFrame++);
+	vram_put(*tileFrame++);
 }
 
 void updateEnemyMovement(void) {
@@ -920,17 +932,19 @@ void updateEnemyMovement(void) {
 	}
 }
 
-void playerGetFruit(u8 collideIndex, u8 direction) {
-	playerScore += VALUE_FRUIT;
+//void playerGetFruit(u8 collideIndex, u8 direction) {
+void checkPlayerGetFruit() {
+	
 	//getCollisionIndex(playerX, playerY);
-	collisionMap[collideIndex] = TILE_NOCOLLIDE;
+	//collisionMap[collideIndex] = TILE_NOCOLLIDE;
 
-	if ( direction == PAD_LEFT ) {
-		setMapTile(playerX - 16, playerY + 4, emptyFrame);	
-	} else if ( direction == PAD_RIGHT ) {
-		setMapTile(playerX + 16, playerY + 4, emptyFrame);	
-	} else if ( direction == PAD_DOWN ) {
-		setMapTile(playerX, playerY + 16, emptyFrame);	
+	getCollisionIndex(playerX + 8, playerY + 8);
+	if ( collisionMap[collisionIndex] == TILE_FRUIT ) {
+		playerScore += VALUE_FRUIT;
+		collisionMap[collisionIndex] = TILE_NOCOLLIDE;
+		updateMapTile((((playerX + 8) & 0xf0) >> 3), (((playerY + 8) & 0xf0) >> 3), emptyFrame);
+
+		sfx_play(SFX_BEEP, CHANNEL_SQUARE1);
 	}
 }
 
@@ -1081,9 +1095,11 @@ void updatePlayerHorizontalMovement(void) {
 
 	bgHorizCollideCheck(&playerX, &playerY, pad);
 
+	/*
 	if ( horizontalCollideCheck == TILE_FRUIT ) {
 		playerGetFruit();
 	}
+	*/
 }
 
 void updatePlayerGlue(void) {
@@ -1225,7 +1241,7 @@ void main(void)
 
 	drawScoreboard();
 
-	ppu_on_all(); //enable rendering
+	
 
 	//set initial coords
 	playerDir = PAD_LEFT;
@@ -1239,7 +1255,11 @@ void main(void)
 	setSpriteFrame(playerSpriteData, playerFrames[playerFrame]);
 	playerLives = PLAYER_INIT_LIVES;
 
+
+
 	setupMap();
+
+
 
 	// now the main loop
 	
@@ -1264,7 +1284,7 @@ void main(void)
 		updateGlueSprites();
 		spriteCount();
 
-		
+		checkPlayerGetFruit();
 		
 		updatePlayerState();
 
