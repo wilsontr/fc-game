@@ -262,6 +262,8 @@ const u8 enemySpriteDataTemplate[17] = {
 static u8 enemySpriteData[10][17];
 static enemy * currentEnemy;
 
+/*********** Score/tile updates ***********/
+
 const u8 tileUpdateListInit[9 * 3 + 1] = {
 
 	0, 0, 0,
@@ -280,6 +282,26 @@ const u8 tileUpdateListInit[9 * 3 + 1] = {
 };
 
 u8 tileUpdateList[9 * 3 + 1];
+
+
+static u8 scoreUpdateListData[8] = { 
+	MSB(NTADR_A(3, 3)) | NT_UPD_HORZ, // MSB
+	LSB(NTADR_A(3, 3)),  // LSB
+	4, // Byte count
+	0, 0, 0, 0,
+	NT_UPD_EOF // EOF
+};
+
+static u8 scoreUpdateList[8] = {
+	0, 0, 0, 0, 0, 0, 0, 0
+};
+
+static u8 digitsArray[4] = {
+	0, 0, 0, 0
+};
+static u8 decadeCount;
+static unsigned int valueToConvert;
+static u8 scoreChanged = 0;
 
 /* Prototypes */
 
@@ -601,24 +623,6 @@ void drawScoreboard(void) {
 	putStr(NTADR_A(3, 3), "000000");
 }
 
-static u8 scoreUpdateListData[8] = { 
-	MSB(NTADR_A(3, 3)) | NT_UPD_HORZ, // MSB
-	LSB(NTADR_A(3, 3)),  // LSB
-	4, // Byte count
-	0, 0, 0, 0,
-	NT_UPD_EOF // EOF
-};
-
-static u8 scoreUpdateList[8] = {
-	0, 0, 0, 0, 0, 0, 0, 0
-};
-
-static u8 digitsArray[4] = {
-	0, 0, 0, 0
-};
-static u8 decadeCount;
-static unsigned int valueToConvert;
-static u8 scoreChanged = 0;
 
 //static u8 playerScoreString[6];
 
@@ -1316,12 +1320,6 @@ void main(void)
 
 	pal_spr(palSprites);
 	pal_bg(bgPalette);
-
-	vram_adr(NAMETABLE_A); //unpack nametable into VRAM
-	vram_unrle(map2);	
-
-	
-
 	
 
 	//set initial coords
@@ -1338,6 +1336,10 @@ void main(void)
 
 
 	while ( 1 ) {
+
+		vram_adr(NAMETABLE_A); //unpack nametable into VRAM
+		vram_unrle(map2);	
+
 		setupMap();
 
 		ppu_off();

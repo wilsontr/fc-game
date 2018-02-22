@@ -1449,7 +1449,7 @@ _tileUpdateListInit:
 	.byte	$00
 	.byte	$00
 	.byte	$FF
-L0795:
+L07BD:
 	.byte	$30,$30,$30,$30,$30,$30,$00
 
 .segment	"BSS"
@@ -1595,17 +1595,17 @@ _currentEnemy:
 _tileUpdateList:
 	.res	28,$00
 .segment	"BSS"
-_sSpriteIndex:
-	.res	1,$00
-.segment	"BSS"
-_sFrameIndex:
-	.res	1,$00
-.segment	"BSS"
 _decadeCount:
 	.res	1,$00
 .segment	"BSS"
 _valueToConvert:
 	.res	2,$00
+.segment	"BSS"
+_sSpriteIndex:
+	.res	1,$00
+.segment	"BSS"
+_sFrameIndex:
+	.res	1,$00
 
 ; ---------------------------------------------------------------
 ; void __near__ setupMap (void)
@@ -1617,7 +1617,7 @@ _valueToConvert:
 
 .segment	"RODATA"
 
-L053D:
+L0565:
 	.byte	$00
 	.byte	$00
 	.byte	$00
@@ -1645,19 +1645,19 @@ L053D:
 ;
 	jsr     decsp6
 	ldy     #$05
-L0542:	lda     L053D,y
+L056A:	lda     L0565,y
 	sta     (sp),y
 	dey
-	bpl     L0542
+	bpl     L056A
 ;
 ; memcpy(collisionMap, map2_coll, COLLISION_MAP_SIZE);
 ;
 	ldy     #$00
-L0547:	lda     _map2_coll,y
+L056F:	lda     _map2_coll,y
 	sta     _collisionMap,y
 	iny
 	cpy     #$F0
-	bne     L0547
+	bne     L056F
 ;
 ; enemyIndex = 0;
 ;
@@ -1752,7 +1752,7 @@ L0C08:	sta     (sp),y
 ;
 ; } else if ( ( collisionByte == TILE_ENEMY1START_RIGHT ) || ( collisionByte == TILE_ENEMY1START_LEFT ) ) {
 ;
-	jmp     L05A7
+	jmp     L05CF
 L0C0B:	lda     (sp),y
 	cmp     #$05
 	beq     L0C0C
@@ -1776,9 +1776,9 @@ L0C0C:	ldx     #$00
 	ldx     sp+1
 	clc
 	adc     #$02
-	bcc     L0577
+	bcc     L059F
 	inx
-L0577:	jsr     pushax
+L059F:	jsr     pushax
 	ldx     #$00
 	lda     #$06
 	jsr     _memcpy
@@ -1921,7 +1921,7 @@ L0C10:	lda     _enemyIndex
 ;
 ; } else if ( collisionByte == TILE_FRUIT ) {
 ;
-	jmp     L05A7
+	jmp     L05CF
 L0C12:	lda     (sp),y
 	cmp     #$08
 	bne     L0C14
@@ -1947,7 +1947,7 @@ L0C12:	lda     (sp),y
 	jmp     L0C07
 L0C14:	lda     (sp),y
 	cmp     #$0C
-	bne     L05A7
+	bne     L05CF
 ;
 ; putMapTile(mapX << 1, mapY << 1, jewelFrame);
 ;
@@ -1968,7 +1968,7 @@ L0C07:	jsr     _putMapTile
 ;
 ; ++mapX;
 ;
-L05A7:	ldy     #$08
+L05CF:	ldy     #$08
 	clc
 	lda     #$01
 	adc     (sp),y
@@ -1977,7 +1977,7 @@ L05A7:	ldy     #$08
 ; if ( mapX > 15 ) {
 ;
 	cmp     #$10
-	bcc     L055C
+	bcc     L0584
 ;
 ; mapX = 0;
 ;
@@ -1994,7 +1994,7 @@ L05A7:	ldy     #$08
 ;
 ; for ( index = 0; index < COLLISION_MAP_SIZE; ++index ) {
 ;
-L055C:	ldy     #$06
+L0584:	ldy     #$06
 	clc
 	lda     #$01
 	adc     (sp),y
@@ -2060,9 +2060,9 @@ L0C15:	lda     _playerStartX
 	lda     (sp),y
 	clc
 	adc     #$02
-	bcc     L065D
+	bcc     L0685
 	inx
-L065D:	jsr     pushax
+L0685:	jsr     pushax
 	ldy     #$03
 	lda     (sp),y
 	sta     ptr1+1
@@ -2082,9 +2082,9 @@ L065D:	jsr     pushax
 	lda     (sp),y
 	clc
 	adc     #$06
-	bcc     L0662
+	bcc     L068A
 	inx
-L0662:	jsr     pushax
+L068A:	jsr     pushax
 	ldy     #$03
 	lda     (sp),y
 	tax
@@ -2106,9 +2106,9 @@ L0662:	jsr     pushax
 	lda     (sp),y
 	clc
 	adc     #$0A
-	bcc     L0668
+	bcc     L0690
 	inx
-L0668:	jsr     pushax
+L0690:	jsr     pushax
 	ldy     #$03
 	lda     (sp),y
 	tax
@@ -2129,9 +2129,9 @@ L0668:	jsr     pushax
 	lda     (sp),y
 	clc
 	adc     #$0E
-	bcc     L066E
+	bcc     L0696
 	inx
-L066E:	jsr     pushax
+L0696:	jsr     pushax
 	ldy     #$03
 	lda     (sp),y
 	tax
@@ -2172,7 +2172,7 @@ L066E:	jsr     pushax
 	ldy     #$00
 L0C16:	sta     (sp),y
 	cmp     #$10
-	bcs     L0674
+	bcs     L069C
 ;
 ; sprite[i] &= ~(0x3);
 ;
@@ -2224,7 +2224,7 @@ L0C16:	sta     (sp),y
 ;
 ; }
 ;
-L0674:	jmp     incsp4
+L069C:	jmp     incsp4
 
 .endproc
 
@@ -2303,9 +2303,9 @@ L0674:	jmp     incsp4
 	lda     (sp),y
 	clc
 	adc     #$01
-	bcc     L05EE
+	bcc     L0616
 	inx
-L05EE:	ora     ptr1
+L0616:	ora     ptr1
 	txa
 	ora     tmp1
 	ora     #$20
@@ -2326,9 +2326,9 @@ L05EE:	ora     ptr1
 	lda     (sp),y
 	clc
 	adc     #$01
-	bcc     L05FA
+	bcc     L0622
 	inx
-L05FA:	ora     ptr1
+L0622:	ora     ptr1
 	sta     _tileUpdateList+4
 	txa
 	ora     tmp1
@@ -2353,9 +2353,9 @@ L05FA:	ora     ptr1
 	lda     (sp),y
 	clc
 	adc     #$01
-	bcc     L0609
+	bcc     L0631
 	inx
-L0609:	jsr     shlax4
+L0631:	jsr     shlax4
 	stx     tmp1
 	asl     a
 	rol     tmp1
@@ -2374,9 +2374,9 @@ L0609:	jsr     shlax4
 	lda     (sp),y
 	clc
 	adc     #$01
-	bcc     L0615
+	bcc     L063D
 	inx
-L0615:	jsr     shlax4
+L063D:	jsr     shlax4
 	stx     tmp1
 	asl     a
 	rol     tmp1
@@ -2406,9 +2406,9 @@ L0615:	jsr     shlax4
 	lda     (sp),y
 	clc
 	adc     #$01
-	bcc     L0625
+	bcc     L064D
 	inx
-L0625:	jsr     shlax4
+L064D:	jsr     shlax4
 	stx     tmp1
 	asl     a
 	rol     tmp1
@@ -2418,9 +2418,9 @@ L0625:	jsr     shlax4
 	lda     (sp),y
 	clc
 	adc     #$01
-	bcc     L0627
+	bcc     L064F
 	inx
-L0627:	ora     ptr1
+L064F:	ora     ptr1
 	txa
 	ora     tmp1
 	ora     #$20
@@ -2433,9 +2433,9 @@ L0627:	ora     ptr1
 	lda     (sp),y
 	clc
 	adc     #$01
-	bcc     L0632
+	bcc     L065A
 	inx
-L0632:	jsr     shlax4
+L065A:	jsr     shlax4
 	stx     tmp1
 	asl     a
 	rol     tmp1
@@ -2445,9 +2445,9 @@ L0632:	jsr     shlax4
 	lda     (sp),y
 	clc
 	adc     #$01
-	bcc     L0634
+	bcc     L065C
 	inx
-L0634:	ora     ptr1
+L065C:	ora     ptr1
 	sta     _tileUpdateList+10
 	txa
 	ora     tmp1
@@ -2528,9 +2528,9 @@ L0634:	ora     ptr1
 	stx     regsave+1
 	clc
 	adc     #$01
-	bcc     L0645
+	bcc     L066D
 	inx
-L0645:	jsr     stax0sp
+L066D:	jsr     stax0sp
 	ldy     #$00
 	lda     (regsave),y
 	jsr     _vram_put
@@ -2546,9 +2546,9 @@ L0645:	jsr     stax0sp
 	stx     regsave+1
 	clc
 	adc     #$01
-	bcc     L0648
+	bcc     L0670
 	inx
-L0648:	jsr     stax0sp
+L0670:	jsr     stax0sp
 	ldy     #$00
 	lda     (regsave),y
 	jsr     _vram_put
@@ -2584,9 +2584,9 @@ L0648:	jsr     stax0sp
 	stx     regsave+1
 	clc
 	adc     #$01
-	bcc     L0652
+	bcc     L067A
 	inx
-L0652:	jsr     stax0sp
+L067A:	jsr     stax0sp
 	ldy     #$00
 	lda     (regsave),y
 	jsr     _vram_put
@@ -2602,9 +2602,9 @@ L0652:	jsr     stax0sp
 	stx     regsave+1
 	clc
 	adc     #$01
-	bcc     L0655
+	bcc     L067D
 	inx
-L0655:	jsr     stax0sp
+L067D:	jsr     stax0sp
 	ldy     #$00
 	lda     (regsave),y
 	jsr     _vram_put
@@ -2641,14 +2641,14 @@ L0655:	jsr     stax0sp
 ;
 ; if(!*str) break;
 ;
-L05BD:	ldy     #$01
+L05E5:	ldy     #$01
 	lda     (sp),y
 	sta     ptr1+1
 	dey
 	lda     (sp),y
 	sta     ptr1
 	lda     (ptr1),y
-	beq     L05BE
+	beq     L05E6
 ;
 ; vram_put((*str++) + 0xA0); // +0xA0 because ASCII code 0x20 is placed in tile C0 of the CHR
 ;
@@ -2661,9 +2661,9 @@ L05BD:	ldy     #$01
 	stx     regsave+1
 	clc
 	adc     #$01
-	bcc     L05C6
+	bcc     L05EE
 	inx
-L05C6:	jsr     stax0sp
+L05EE:	jsr     stax0sp
 	ldy     #$00
 	lda     (regsave),y
 	clc
@@ -2672,11 +2672,11 @@ L05C6:	jsr     stax0sp
 ;
 ; while(1)
 ;
-	jmp     L05BD
+	jmp     L05E5
 ;
 ; }
 ;
-L05BE:	jmp     incsp4
+L05E6:	jmp     incsp4
 
 .endproc
 
@@ -2699,7 +2699,7 @@ L05BE:	jmp     incsp4
 ;
 	ldy     #$00
 	lda     (sp),y
-	beq     L0685
+	beq     L06AD
 ;
 ; sprite[3] |= OAM_BEHIND;
 ;
@@ -2758,7 +2758,7 @@ L05BE:	jmp     incsp4
 ;
 ; sprite[3] &= ~OAM_BEHIND;
 ;
-L0685:	ldy     #$02
+L06AD:	ldy     #$02
 	lda     (sp),y
 	sta     ptr1+1
 	dey
@@ -2833,7 +2833,7 @@ L0C17:	sta     (ptr1),y
 ;
 	ldy     #$00
 	lda     (sp),y
-	jeq     L06A1
+	jeq     L06C9
 ;
 ; sprite[0] = 8;
 ;
@@ -2940,7 +2940,7 @@ L0C17:	sta     (ptr1),y
 ;
 ; sprite[0] = 0;
 ;
-L06A1:	ldy     #$02
+L06C9:	ldy     #$02
 	lda     (sp),y
 	sta     ptr1+1
 	dey
@@ -3060,7 +3060,7 @@ L0C18:	sta     (ptr1),y
 	inc     _enemySpriteCount
 	lda     _enemySpriteCount
 	cmp     _numEnemies
-	bcc     L06D5
+	bcc     L06FD
 ;
 ; enemySpriteCount = 0;
 ;
@@ -3069,7 +3069,7 @@ L0C18:	sta     (ptr1),y
 ;
 ; }
 ;
-L06D5:	rts
+L06FD:	rts
 
 .endproc
 
@@ -3126,7 +3126,7 @@ L0C1F:	jsr     _spriteCount
 	stx     ptr1+1
 	ldy     #$04
 	lda     (ptr1),y
-	bne     L06E9
+	bne     L0711
 ;
 ; if ( ( frameCount & 0x0F ) == 0x0F ) {
 ;
@@ -3196,7 +3196,7 @@ L0C1A:	lda     _spriteFlickerIndex
 ;
 ; if ( ( currentEnemy->state == ENEMY_STATE_NORMAL ) || ( currentEnemy->state == ENEMY_STATE_GLUED ) ) {
 ;
-L06E9:	lda     _currentEnemy
+L0711:	lda     _currentEnemy
 	sta     ptr1
 	lda     _currentEnemy+1
 	sta     ptr1+1
@@ -3305,7 +3305,7 @@ L0C23:	lda     _i
 	lda     _frameCount
 	and     #$1F
 	cmp     #$1F
-	bne     L0715
+	bne     L073D
 ;
 ; gluePointer->frame ^= 1;
 ;
@@ -3324,9 +3324,9 @@ L0C23:	lda     _i
 	ldx     _gluePointer+1
 	clc
 	adc     #$06
-	bcc     L071D
+	bcc     L0745
 	inx
-L071D:	jsr     pushax
+L0745:	jsr     pushax
 	lda     _gluePointer
 	sta     ptr1
 	lda     _gluePointer+1
@@ -3337,14 +3337,14 @@ L071D:	jsr     pushax
 ;
 ; if ( gluePointer->timeLeft < 60 ) {
 ;
-L0715:	lda     _gluePointer
+L073D:	lda     _gluePointer
 	sta     ptr1
 	lda     _gluePointer+1
 	sta     ptr1+1
 	ldy     #$02
 	lda     (ptr1),y
 	cmp     #$3C
-	bcs     L071F
+	bcs     L0747
 ;
 ; setSpriteFrame(gluePointer->spriteData, glueFrames[GLUE_FRAME_SMALL]);
 ;
@@ -3352,22 +3352,22 @@ L0715:	lda     _gluePointer
 	ldx     _gluePointer+1
 	clc
 	adc     #$06
-	bcc     L0723
+	bcc     L074B
 	inx
-L0723:	jsr     pushax
+L074B:	jsr     pushax
 	lda     #<(_glueFrames+8)
 	ldx     #>(_glueFrames+8)
 ;
 ; } else if ( gluePointer->timeLeft < 120 ) {
 ;
 	jmp     L0C20
-L071F:	lda     _gluePointer
+L0747:	lda     _gluePointer
 	sta     ptr1
 	lda     _gluePointer+1
 	sta     ptr1+1
 	lda     (ptr1),y
 	cmp     #$78
-	bcs     L0727
+	bcs     L074F
 ;
 ; setSpriteFrame(gluePointer->spriteData, glueFrames[GLUE_FRAME_MEDIUM]);
 ;
@@ -3375,16 +3375,16 @@ L071F:	lda     _gluePointer
 	ldx     _gluePointer+1
 	clc
 	adc     #$06
-	bcc     L072B
+	bcc     L0753
 	inx
-L072B:	jsr     pushax
+L0753:	jsr     pushax
 	lda     #<(_glueFrames+4)
 	ldx     #>(_glueFrames+4)
 L0C20:	jsr     _setSpriteFrame
 ;
 ; oamSpriteIndex = oam_meta_spr(gluePointer->x, gluePointer->y, oamSpriteIndex, gluePointer->spriteData); 
 ;
-L0727:	jsr     decsp3
+L074F:	jsr     decsp3
 	lda     _gluePointer
 	sta     ptr1
 	lda     _gluePointer+1
@@ -3407,9 +3407,9 @@ L0727:	jsr     decsp3
 	ldx     _gluePointer+1
 	clc
 	adc     #$06
-	bcc     L0734
+	bcc     L075C
 	inx
-L0734:	jsr     _oam_meta_spr
+L075C:	jsr     _oam_meta_spr
 	sta     _oamSpriteIndex
 ;
 ; for ( i = 0; i < MAX_GLUE_COUNT; ++i ) {
@@ -3477,7 +3477,7 @@ L0C24:	jsr     _flipSprite
 L0C2A:	lda     _frameCount
 	and     #$07
 	cmp     #$07
-	bne     L074E
+	bne     L0776
 ;
 ; playerFrame ^= 1;
 ;
@@ -3490,7 +3490,7 @@ L0C25:	sta     _playerFrame
 ;
 ; setSpriteFrame(playerSpriteData, playerFrames[playerFrame]);
 ;
-L074E:	lda     #<(_playerSpriteData)
+L0776:	lda     #<(_playerSpriteData)
 	ldx     #>(_playerSpriteData)
 	jsr     pushax
 	ldx     #$00
@@ -3529,7 +3529,7 @@ L0C2C:	lda     _playerState
 	jmp     L0C27
 L0C2D:	lda     _pad
 	and     #$40
-	beq     L075E
+	beq     L0786
 ;
 ; flipSprite(playerSpriteData, 0);
 ;
@@ -3541,7 +3541,7 @@ L0C27:	jsr     _flipSprite
 ;
 ; setSpriteFrame(playerSpriteData, playerFrames[PLAYER_FRAME_JUMPING]);
 ;
-L075E:	lda     #<(_playerSpriteData)
+L0786:	lda     #<(_playerSpriteData)
 	ldx     #>(_playerSpriteData)
 	jsr     pushax
 	lda     #<(_playerFrames+12)
@@ -3559,7 +3559,7 @@ L0C2E:	lda     _playerState
 	lda     _frameCount
 	and     #$07
 	cmp     #$07
-	bne     L076A
+	bne     L0792
 ;
 ; playerFrame ^= 1;
 ;
@@ -3577,7 +3577,7 @@ L0C2E:	lda     _playerState
 ;
 ; setSpriteFrame(playerSpriteData, playerFrames[PLAYER_FRAME_CLIMBING]);
 ;
-L076A:	lda     #<(_playerSpriteData)
+L0792:	lda     #<(_playerSpriteData)
 	ldx     #>(_playerSpriteData)
 	jsr     pushax
 	lda     #<(_playerFrames+8)
@@ -3588,7 +3588,7 @@ L076A:	lda     #<(_playerSpriteData)
 	jmp     L0C26
 L0C2F:	lda     _playerState
 	cmp     #$01
-	bne     L0778
+	bne     L07A0
 ;
 ; setSpriteFrame(playerSpriteData, playerFrames[PLAYER_FRAME_DEAD]);
 ;
@@ -3601,7 +3601,7 @@ L0C26:	jsr     _setSpriteFrame
 ;
 ; oamSpriteIndex = oam_meta_spr(playerX, playerY, oamSpriteIndex, playerSpriteData); 
 ;
-L0778:	jsr     decsp3
+L07A0:	jsr     decsp3
 	lda     _playerX
 	ldy     #$02
 	sta     (sp),y
@@ -3649,8 +3649,8 @@ L0778:	jsr     decsp3
 	ldx     #$20
 	lda     #$63
 	jsr     pushax
-	lda     #<(L0795)
-	ldx     #>(L0795)
+	lda     #<(L07BD)
+	ldx     #>(L07BD)
 	jmp     _putStr
 
 .endproc
@@ -6956,18 +6956,6 @@ L0BBF:	lda     _paldat,y
 	ldx     #>(_bgPalette)
 	jsr     _pal_bg
 ;
-; vram_adr(NAMETABLE_A); //unpack nametable into VRAM
-;
-	ldx     #$20
-	lda     #$00
-	jsr     _vram_adr
-;
-; vram_unrle(map2); 
-;
-	lda     #<(_map2)
-	ldx     #>(_map2)
-	jsr     _vram_unrle
-;
 ; playerDir = PAD_LEFT;
 ;
 	lda     #$40
@@ -7008,9 +6996,21 @@ L0BBF:	lda     _paldat,y
 	lda     #$03
 	sta     _playerLives
 ;
+; vram_adr(NAMETABLE_A); //unpack nametable into VRAM
+;
+L0BD2:	ldx     #$20
+	lda     #$00
+	jsr     _vram_adr
+;
+; vram_unrle(map2); 
+;
+	lda     #<(_map2)
+	ldx     #>(_map2)
+	jsr     _vram_unrle
+;
 ; setupMap();
 ;
-L0BD6:	jsr     _setupMap
+	jsr     _setupMap
 ;
 ; ppu_off();
 ;
@@ -7141,7 +7141,7 @@ L0BE2:	lda     _levelComplete
 ;
 ; while ( 1 ) {
 ;
-	jmp     L0BD6
+	jmp     L0BD2
 
 .endproc
 
