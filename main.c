@@ -79,6 +79,7 @@ typedef uint16_t u16;
 #define CHANNEL_NOISE	 	3
 
 #define SCORE_VALUE_FRUIT	8
+#define SCORE_VALUE_JEWEL	20
 
 
 #pragma bss-name (push, "ZEROPAGE")
@@ -99,6 +100,7 @@ static u8 collideBottom;
 static u8 enemyColliding;
 static u8 playerStartX;
 static u8 playerStartY;
+static u8 levelComplete;
 
 
 #pragma data-name(pop)
@@ -243,6 +245,10 @@ const u8 fruitFrame[4] = {
 	0x20, 0x21, 0x30, 0x31
 };
 
+const u8 jewelFrame[4] = {
+	0x42, 0x43, 0x52, 0x53
+};
+
 // x offset, y offset, tile, attribute
 
 const u8 enemySpriteDataTemplate[17] = {
@@ -356,6 +362,8 @@ void setupMap(void) {
 
 		} else if ( collisionByte == TILE_FRUIT ) {
 			putMapTile(mapX << 1, mapY << 1, fruitFrame);
+		} else if ( collisionByte == TILE_JEWEL ) {
+			putMapTile(mapX << 1, mapY << 1, jewelFrame);
 		}
 
 		++mapX;
@@ -1007,19 +1015,23 @@ void updateEnemyMovement(void) {
 	}
 }
 
-//void playerGetFruit(u8 collideIndex, u8 direction) {
-void checkPlayerGetFruit() {
+void checkPlayerGetItems() {
 	
-	//getCollisionIndex(playerX, playerY);
-	//collisionMap[collideIndex] = TILE_NOCOLLIDE;
-
 	getCollisionIndex(playerX + 8, playerY + 8);
 	if ( collisionMap[collisionIndex] == TILE_FRUIT ) {
 		addScore(SCORE_VALUE_FRUIT);
 		collisionMap[collisionIndex] = TILE_NOCOLLIDE;
 		updateMapTile((((playerX + 8) & 0xf0) >> 3), (((playerY + 8) & 0xf0) >> 3), emptyFrame);
-
 		sfx_play(SFX_BEEP, CHANNEL_SQUARE1);
+
+	} else if ( collisionMap[collisionIndex] == TILE_JEWEL ) {
+
+		addScore(SCORE_VALUE_JEWEL);
+		collisionMap[collisionIndex] = TILE_NOCOLLIDE;
+		updateMapTile((((playerX + 8) & 0xf0) >> 3), (((playerY + 8) & 0xf0) >> 3), emptyFrame);		
+		sfx_play(SFX_BEEP, CHANNEL_SQUARE1);
+		delay(180);
+		levelComplete = 1;
 	}
 }
 
@@ -1326,60 +1338,63 @@ void main(void)
 	playerLives = PLAYER_INIT_LIVES;
 
 
+	while ( 1 ) {
+		setupMap();
 
-	setupMap();
+		ppu_off();
+		drawScoreboard();
+		ppu_on_all();
 
-	ppu_off();
-	drawScoreboard();
-	ppu_on_all();
+		levelComplete = 0;
 
-
-	// now the main loop
-	
-	while ( 1 )
-	{
-		ppu_wait_frame(); // wait for next TV frame
-		updateScoreboard();
-		//ppu_wait_nmi();
-	
-		//process player
+		// now the main loop
 		
-		oamSpriteIndex = 0;
-		i = 0;
-
-		sprPriorityToggle = frameCount & 0xFE;
-
-		// update player movement
-		pad = pad_poll(i);
-
+		while ( !levelComplete )
+		{
+			ppu_wait_frame(); // wait for next TV frame
+			updateScoreboard();
+			//ppu_wait_nmi();
 		
+			//process player
+			
+			oamSpriteIndex = 0;
+			i = 0;
 
-		updatePlayerSprite();
-		updateEnemySprites();
-		updateGlueSprites();
-		spriteCount();
+			sprPriorityToggle = frameCount & 0xFE;
 
-		checkPlayerGetFruit();
+			// update player movement
+			pad = pad_poll(i);
 
-		
-		
-		updatePlayerState();
+			
 
-		if ( playerState != PLAYER_STATE_DEAD ) {
-			updateEnemyMovement();	
-			updateGlues();
-			enemyColliding = 0;
-			four_Sides(playerX, playerY);
-			playerEnemyCollideCheck();
-			playerEnemyColliding = enemyColliding;
-			//gluePlayerCollideCheck();
-			glueEnemyCollideCheck();			
-		}
-		
-		
-		oam_hide_rest(oamSpriteIndex);
+			updatePlayerSprite();
+			updateEnemySprites();
+			updateGlueSprites();
+			spriteCount();
 
-		++frameCount;
+			checkPlayerGetItems();
+			
+			
+			updatePlayerState();
+
+			if ( playerState != PLAYER_STATE_DEAD ) {
+				updateEnemyMovement();	
+				updateGlues();
+				enemyColliding = 0;
+				four_Sides(playerX, playerY);
+				playerEnemyCollideCheck();
+				playerEnemyColliding = enemyColliding;
+				//gluePlayerCollideCheck();
+				glueEnemyCollideCheck();			
+			}
+			
+			
+			oam_hide_rest(oamSpriteIndex);
+
+			++frameCount;
+		}		
 	}
+
+
 	
 }
