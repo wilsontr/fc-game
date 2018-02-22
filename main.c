@@ -1032,6 +1032,8 @@ void checkPlayerGetItems() {
 		sfx_play(SFX_BEEP, CHANNEL_SQUARE1);
 		delay(180);
 		levelComplete = 1;
+	} else if ( collisionMap[collisionIndex] == TILE_WATER ) {
+		killPlayer();		
 	}
 }
 
@@ -1127,9 +1129,6 @@ void updatePlayerJumpFall(void) {
 		} 
 	} 
 
-	if ( verticalCollideCheck == TILE_WATER ) {
-		killPlayer();
-	} 
 }
 
 void updatePlayerClimbing(void) {
@@ -1371,13 +1370,11 @@ void main(void)
 			updateEnemySprites();
 			updateGlueSprites();
 			spriteCount();
-
-			checkPlayerGetItems();
-			
 			
 			updatePlayerState();
 
 			if ( playerState != PLAYER_STATE_DEAD ) {
+				checkPlayerGetItems();
 				updateEnemyMovement();	
 				updateGlues();
 				enemyColliding = 0;
