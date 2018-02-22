@@ -78,7 +78,7 @@ typedef uint16_t u16;
 #define CHANNEL_TRIANGLE 	2
 #define CHANNEL_NOISE	 	3
 
-#define VALUE_FRUIT			800
+#define SCORE_VALUE_FRUIT	8
 
 
 #pragma bss-name (push, "ZEROPAGE")
@@ -122,7 +122,7 @@ static u8 touch;
 static u8 spriteFlickerIndex = 0;
 static u8 sprPriorityToggle = 0;
 
-static long playerScore = 0;
+static unsigned int playerScore = 0;
 
 static u8 palSprites[4];
 //static u8 palBG[4];
@@ -588,38 +588,85 @@ void drawScoreboard(void) {
 	//pal_col(1,0x30); //set white color
 	//vram_adr(NTADR_A(0, 1));
 	// vram_fill(0x10, 5);
-	vram_adr(NTADR_A(2, 2));
+	vram_adr(NTADR_A(2, 3));
 	vram_put(0xDD);
-	putStr(NTADR_A(3, 2), "000000");
+	putStr(NTADR_A(3, 3), "000000");
 }
 
-u8 updateListData[10] = { 
-	MSB(NTADR_A(0, 1)) | NT_UPD_HORZ, // MSB
-	LSB(NTADR_A(0, 1)),  // LSB
-	6, // Byte count
-	0, 0, 0, 0, 0, 0,
+static u8 scoreUpdateListData[8] = { 
+	MSB(NTADR_A(3, 3)) | NT_UPD_HORZ, // MSB
+	LSB(NTADR_A(3, 3)),  // LSB
+	4, // Byte count
+	0, 0, 0, 0,
 	NT_UPD_EOF // EOF
 };
 
-static u8 updateList[8];
+static u8 scoreUpdateList[8] = {
+	0, 0, 0, 0, 0, 0, 0, 0
+};
 
-static u8 playerScoreString[100];
+static u8 digitsArray[4] = {
+	0, 0, 0, 0
+};
+static u8 decadeCount;
+static unsigned int valueToConvert;
+static u8 scoreChanged = 0;
+
+//static u8 playerScoreString[6];
 
 void updateScoreboard(void) {
-	memcpy(updateList, updateListData, sizeof(updateListData));	
-	//sprintf(playerScoreString, "%06d", playerScore);
-	//memcpy(&updateList[2], playerScoreString, 6);
 
-	//itoa(playerScore, playerScoreString, 10);
-
-
-	for ( i = 0; i < 6; ++i ) {
-		//playerScoreString[i] = 0xD0;
-		//updateList[2 + i] = playerScoreString[i];
+	if ( !scoreChanged ) {
+		return;
 	}
 
-	set_vram_update(updateList);
+	valueToConvert = playerScore;
+
+	for ( i = 0; i < 4; ++i ) {
+		digitsArray[i] = 0;
+	}
+
+	decadeCount = 0;
+
+	while ( valueToConvert >= 1000 ) {
+		valueToConvert -= 1000;
+		++decadeCount;
+	}
+
+	digitsArray[0] = decadeCount;
+	decadeCount = 0;
+
+	while ( valueToConvert >= 100 ) {
+		valueToConvert -= 100;
+		++decadeCount;
+	}
+
+	digitsArray[1] = decadeCount;
+	decadeCount = 0;
+
+	while ( valueToConvert >= 10 ) {
+		valueToConvert -= 10;
+		++decadeCount;
+	}
+
+	digitsArray[2] = decadeCount;
+	digitsArray[3] = valueToConvert;
+	
+
+	
+	for ( i = 0; i < 4; ++i ) {
+		scoreUpdateList[3 + i] = digitsArray[i] + 0xD0;
+	}
+	
+	set_vram_update(scoreUpdateList);
+	scoreChanged = 0;
 }
+
+void __fastcall__ addScore(u8 addValue) {
+	playerScore += addValue;
+	scoreChanged = 1;
+}
+
 /*********** Collision Checking ***********/
 
 void __fastcall__ four_Sides(u8 originX, u8 originY) {
@@ -968,7 +1015,7 @@ void checkPlayerGetFruit() {
 
 	getCollisionIndex(playerX + 8, playerY + 8);
 	if ( collisionMap[collisionIndex] == TILE_FRUIT ) {
-		playerScore += VALUE_FRUIT;
+		addScore(SCORE_VALUE_FRUIT);
 		collisionMap[collisionIndex] = TILE_NOCOLLIDE;
 		updateMapTile((((playerX + 8) & 0xf0) >> 3), (((playerY + 8) & 0xf0) >> 3), emptyFrame);
 
@@ -1250,6 +1297,7 @@ void main(void)
 
 
 	memcpy(tileUpdateList, tileUpdateListInit, sizeof(tileUpdateListInit));
+	memcpy(scoreUpdateList, scoreUpdateListData, sizeof(scoreUpdateListData));	
 
 	memcpy(palSprites, paldat, 16);
 
@@ -1291,6 +1339,8 @@ void main(void)
 	while ( 1 )
 	{
 		ppu_wait_frame(); // wait for next TV frame
+		updateScoreboard();
+		//ppu_wait_nmi();
 	
 		//process player
 		
@@ -1302,7 +1352,7 @@ void main(void)
 		// update player movement
 		pad = pad_poll(i);
 
-		updateScoreboard();
+		
 
 		updatePlayerSprite();
 		updateEnemySprites();
@@ -1310,6 +1360,8 @@ void main(void)
 		spriteCount();
 
 		checkPlayerGetFruit();
+
+		
 		
 		updatePlayerState();
 
