@@ -356,6 +356,10 @@ static u8 decadeCount;
 static unsigned int valueToConvert;
 static u8 scoreChanged = 0;
 
+/* Sprite maintenance */
+
+static u8 sSpriteIndex, sFrameIndex;
+
 /* Prototypes */
 
 void setupMap(void);
@@ -406,8 +410,6 @@ void setupMap(void) {
 	enemyIndex = 0;
 	platformIndex = 0;
 	numEnemies = 0;
-
-	ppu_off();
 
 	// initialize glue data
 
@@ -476,7 +478,7 @@ void setupMap(void) {
 	playerY = playerStartY;
 	numEnemies = enemyIndex;
 
-	ppu_on_all(); //enable rendering	
+	
 }
 
 /*********** Nametable/Background Updates ***********/
@@ -522,7 +524,7 @@ void __fastcall__ putMapTile(u8 mapX, u8 mapY, const u8 * tileFrame) {
 
 /*********** Sprite Management ***********/
 
-static u8 sSpriteIndex, sFrameIndex;
+
 
 void __fastcall__ setSpriteFrame(u8 *sprite, const u8 *frame) {
 	sSpriteIndex = 2;
@@ -1389,7 +1391,9 @@ void updatePlayerState(void) {
 	if ( playerState == PLAYER_STATE_DEAD ) {
 		++playerAnimationCounter;
 		if ( playerAnimationCounter == PLAYER_DEAD_INTERVAL ) {
+			ppu_off();
 			setupMap();
+			ppu_on_all(); 
 			playerState = PLAYER_STATE_NORMAL;
 			playerAnimationCounter = 0;
 		}
@@ -1483,13 +1487,15 @@ void main(void)
 
 	while ( 1 ) {
 
+
+		ppu_off();
+
 		vram_adr(NAMETABLE_A);
 		vram_unrle(levels[currentLevel]);
 		currentCollisionData = levelCollisions[currentLevel];
 
 		setupMap();	
 		
-
 		ppu_off();
 		drawScoreboard();
 		ppu_on_all();
@@ -1539,9 +1545,16 @@ void main(void)
 			oam_hide_rest(oamSpriteIndex);
 
 			++frameCount;
-		}		
+		}	
+
+		
 
 		++currentLevel;
+		if ( currentLevel > 1 ) {
+			currentLevel = 0;
+		}
+
+		
 	}
 
 
