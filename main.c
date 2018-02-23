@@ -16,6 +16,8 @@
 #include <stdint.h>
 #include <stdlib.h>
 #include "neslib.h"
+#include "maps/newmap.h"
+#include "maps/newmap_coll.h"
 #include "maps/map2.h"
 #include "maps/map2_coll.h"
 
@@ -82,7 +84,7 @@ typedef uint16_t u16;
 #define ENEMY_STATE_DEAD		3
 
 #define ENEMY_DATA_SIZE		17
-#define MAX_ENEMIES			5
+#define MAX_ENEMY_COUNT		5
 
 #define SFX_JUMP			0
 #define SFX_GLUEDROP		1
@@ -133,7 +135,7 @@ extern const u8 paldat[];
 const unsigned char bgPalette[16]={ 0x0f,0x11,0x21,0x30,0x0f,0x04,0x14,0x34,0x0f,0x16,0x29,0x30,0x0f,0x20,0x28,0x21 };
 
 
-
+const u8 * currentCollisionData;
 
 
 static u8 touch;
@@ -157,7 +159,7 @@ static u8 playerState = PLAYER_STATE_NORMAL;
 static signed char playerVertVel = 0;
 static u8 jumpButtonReset = 1;
 static u8 glueButtonReset = 1;
-static u8 playerSittingOnEnemy = 0;
+static u8 playerSittingOnSprite = 0;
 static u8 playerLives;
 static u8 playerAnimationCounter;
 
@@ -235,13 +237,21 @@ struct platformStruct {
 	u8 y;
 	u8 isActive;
 	u8 direction;
+	u8 playerColliding;
 };
 
 typedef struct platformStruct platform;
 
 static platform platformData[MAX_PLATFORM_COUNT];
-static platform *platformPointer;
-u8 platformIndex;
+static platform *platformPointer = NULL;
+static u8 platformIndex;
+
+static u8 platformTop;
+static u8 platformBottom;
+static u8 platformLeft;
+static u8 platformRight;
+
+static u8 playerPlatformStuck = 0;
 
 /* Enemies */
 
@@ -268,7 +278,7 @@ struct enemyStruct {
 
 typedef struct enemyStruct enemy;
 
-enemy enemyData[MAX_ENEMIES];
+enemy enemyData[MAX_ENEMY_COUNT];
 
 const u8 enemyFrames[2][4] = {
 	{ 0x06, 0x07, 0x16, 0x17 },
@@ -349,10 +359,12 @@ static u8 scoreChanged = 0;
 /* Prototypes */
 
 void setupMap(void);
+void killPlayer(void);
 void __fastcall__ setSpriteFrame(u8 *sprite, const u8 *frame);
 void __fastcall__ setSpritePalette(u8 *sprite, u8 palette);
 void __fastcall__ updateMapTile(u8 mapX, u8 mapY, const u8 * tileFrame);
 void __fastcall__ putMapTile(u8 mapX, u8 mapY, const u8 * tileFrame);
+
 
 /*********** Unused: utility function for decompressing RLE collision map data ***********/
 
@@ -388,21 +400,29 @@ void setupMap(void) {
 	u8 index = 0;
 
 	enemy newEnemy = { 0, 0, 0, PAD_LEFT };
-	platform newPlatform = { 0, 0, 1, PAD_LEFT };
+	platform newPlatform = { 0, 0, 1, PAD_LEFT, 0 };
 
-	memcpy(collisionMap, map2_coll, COLLISION_MAP_SIZE);
+	memcpy(collisionMap, currentCollisionData, COLLISION_MAP_SIZE);
 	enemyIndex = 0;
 	platformIndex = 0;
-	
+	numEnemies = 0;
 
 	ppu_off();
 
 	// initialize glue data
 
-	for ( index = 0; index < sizeof(MAX_GLUE_COUNT); ++index ) {
+	for ( index = 0; index < MAX_GLUE_COUNT; ++index ) {
 		gluePointer = &(glueData[index]);
 		gluePointer->isActive = 0;
 	}
+
+	// initialize platform data
+
+	for ( index = 0; index < MAX_PLATFORM_COUNT; ++index ) {
+		platformPointer = &(platformData[index]);
+		platformPointer->isActive = 0;
+	}
+
 	
 	// populate the screen based on the collision map
 
@@ -415,7 +435,7 @@ void setupMap(void) {
 			playerStartY = (mapY << 4) - 1;
 
 		} else if ( ( collisionByte == TILE_ENEMY1START_RIGHT ) || ( collisionByte == TILE_ENEMY1START_LEFT ) ) {
-			if ( enemyIndex < MAX_ENEMIES ) {
+			if ( enemyIndex < MAX_ENEMY_COUNT ) {
 				enemyData[enemyIndex] = newEnemy;
 				enemyData[enemyIndex].x = mapX << 4;
 				enemyData[enemyIndex].y = (mapY << 4) - 1;
@@ -436,6 +456,7 @@ void setupMap(void) {
 				platformData[platformIndex].x = mapX << 4;
 				platformData[platformIndex].y = (mapY << 4) - 1;
 				platformData[platformIndex].isActive = 1;
+				platformData[platformIndex].direction = PAD_LEFT;
 				++platformIndex;
 			}
 		} else if ( collisionByte == TILE_FRUIT ) {
@@ -774,36 +795,6 @@ void __fastcall__ getCollisionIndex(u8 screenX, u8 screenY) {
 	collisionIndex = ((screenX & 0xf0) >> 4) + (screenY & 0xf0);
 }
 
-/*
-u8 __fastcall__ smallCollideCheckVertical(u8 originX, u8 originY, u8 direction) {
-
-	leftSide = originX;
-	rightSide = originX + 8;
-	topSide = originY;
-	bottomSide = originY + 8;
-
-	collisionIndex = 0;
-
-	if ( direction & PAD_UP ) {
-		getCollisionIndex(rightSide, topSide);
-		if ( collisionMap[collisionIndex] != TILE_ALLCOLLIDE ) {
-			getCollisionIndex(leftSide, topSide);
-		}
-	} else if ( direction & PAD_DOWN ) {
-		getCollisionIndex(rightSide, bottomSide);
-		if ( collisionMap[collisionIndex] != TILE_ALLCOLLIDE ) {
-			getCollisionIndex(leftSide, bottomSide);
-		}
-	}
-
-	if ( collisionIndex ) {
-		return collisionMap[collisionIndex];	
-	} else {
-		return 0;
-	}
-}
-*/
-
 void __fastcall__ collideCheckVertical(u8 originX, u8 originY, u8 direction) {
 
 	leftSide = originX + 2;
@@ -812,21 +803,52 @@ void __fastcall__ collideCheckVertical(u8 originX, u8 originY, u8 direction) {
 	bottomSide = originY + 16;
 
 	collisionIndex = 0;
+	verticalCollideCheck = TILE_NOCOLLIDE;
 
 	if ( direction & PAD_UP ) {
 		getCollisionIndex(rightSide - 4, topSide);
 		if ( collisionMap[collisionIndex] != TILE_ALLCOLLIDE )  {
 			getCollisionIndex(leftSide + 4, topSide);
 		}
+		verticalCollideCheck = collisionMap[collisionIndex];	
 	} else if ( direction & PAD_DOWN ) {
 		getCollisionIndex(rightSide, bottomSide);
 		if ( collisionMap[collisionIndex] != TILE_ALLCOLLIDE ) {
 			getCollisionIndex(leftSide, bottomSide);
 		}
+		verticalCollideCheck = collisionMap[collisionIndex];			
+
+		if ( collisionMap[collisionIndex] != TILE_ALLCOLLIDE ) {
+			// check platform collision
+			for ( platformIndex = 0; platformIndex < MAX_PLATFORM_COUNT; ++platformIndex ) {
+				platformPointer = &(platformData[platformIndex]);
+
+				if ( platformPointer->isActive == 1 ) {
+					platformTop = platformPointer->y;
+					platformBottom = platformPointer->y + 16;
+					platformLeft = platformPointer->x;
+					platformRight = platformPointer->x + 16;
+
+					if ( !( rightSide  <  platformLeft || 
+							leftSide   > platformRight || 
+							bottomSide <  platformTop  ||
+							topSide    > platformBottom ) ) {
+
+						verticalCollideCheck = TILE_PLATFORM;
+						platformPointer->playerColliding = 1;
+						playerPlatformStuck = 1;
+					} else {
+						platformPointer->playerColliding = 0;
+					}
+				}
+			}
+
+		}
 	}
 
-	verticalCollideCheck = collisionMap[collisionIndex];	
+	
 }
+
 
 void __fastcall__ collideCheckHorizontal(u8 originX, u8 originY, u8 direction) {
 
@@ -845,6 +867,21 @@ void __fastcall__ collideCheckHorizontal(u8 originX, u8 originY, u8 direction) {
 		if ( collisionMap[collisionIndex] == TILE_NOCOLLIDE ) {
 			getCollisionIndex(rightSide, bottomSide);
 		}
+	}
+
+	horizontalCollideCheck = collisionMap[collisionIndex];
+}
+
+void __fastcall__ collideCheckHorizontalFull(u8 originX, u8 originY, u8 direction) {
+
+	leftSide = originX;
+	rightSide = originX + 15;
+	topSide = originY + 8;
+
+	if ( direction & PAD_LEFT ) {
+		getCollisionIndex(leftSide, topSide);
+	} else if ( direction & PAD_RIGHT ) {
+		getCollisionIndex(rightSide, topSide);
 	}
 
 	horizontalCollideCheck = collisionMap[collisionIndex];
@@ -907,19 +944,13 @@ void __fastcall__ bgVertCollideCheck(u8 *x, u8 *y, u8 dir) {
 }
 */
 
-void killPlayer(void) {
-	// kill player
-	playerState = PLAYER_STATE_DEAD;
-	--playerLives;
-	playerAnimationCounter = 0;
-}
 
 void playerEnemyCollideCheck(void) {
 
 	enemyIndex = 0;
 	enemyColliding = 0;
 	enemyCollidedIndex = 0;
-	playerSittingOnEnemy = 0;
+	playerSittingOnSprite = 0;
 
 	while ( !enemyColliding && ( enemyIndex < numEnemies ) ) {
 		currentEnemy = &(enemyData[enemyIndex]);
@@ -945,7 +976,7 @@ void playerEnemyCollideCheck(void) {
 					if ( ( bottomSide >= (enemyTop) ) && ( bottomSide <= ( enemyTop + 4 ) ) ) {
 						if ( !( pad & PAD_UP ) && ( playerVertVel < 0 ) ) {
 							playerY = ( enemyTop - 15 );
-							playerSittingOnEnemy = 1;
+							playerSittingOnSprite = 1;
 							playerState = PLAYER_STATE_NORMAL;							
 							playerFrame = PLAYER_FRAME_STANDING;																									
 						}
@@ -1084,6 +1115,37 @@ void updateEnemyMovement(void) {
 	}
 }
 
+void updatePlatforms(void) {
+
+	for ( i = 0; i < MAX_PLATFORM_COUNT; i++ ) {
+		platformPointer = &(platformData[i]);
+		if ( platformPointer->isActive == 1 ) {
+			if ( ( frameCount & 0x01 ) == 0x01 ) {
+				if ( platformPointer->direction == PAD_RIGHT ) {
+					platformPointer->x += 1;
+					if ( platformPointer->playerColliding || playerPlatformStuck ) {
+						playerX += 1;
+					}
+					collideCheckHorizontalFull(platformPointer->x, platformPointer->y, PAD_RIGHT);
+					if ( ( horizontalCollideCheck == TILE_ALLCOLLIDE ) ) {
+						platformPointer->direction = PAD_LEFT;
+					}
+				} else {
+					if ( platformPointer->playerColliding || playerPlatformStuck ) {
+						playerX -= 1;
+					}
+					platformPointer->x -= 1;
+					collideCheckHorizontalFull(platformPointer->x, platformPointer->y, PAD_LEFT);
+					if ( ( horizontalCollideCheck == TILE_ALLCOLLIDE ) ) {
+						platformPointer->direction = PAD_RIGHT;
+					}
+				}		
+			}
+		}
+	}
+}
+
+
 void checkPlayerGetItems() {
 	
 	getCollisionIndex(playerX + 8, playerY + 8);
@@ -1133,7 +1195,7 @@ void updatePlayerJumpFall(void) {
 			// check collision below
 			collideCheckVertical(playerX, playerY + 2, PAD_DOWN);
 			
-			if ( ( verticalCollideCheck == TILE_ALLCOLLIDE ) || ( verticalCollideCheck == TILE_LADDER_TOP ) ) { 
+			if ( ( verticalCollideCheck == TILE_ALLCOLLIDE ) || ( verticalCollideCheck == TILE_LADDER_TOP ) || ( verticalCollideCheck == TILE_PLATFORM ) ) { 
 				// *** Player lands from jump				
 				//playerY =  ( ( playerY + 2 ) & 0xF0 ) - 1;
 				playerY =  ( ( playerY + 8 ) & 0xF0 ) - 1;
@@ -1158,7 +1220,7 @@ void updatePlayerJumpFall(void) {
 		// check collision below
 		collideCheckVertical(playerX, playerY + 2, PAD_DOWN);
 
-		if ( ( verticalCollideCheck == TILE_ALLCOLLIDE ) || ( verticalCollideCheck == TILE_LADDER_TOP ) ) { 
+		if ( ( verticalCollideCheck == TILE_ALLCOLLIDE ) || ( verticalCollideCheck == TILE_LADDER_TOP ) || ( verticalCollideCheck == TILE_PLATFORM ) ) { 
 			// *** Player is standing on the ground
 
 			playerY = ((playerY + 8) & 0xF0) - 1;
@@ -1172,12 +1234,13 @@ void updatePlayerJumpFall(void) {
 		}	
 	}
 
-	if ( collideBottom || playerSittingOnEnemy ) {
+	if ( collideBottom || playerSittingOnSprite ) {
 		// *** Actions player can take when the player is standing on the ground
 
 		if ( ( jumpButtonReset != 0 ) && ( pad & PAD_A ) ) {
 			// *** Start a jump
 
+			playerPlatformStuck = 0;
 			playerVertVel = PLAYER_INIT_JUMP_VEL;
 			playerState = PLAYER_STATE_JUMPING;
 			playerJumpCounter = 0;
@@ -1206,6 +1269,7 @@ void updatePlayerClimbing(void) {
 	if ( pad & PAD_UP ) { 
 		// *** Climb up
 		--playerY;
+		playerPlatformStuck = 0;
 	} else if ( pad & PAD_DOWN ) {
 		// *** Climb down
 		++playerY;
@@ -1236,11 +1300,13 @@ void updatePlayerHorizontalMovement(void) {
 
 	if ( pad & PAD_LEFT ) {
 		playerDir = PAD_LEFT;
+		playerPlatformStuck = 0;
 		if ( playerX > 0 ) {
 			playerX -= PLAYER_MOVE_VEL;
 		}
 	} else if ( pad & PAD_RIGHT ) {
 		playerDir = PAD_RIGHT;
+		playerPlatformStuck = 0;
 		if ( playerX < 240 ) {
 			playerX += PLAYER_MOVE_VEL;
 		}
@@ -1249,6 +1315,10 @@ void updatePlayerHorizontalMovement(void) {
 	horizontalCollideCheck = TILE_NOCOLLIDE;
 
 	bgHorizCollideCheck(&playerX, &playerY, pad);
+
+	if ( horizontalCollideCheck != TILE_NOCOLLIDE ) {
+		playerPlatformStuck = 0;
+	}
 }
 
 void updatePlayerGlue(void) {
@@ -1307,6 +1377,13 @@ void updatePlayerGlue(void) {
 	}
 }
 
+void killPlayer(void) {
+	// kill player
+	playerState = PLAYER_STATE_DEAD;
+	--playerLives;
+	playerAnimationCounter = 0;
+}
+
 void updatePlayerState(void) {
 
 	if ( playerState == PLAYER_STATE_DEAD ) {
@@ -1341,6 +1418,9 @@ void updateGlues(void) {
 				if ( ( collisionMap[collisionIndex] == TILE_ALLCOLLIDE ) || ( collisionMap[collisionIndex] == TILE_LADDER_TOP ) ) {
 					gluePointer->collisionIndex = collisionIndex;
 					gluePointer->y = ((gluePointer->y + 8 ) & 0xF0) - 1;
+				} else if ( collisionMap[collisionIndex] == TILE_WATER ) {
+					// kill glue
+					gluePointer->isActive = 0;
 				} else {
 					four_Sides(gluePointer->x, gluePointer->y + 2);
 					glueCollideCheck();
@@ -1363,6 +1443,17 @@ void updateGlues(void) {
 
 void main(void)
 {
+	int currentLevel = 0;
+
+	const u8 * levels[2] = {
+		map2,
+		newmap
+	};
+
+	const u8 * levelCollisions[2] = {
+		map2_coll,
+		newmap_coll
+	};
 
 	memcpy(tileUpdateList, tileUpdateListInit, sizeof(tileUpdateListInit));
 	memcpy(scoreUpdateList, scoreUpdateListData, sizeof(scoreUpdateListData));	
@@ -1387,13 +1478,17 @@ void main(void)
 	setSpriteFrame(playerSpriteData, playerFrames[playerFrame]);
 	playerLives = PLAYER_INIT_LIVES;
 
+	//vram_adr(NAMETABLE_A); //unpack nametable into VRAM
+	//vram_unrle(map2);	
 
 	while ( 1 ) {
 
-		vram_adr(NAMETABLE_A); //unpack nametable into VRAM
-		vram_unrle(map2);	
+		vram_adr(NAMETABLE_A);
+		vram_unrle(levels[currentLevel]);
+		currentCollisionData = levelCollisions[currentLevel];
 
-		setupMap();
+		setupMap();	
+		
 
 		ppu_off();
 		drawScoreboard();
@@ -1407,7 +1502,7 @@ void main(void)
 		{
 			ppu_wait_frame(); // wait for next TV frame
 			updateScoreboard();
-			//ppu_wait_nmi();
+
 		
 			//process player
 			
@@ -1418,7 +1513,6 @@ void main(void)
 
 			// update player movement
 			pad = pad_poll(i);
-
 			
 
 			updatePlayerSprite();
@@ -1433,11 +1527,11 @@ void main(void)
 				checkPlayerGetItems();
 				updateEnemyMovement();	
 				updateGlues();
+				updatePlatforms();
 				enemyColliding = 0;
 				four_Sides(playerX, playerY);
 				playerEnemyCollideCheck();
 				playerEnemyColliding = enemyColliding;
-				//gluePlayerCollideCheck();
 				glueEnemyCollideCheck();			
 			}
 			
@@ -1446,6 +1540,8 @@ void main(void)
 
 			++frameCount;
 		}		
+
+		++currentLevel;
 	}
 
 
