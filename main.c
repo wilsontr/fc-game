@@ -1,4 +1,16 @@
 
+// TODO next:
+
+// - boss
+// - flesh out enemy behavior
+// - bashing enemies for medals, medal chaining
+// - more sound effects
+// - lives in scoreboard
+// - break out headers/modules
+// - moving platforms?
+// - study enemy behavior in games	
+// - level music theme
+// - title screen
 
 #include <stdio.h>
 #include <stdint.h>
@@ -22,10 +34,11 @@ typedef uint16_t u16;
 #define TILE_LADDER				6
 #define TILE_LADDER_TOP			7
 #define TILE_FRUIT				8
-#define TILE_JEWEL				12
+#define TILE_PLAYER				9
 #define TILE_BOSS				10
 #define TILE_WATER				11
-#define TILE_PLAYER				9	  		
+#define TILE_JEWEL				12	  	
+#define TILE_PLATFORM			13	
 
 // TODO Think about RLE-encoding collision maps again
 #define COLLISION_MAP_SIZE 	    240
@@ -57,6 +70,9 @@ typedef uint16_t u16;
 #define MAX_GLUE_COUNT 			1
 #define GLUE_INIT_DURATION		255
 
+#define MAX_PLATFORM_COUNT		3
+#define PLATFORM_SPEED			1
+
 #define GLUE_FRAME_BIG			0
 #define GLUE_FRAME_MEDIUM		1
 #define GLUE_FRAME_SMALL		2
@@ -66,7 +82,7 @@ typedef uint16_t u16;
 #define ENEMY_STATE_DEAD		3
 
 #define ENEMY_DATA_SIZE		17
-#define NUM_ENEMIES 		4
+#define MAX_ENEMIES			5
 
 #define SFX_JUMP			0
 #define SFX_GLUEDROP		1
@@ -110,7 +126,7 @@ static u8 collisionMap[COLLISION_MAP_SIZE];
 
 /* Bookkeeping and state */
 
-// sprite palette comes from palette.dat
+// sprite palette comes from fcgame.dat
 // imported in crt0.s
 
 extern const u8 paldat[];
@@ -184,7 +200,6 @@ static glue *gluePointer;
 static u8 glueIndex;
 static u8 glueColliding;
 static u8 glueCollidedIndex;
-static glue * currentGlue;
 static u8 glueTop;
 static u8 glueLeft;
 static u8 glueRight;
@@ -204,6 +219,29 @@ const u8 glueSpriteDataTemplate[17] = {
 	128
 };
 
+/* Platforms */
+
+
+const u8 platformSpriteDataTemplate[17] = {
+	0, 0, 0x82, 0x1,
+	8, 0, 0x83, 0x1,
+	0, 8, 0x92, 0x1,
+	8, 8, 0x93, 0x1,
+	128
+};
+
+struct platformStruct {
+	u8 x;
+	u8 y;
+	u8 isActive;
+	u8 direction;
+};
+
+typedef struct platformStruct platform;
+
+static platform platformData[MAX_PLATFORM_COUNT];
+static platform *platformPointer;
+u8 platformIndex;
 
 /* Enemies */
 
@@ -230,7 +268,7 @@ struct enemyStruct {
 
 typedef struct enemyStruct enemy;
 
-enemy enemyData[8];
+enemy enemyData[MAX_ENEMIES];
 
 const u8 enemyFrames[2][4] = {
 	{ 0x06, 0x07, 0x16, 0x17 },
@@ -261,6 +299,11 @@ const u8 enemySpriteDataTemplate[17] = {
 
 static u8 enemySpriteData[10][17];
 static enemy * currentEnemy;
+
+
+
+
+
 
 /*********** Score/tile updates ***********/
 
@@ -345,8 +388,12 @@ void setupMap(void) {
 	u8 index = 0;
 
 	enemy newEnemy = { 0, 0, 0, PAD_LEFT };
+	platform newPlatform = { 0, 0, 1, PAD_LEFT };
+
 	memcpy(collisionMap, map2_coll, COLLISION_MAP_SIZE);
 	enemyIndex = 0;
+	platformIndex = 0;
+	
 
 	ppu_off();
 
@@ -368,20 +415,29 @@ void setupMap(void) {
 			playerStartY = (mapY << 4) - 1;
 
 		} else if ( ( collisionByte == TILE_ENEMY1START_RIGHT ) || ( collisionByte == TILE_ENEMY1START_LEFT ) ) {
-			
-			enemyData[enemyIndex] = newEnemy;
-			enemyData[enemyIndex].x = mapX << 4;
-			enemyData[enemyIndex].y = (mapY << 4) - 1;
-			enemyData[enemyIndex].direction = ( collisionByte == TILE_ENEMY1START_RIGHT ) ? PAD_RIGHT : PAD_LEFT;
-			enemyData[enemyIndex].state = ENEMY_STATE_NORMAL;
+			if ( enemyIndex < MAX_ENEMIES ) {
+				enemyData[enemyIndex] = newEnemy;
+				enemyData[enemyIndex].x = mapX << 4;
+				enemyData[enemyIndex].y = (mapY << 4) - 1;
+				enemyData[enemyIndex].direction = ( collisionByte == TILE_ENEMY1START_RIGHT ) ? PAD_RIGHT : PAD_LEFT;
+				enemyData[enemyIndex].state = ENEMY_STATE_NORMAL;
 
-			for ( i = 0; i < ENEMY_DATA_SIZE; ++i ) {
-				enemySpriteData[enemyIndex][i] = enemySpriteDataTemplate[i];
+				for ( i = 0; i < ENEMY_DATA_SIZE; ++i ) {
+					enemySpriteData[enemyIndex][i] = enemySpriteDataTemplate[i];
+				}
+
+				setSpriteFrame(enemySpriteData[enemyIndex], enemyFrames[0]);
+				++enemyIndex;				
 			}
 
-			setSpriteFrame(enemySpriteData[enemyIndex], enemyFrames[0]);
-			++enemyIndex;
-
+		} else if ( collisionByte == TILE_PLATFORM ) {
+			if ( platformIndex < MAX_PLATFORM_COUNT ) {
+				platformData[platformIndex] = newPlatform;
+				platformData[platformIndex].x = mapX << 4;
+				platformData[platformIndex].y = (mapY << 4) - 1;
+				platformData[platformIndex].isActive = 1;
+				++platformIndex;
+			}
 		} else if ( collisionByte == TILE_FRUIT ) {
 			putMapTile(mapX << 1, mapY << 1, fruitFrame);
 		} else if ( collisionByte == TILE_JEWEL ) {
@@ -560,6 +616,15 @@ void updateGlueSprites(void) {
 			}
 
 			oamSpriteIndex = oam_meta_spr(gluePointer->x, gluePointer->y, oamSpriteIndex, gluePointer->spriteData);	
+		}
+	}
+}
+
+void updatePlatformSprites(void) {
+	for ( i = 0; i < MAX_PLATFORM_COUNT; ++i ) {
+		platformPointer = &(platformData[i]);
+		if ( platformPointer->isActive == 1 ) {
+			oamSpriteIndex = oam_meta_spr(platformPointer->x, platformPointer->y, oamSpriteIndex, platformSpriteDataTemplate);	
 		}
 	}
 }
@@ -962,12 +1027,12 @@ void glueCollideCheck(void) {
 	glueCollidedIndex = 0;
 
 	while ( !glueColliding && ( glueIndex < MAX_GLUE_COUNT ) ) {
-		currentGlue = &(glueData[glueIndex]);
-		if ( currentGlue->isActive ) {
-			glueTop = currentGlue->y + 2;
-			glueBottom = currentGlue->y + 14;
-			glueLeft = currentGlue->x + 2;
-			glueRight = currentGlue->x + 14;
+		gluePointer = &(glueData[glueIndex]);
+		if ( gluePointer->isActive ) {
+			glueTop = gluePointer->y + 2;
+			glueBottom = gluePointer->y + 14;
+			glueLeft = gluePointer->x + 2;
+			glueRight = gluePointer->x + 14;
 
 			if ( !( rightSide  <  glueLeft  || 
 					leftSide   >= glueRight || 
@@ -1299,18 +1364,6 @@ void updateGlues(void) {
 void main(void)
 {
 
-	// TODO next:
-
-	// - test/fix fruit collisions
-	// 	- limit this to a simple collision index check on player's x + 8, y + 8, every frame?
-	//  - do a similar check with hazard tiles
-	// - scoreboard
-	// - collect the jewel to end the level
-	// - boss
-	// - build a proper level (in progress)
-	// - study enemy behavior in games
-
-
 	memcpy(tileUpdateList, tileUpdateListInit, sizeof(tileUpdateListInit));
 	memcpy(scoreUpdateList, scoreUpdateListData, sizeof(scoreUpdateListData));	
 
@@ -1371,6 +1424,7 @@ void main(void)
 			updatePlayerSprite();
 			updateEnemySprites();
 			updateGlueSprites();
+			updatePlatformSprites();
 			spriteCount();
 			
 			updatePlayerState();
