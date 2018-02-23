@@ -5409,19 +5409,19 @@ L1104:	sta     _collisionIndex
 ;
 	jsr     pusha
 ;
-; leftSide = originX + 2;
+; leftSide = originX + 3;
 ;
 	ldy     #$02
 	lda     (sp),y
 	clc
-	adc     #$02
+	adc     #$03
 	sta     _leftSide
 ;
-; rightSide = originX + 14;
+; rightSide = originX + 13;
 ;
 	lda     (sp),y
 	clc
-	adc     #$0E
+	adc     #$0D
 	sta     _rightSide
 ;
 ; topSide = originY + 10;
@@ -5736,19 +5736,19 @@ L110E:	inc     _platformIndex
 ;
 	jsr     pusha
 ;
-; leftSide = originX + 6;
+; leftSide = originX + 3;
 ;
 	ldy     #$02
 	lda     (sp),y
 	clc
-	adc     #$06
+	adc     #$03
 	sta     _leftSide
 ;
-; rightSide = originX + 10;
+; rightSide = originX + 13;
 ;
 	lda     (sp),y
 	clc
-	adc     #$0A
+	adc     #$0D
 	sta     _rightSide
 ;
 ; topSide = originY + 10;
@@ -5980,7 +5980,7 @@ L0CEA:	lda     #<(_collisionMap)
 	and     #$40
 	beq     L111E
 ;
-; *x = (*x & 0xf0) + 10;
+; *x = (*x & 0xf0) + 13;
 ;
 	ldy     #$06
 	jsr     pushwysp
@@ -5994,7 +5994,7 @@ L0CEA:	lda     #<(_collisionMap)
 	lda     (ptr1),y
 	and     #$F0
 	clc
-	adc     #$0A
+	adc     #$0D
 ;
 ; } else if ( dir & PAD_RIGHT ) {
 ;
@@ -6003,7 +6003,7 @@ L111E:	lda     (sp),y
 	and     #$80
 	beq     L0D01
 ;
-; *x = (*x & 0xf0) + 5;
+; *x = (*x & 0xf0) + 2;
 ;
 	ldy     #$06
 	jsr     pushwysp
@@ -6017,7 +6017,7 @@ L111E:	lda     (sp),y
 	lda     (ptr1),y
 	and     #$F0
 	clc
-	adc     #$05
+	adc     #$02
 L111C:	jsr     staspidx
 ;
 ; }

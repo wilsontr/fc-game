@@ -799,8 +799,8 @@ void __fastcall__ getCollisionIndex(u8 screenX, u8 screenY) {
 
 void __fastcall__ collideCheckVertical(u8 originX, u8 originY, u8 direction) {
 
-	leftSide = originX + 2;
-	rightSide = originX + 14;
+	leftSide = originX + 3;
+	rightSide = originX + 13;
 	topSide = originY + 10;
 	bottomSide = originY + 16;
 
@@ -854,8 +854,8 @@ void __fastcall__ collideCheckVertical(u8 originX, u8 originY, u8 direction) {
 
 void __fastcall__ collideCheckHorizontal(u8 originX, u8 originY, u8 direction) {
 
-	leftSide = originX + 6;
-	rightSide = originX + 10;
+	leftSide = originX + 3;
+	rightSide = originX + 13;
 	topSide = originY + 10;
 	bottomSide = originY + 16;
 
@@ -893,10 +893,11 @@ void __fastcall__ bgHorizCollideCheck(u8 *x, u8 *y, u8 dir) {
 	collideCheckHorizontal(*x, *y, dir);
 	if ( horizontalCollideCheck == TILE_ALLCOLLIDE ) {
 		if ( dir & PAD_LEFT ) {
-			*x = (*x & 0xf0) + 10;
+			*x = (*x & 0xf0) + 13;
 
 		} else if ( dir & PAD_RIGHT ) {
-			*x = (*x & 0xf0) + 5;
+			//*x = (*x & 0xf0) + 5;
+			*x = (*x & 0xf0) + 2;
 		}		
 	}
 }
