@@ -50,6 +50,7 @@ typedef uint16_t u16;
 #define PLAYER_STATE_CLIMBING	2
 #define PLAYER_STATE_JUMPING	3
 #define PLAYER_STATE_FALLING	4
+#define PLAYER_STATE_GLUING		5
 
 #define PLAYER_INIT_LIVES		3
 
@@ -71,6 +72,8 @@ typedef uint16_t u16;
 #define GLUE_INIT_LIFESPAN	 	240
 #define MAX_GLUE_COUNT 			1
 #define GLUE_INIT_DURATION		255
+#define GLUE_FORMING_DURATION		15
+#define GLUE_FORMING_DURATION_HALF	8
 
 #define MAX_PLATFORM_COUNT		3
 #define PLATFORM_SPEED			1
@@ -313,10 +316,6 @@ const u8 enemySpriteDataTemplate[17] = {
 
 static u8 enemySpriteData[10][17];
 static enemy * currentEnemy;
-
-
-
-
 
 
 /*********** Score/tile updates ***********/
@@ -632,16 +631,27 @@ void updateGlueSprites(void) {
 	for ( i = 0; i < MAX_GLUE_COUNT; ++i ) {
 		gluePointer = &(glueData[i]);
 		if ( gluePointer->state == GLUE_STATE_ACTIVE ) {
+
 			if ( ( frameCount & 0x1F ) == 0x1F ) {
 				gluePointer->frame ^= 1;
 				flipSprite(gluePointer->spriteData, gluePointer->frame);
 			}
+
 			if ( gluePointer->timeLeft < 60 ) {
 				setSpriteFrame(gluePointer->spriteData, glueFrames[GLUE_FRAME_SMALL]);
 			} else if ( gluePointer->timeLeft < 120 ) {
 				setSpriteFrame(gluePointer->spriteData, glueFrames[GLUE_FRAME_MEDIUM]);
+			} else {
+				setSpriteFrame(gluePointer->spriteData, glueFrames[GLUE_FRAME_BIG]);
 			}
 
+			oamSpriteIndex = oam_meta_spr(gluePointer->x, gluePointer->y, oamSpriteIndex, gluePointer->spriteData);	
+		} else if ( gluePointer->state == GLUE_STATE_FORMING ) {
+			if ( gluePointer->timeLeft < GLUE_FORMING_DURATION_HALF ) {
+				setSpriteFrame(gluePointer->spriteData, glueFrames[GLUE_FRAME_MEDIUM]);
+			} else {
+				setSpriteFrame(gluePointer->spriteData, glueFrames[GLUE_FRAME_SMALL]);
+			}
 			oamSpriteIndex = oam_meta_spr(gluePointer->x, gluePointer->y, oamSpriteIndex, gluePointer->spriteData);	
 		}
 	}
@@ -658,7 +668,7 @@ void updatePlatformSprites(void) {
 
 void updatePlayerSprite(void) {
 
-	if ( playerState == PLAYER_STATE_NORMAL ) {
+	if ( ( playerState == PLAYER_STATE_NORMAL ) ) {
 
 		if ( ( pad & PAD_LEFT) || ( pad & PAD_RIGHT ) ) {
 			if ( pad & PAD_RIGHT ) {
@@ -677,6 +687,9 @@ void updatePlayerSprite(void) {
 
 		setSpriteFrame(playerSpriteData, playerFrames[playerFrame]);
 
+	} else if ( playerState == PLAYER_STATE_GLUING ) {
+		playerFrame = PLAYER_FRAME_STANDING;
+		setSpriteFrame(playerSpriteData, playerFrames[playerFrame]);
 	} else if ( playerState == PLAYER_STATE_JUMPING ) {
 
 		if ( pad & PAD_RIGHT ) {
@@ -1036,21 +1049,25 @@ void genericEnemyCollideCheck(void) {
 void glueEnemyCollideCheck(void) {
 	for ( i = 0; i < MAX_GLUE_COUNT; ++i ) {
 		gluePointer = &(glueData[i]);
-		if ( gluePointer->state == GLUE_STATE_ACTIVE ) {
+		if ( gluePointer->state != GLUE_STATE_INACTIVE ) {
 			glueFourSides(gluePointer->x, gluePointer->y);
 			genericEnemyCollideCheck();
+
 			if ( enemyColliding ) {
+				// if glue is viable, freeze the enemy
+
+				if ( gluePointer->state == GLUE_STATE_ACTIVE ) {
+					currentEnemy = &(enemyData[enemyCollidedIndex]);
+					currentEnemy->state = ENEMY_STATE_GLUED;
+					currentEnemy->glueTimeLeft = GLUE_INIT_DURATION;
+
+					sfx_play(SFX_GLUESTUCK, CHANNEL_SQUARE1);					
+				}
+
 				// kill glue
 				gluePointer->state = GLUE_STATE_INACTIVE;
 				gluePointer->x = 0;
-				gluePointer->y = 0;
-
-				// freeze enemy
-				currentEnemy = &(enemyData[enemyCollidedIndex]);
-				currentEnemy->state = ENEMY_STATE_GLUED;
-				currentEnemy->glueTimeLeft = GLUE_INIT_DURATION;
-
-				sfx_play(SFX_GLUESTUCK, CHANNEL_SQUARE1);
+				gluePointer->y = 0;				
 			}
 		}
 	}
@@ -1337,25 +1354,28 @@ void updatePlayerGlue(void) {
 		glueButtonReset = 1;
 	}
 
-	if ( ( pad & PAD_B ) && ( glueButtonReset == 1 ) ) {
+	if ( ( pad & PAD_B ) && ( glueButtonReset == 1 ) && ( playerState == PLAYER_STATE_NORMAL ) ) {
+		// *** Glue button hit
+
 		glueButtonReset = 0;
-
-
 		glueY = ((playerY + 1));
+
 		if ( playerDir == PAD_RIGHT ) {
 			glueX = playerX + 16;
 		} else {
 			glueX = playerX - 16;
 		}
 
+		// *** Check if we can put glue here
 		getCollisionIndex(glueX + 8, glueY + 8);
 
 		if ( ( collisionMap[collisionIndex] != TILE_ALLCOLLIDE ) && 
 			 ( collisionMap[collisionIndex] != TILE_LADDER_TOP ) ) {
 
-			// Create glue sprite
+			// *** Create glue sprite
 			i = 0;
 		
+			// *** Find an array slot where we can put this glue
 			do {
 				if ( glueData[i].state == GLUE_STATE_INACTIVE ) {
 					newGlueIndex = i;	
@@ -1366,20 +1386,24 @@ void updatePlayerGlue(void) {
 			} while ( ( newGlueIndex == 255 ) && ( i < MAX_GLUE_COUNT ) && !duplicateFound );
 			
 
+			// *** If we found a slot, assign it and initialize the glue
+
 			if ( newGlueIndex < 255 ) {
 				gluePointer = &(glueData[newGlueIndex]);
 				gluePointer->x = glueX;
-				gluePointer->y = glueY - 1;
+				gluePointer->y = glueY - 6;
 				gluePointer->frame = 0;
-				gluePointer->state = GLUE_STATE_ACTIVE;
-				gluePointer->timeLeft = GLUE_INIT_LIFESPAN;
-				memcpy(gluePointer->spriteData, glueSpriteDataTemplate, sizeof(glueSpriteDataTemplate));				
 
-				sfx_play(SFX_GLUEDROP, CHANNEL_SQUARE1);								
+				// *** Player in gluing animation
+				playerState = PLAYER_STATE_GLUING;
+
+				// *** Glue is in its baby form
+				gluePointer->state = GLUE_STATE_FORMING;
+				gluePointer->timeLeft = GLUE_FORMING_DURATION;
+				memcpy(gluePointer->spriteData, glueSpriteDataTemplate, sizeof(glueSpriteDataTemplate));	
+				sfx_play(SFX_GLUEDROP, CHANNEL_SQUARE1);	
 			}
-
 		}
-		
 	}
 }
 
@@ -1439,9 +1463,19 @@ void updateGlues(void) {
 					} else {
 						gluePointer->y += 2;
 					}					
-
 				}
+			}
+		} else if ( gluePointer->state == GLUE_STATE_FORMING ) {
+			--(gluePointer->timeLeft);
 
+			if ( gluePointer->timeLeft <= 0 ) {
+
+				// Player is free to move
+				playerState = PLAYER_STATE_NORMAL;
+
+				//  Glue is in its mature state
+				gluePointer->state = GLUE_STATE_ACTIVE;
+				gluePointer->timeLeft = GLUE_INIT_LIFESPAN;				
 			}
 		} 
 	}
