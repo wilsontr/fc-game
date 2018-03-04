@@ -79,6 +79,10 @@ typedef uint16_t u16;
 #define GLUE_FRAME_MEDIUM		1
 #define GLUE_FRAME_SMALL		2
 
+#define GLUE_STATE_INACTIVE		0
+#define GLUE_STATE_ACTIVE		1
+#define GLUE_STATE_FORMING		2
+
 #define ENEMY_STATE_NORMAL 		0
 #define ENEMY_STATE_GLUED		1
 #define ENEMY_STATE_DEAD		3
@@ -188,8 +192,8 @@ struct glueStruct {
 	u8 x;
 	u8 y;
 	u8 timeLeft;
-	u8 isActive;
 	u8 frame;
+	u8 state;
 	u8 collisionIndex;
 	u8 spriteData[17];
 };
@@ -415,7 +419,7 @@ void setupMap(void) {
 
 	for ( index = 0; index < MAX_GLUE_COUNT; ++index ) {
 		gluePointer = &(glueData[index]);
-		gluePointer->isActive = 0;
+		gluePointer->state = GLUE_STATE_INACTIVE;
 	}
 
 	// initialize platform data
@@ -627,7 +631,7 @@ void updateEnemySprites(void) {
 void updateGlueSprites(void) {
 	for ( i = 0; i < MAX_GLUE_COUNT; ++i ) {
 		gluePointer = &(glueData[i]);
-		if ( gluePointer->isActive == 1 ) {
+		if ( gluePointer->state == GLUE_STATE_ACTIVE ) {
 			if ( ( frameCount & 0x1F ) == 0x1F ) {
 				gluePointer->frame ^= 1;
 				flipSprite(gluePointer->spriteData, gluePointer->frame);
@@ -1032,12 +1036,12 @@ void genericEnemyCollideCheck(void) {
 void glueEnemyCollideCheck(void) {
 	for ( i = 0; i < MAX_GLUE_COUNT; ++i ) {
 		gluePointer = &(glueData[i]);
-		if ( gluePointer->isActive ) {
+		if ( gluePointer->state == GLUE_STATE_ACTIVE ) {
 			glueFourSides(gluePointer->x, gluePointer->y);
 			genericEnemyCollideCheck();
 			if ( enemyColliding ) {
 				// kill glue
-				gluePointer->isActive = 0;
+				gluePointer->state = GLUE_STATE_INACTIVE;
 				gluePointer->x = 0;
 				gluePointer->y = 0;
 
@@ -1062,7 +1066,7 @@ void glueCollideCheck(void) {
 
 	while ( !glueColliding && ( glueIndex < MAX_GLUE_COUNT ) ) {
 		gluePointer = &(glueData[glueIndex]);
-		if ( gluePointer->isActive ) {
+		if ( gluePointer->state == GLUE_STATE_ACTIVE ) {
 			glueTop = gluePointer->y + 2;
 			glueBottom = gluePointer->y + 14;
 			glueLeft = gluePointer->x + 2;
@@ -1353,7 +1357,7 @@ void updatePlayerGlue(void) {
 			i = 0;
 		
 			do {
-				if ( glueData[i].isActive == 0 ) {
+				if ( glueData[i].state == GLUE_STATE_INACTIVE ) {
 					newGlueIndex = i;	
 				} else if ( glueData[i].collisionIndex == collisionIndex ) {
 					duplicateFound = 1;
@@ -1367,10 +1371,9 @@ void updatePlayerGlue(void) {
 				gluePointer->x = glueX;
 				gluePointer->y = glueY - 1;
 				gluePointer->frame = 0;
-				gluePointer->isActive = 1;
+				gluePointer->state = GLUE_STATE_ACTIVE;
 				gluePointer->timeLeft = GLUE_INIT_LIFESPAN;
-				memcpy(gluePointer->spriteData, glueSpriteDataTemplate, sizeof(glueSpriteDataTemplate));
-				
+				memcpy(gluePointer->spriteData, glueSpriteDataTemplate, sizeof(glueSpriteDataTemplate));				
 
 				sfx_play(SFX_GLUEDROP, CHANNEL_SQUARE1);								
 			}
@@ -1408,12 +1411,12 @@ void updatePlayerState(void) {
 void updateGlues(void) {
 	for ( i = 0; i < MAX_GLUE_COUNT; ++i ) {
 		gluePointer = &(glueData[i]);
-		if ( gluePointer->isActive ) {
+		if ( gluePointer->state == GLUE_STATE_ACTIVE ) {
 			--(gluePointer->timeLeft); 
 
 			if ( gluePointer->timeLeft <= 0 ) {
 				// *** clear glue if its time has run out
-				gluePointer->isActive = 0;
+				gluePointer->state = GLUE_STATE_INACTIVE;
 				gluePointer->collisionIndex = 0;
 			} else {
 				// make glue fall 
@@ -1425,13 +1428,13 @@ void updateGlues(void) {
 					gluePointer->y = ((gluePointer->y + 8 ) & 0xF0) - 1;
 				} else if ( collisionMap[collisionIndex] == TILE_WATER ) {
 					// kill glue
-					gluePointer->isActive = 0;
+					gluePointer->state = GLUE_STATE_INACTIVE;
 				} else {
 					four_Sides(gluePointer->x, gluePointer->y + 2);
 					glueCollideCheck();
 				 	if ( glueColliding && ( glueCollidedIndex != i ) ) {
 						// clear glue if it's colliding with another glue
-						gluePointer->isActive = 0;
+						gluePointer->state = GLUE_STATE_INACTIVE;
 						gluePointer->collisionIndex = 0;
 					} else {
 						gluePointer->y += 2;

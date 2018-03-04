@@ -2727,12 +2727,12 @@ L10CF:	sta     (sp),y
 	sta     _gluePointer
 	stx     _gluePointer+1
 ;
-; gluePointer->isActive = 0;
+; gluePointer->state = GLUE_STATE_INACTIVE;
 ;
 	sta     ptr1
 	stx     ptr1+1
 	lda     #$00
-	ldy     #$03
+	ldy     #$04
 	sta     (ptr1),y
 ;
 ; for ( index = 0; index < MAX_GLUE_COUNT; ++index ) {
@@ -4510,11 +4510,11 @@ L10F0:	lda     _i
 	sta     _gluePointer
 	stx     _gluePointer+1
 ;
-; if ( gluePointer->isActive == 1 ) {
+; if ( gluePointer->state == GLUE_STATE_ACTIVE ) {
 ;
 	sta     ptr1
 	stx     ptr1+1
-	ldy     #$03
+	ldy     #$04
 	lda     (ptr1),y
 	cmp     #$01
 	jne     L10EF
@@ -4532,7 +4532,7 @@ L10F0:	lda     _i
 	sta     ptr1
 	lda     _gluePointer+1
 	sta     ptr1+1
-	iny
+	dey
 	lda     (ptr1),y
 	eor     #$01
 	sta     (ptr1),y
@@ -4550,7 +4550,7 @@ L0B50:	jsr     pushax
 	sta     ptr1
 	lda     _gluePointer+1
 	sta     ptr1+1
-	ldy     #$04
+	ldy     #$03
 	lda     (ptr1),y
 	jsr     _flipSprite
 ;
@@ -6625,13 +6625,14 @@ L114C:	lda     _i
 	sta     _gluePointer
 	stx     _gluePointer+1
 ;
-; if ( gluePointer->isActive ) {
+; if ( gluePointer->state == GLUE_STATE_ACTIVE ) {
 ;
 	sta     ptr1
 	stx     ptr1+1
-	ldy     #$03
+	ldy     #$04
 	lda     (ptr1),y
-	jeq     L114B
+	cmp     #$01
+	jne     L114B
 ;
 ; glueFourSides(gluePointer->x, gluePointer->y);
 ;
@@ -6659,14 +6660,14 @@ L114C:	lda     _i
 	lda     _enemyColliding
 	beq     L114B
 ;
-; gluePointer->isActive = 0;
+; gluePointer->state = GLUE_STATE_INACTIVE;
 ;
 	lda     _gluePointer
 	sta     ptr1
 	lda     _gluePointer+1
 	sta     ptr1+1
 	lda     #$00
-	ldy     #$03
+	ldy     #$04
 	sta     (ptr1),y
 ;
 ; gluePointer->x = 0;
@@ -6780,13 +6781,14 @@ L114E:	lda     _glueIndex
 	sta     _gluePointer
 	stx     _gluePointer+1
 ;
-; if ( gluePointer->isActive ) {
+; if ( gluePointer->state == GLUE_STATE_ACTIVE ) {
 ;
 	sta     ptr1
 	stx     ptr1+1
-	ldy     #$03
+	ldy     #$04
 	lda     (ptr1),y
-	jeq     L1150
+	cmp     #$01
+	jne     L1150
 ;
 ; glueTop = gluePointer->y + 2;
 ;
@@ -8212,7 +8214,7 @@ L11A4:	lda     #<(_collisionMap)
 	lda     #$00
 	sta     _i
 ;
-; if ( glueData[i].isActive == 0 ) {
+; if ( glueData[i].state == GLUE_STATE_INACTIVE ) {
 ;
 L119C:	lda     _i
 	jsr     pusha0
@@ -8224,7 +8226,7 @@ L119C:	lda     _i
 	txa
 	adc     #>(_glueData)
 	sta     ptr1+1
-	ldy     #$03
+	ldy     #$04
 	ldx     #$00
 	lda     (ptr1),y
 	bne     L119D
@@ -8331,17 +8333,17 @@ L11A5:	jsr     pusha0
 	lda     _gluePointer+1
 	sta     ptr1+1
 	lda     #$00
-	ldy     #$04
+	ldy     #$03
 	sta     (ptr1),y
 ;
-; gluePointer->isActive = 1;
+; gluePointer->state = GLUE_STATE_ACTIVE;
 ;
 	lda     _gluePointer
 	sta     ptr1
 	lda     _gluePointer+1
 	sta     ptr1+1
 	lda     #$01
-	dey
+	iny
 	sta     (ptr1),y
 ;
 ; gluePointer->timeLeft = GLUE_INIT_LIFESPAN;
@@ -8351,7 +8353,7 @@ L11A5:	jsr     pusha0
 	lda     _gluePointer+1
 	sta     ptr1+1
 	lda     #$F0
-	dey
+	ldy     #$02
 	sta     (ptr1),y
 ;
 ; memcpy(gluePointer->spriteData, glueSpriteDataTemplate, sizeof(glueSpriteDataTemplate));
@@ -8491,13 +8493,14 @@ L11AD:	lda     _i
 	sta     _gluePointer
 	stx     _gluePointer+1
 ;
-; if ( gluePointer->isActive ) {
+; if ( gluePointer->state == GLUE_STATE_ACTIVE ) {
 ;
 	sta     ptr1
 	stx     ptr1+1
-	ldy     #$03
+	ldy     #$04
 	lda     (ptr1),y
-	jeq     L11AC
+	cmp     #$01
+	jne     L11AC
 ;
 ; --(gluePointer->timeLeft); 
 ;
@@ -8505,7 +8508,7 @@ L11AD:	lda     _i
 	sta     ptr1
 	lda     _gluePointer+1
 	sta     ptr1+1
-	dey
+	ldy     #$02
 	lda     (ptr1),y
 	sec
 	sbc     #$01
@@ -8520,14 +8523,14 @@ L11AD:	lda     _i
 	lda     (ptr1),y
 	bne     L102B
 ;
-; gluePointer->isActive = 0;
+; gluePointer->state = GLUE_STATE_INACTIVE;
 ;
 	lda     _gluePointer
 	sta     ptr1
 	lda     _gluePointer+1
 	sta     ptr1+1
 	lda     #$00
-	iny
+	ldy     #$04
 	sta     (ptr1),y
 ;
 ; gluePointer->collisionIndex = 0;
@@ -8537,7 +8540,7 @@ L11AD:	lda     _i
 	lda     _gluePointer+1
 	sta     ptr1+1
 	lda     #$00
-	ldy     #$05
+	iny
 ;
 ; } else {
 ;
@@ -8630,14 +8633,14 @@ L1037:	lda     #<(_collisionMap)
 	cmp     #$0B
 	bne     L1047
 ;
-; gluePointer->isActive = 0;
+; gluePointer->state = GLUE_STATE_INACTIVE;
 ;
 	lda     _gluePointer
 	sta     ptr1
 	lda     _gluePointer+1
 	sta     ptr1+1
 	lda     #$00
-	ldy     #$03
+	ldy     #$04
 ;
 ; } else {
 ;
@@ -8674,14 +8677,14 @@ L1047:	lda     _gluePointer
 	cmp     _glueCollidedIndex
 	beq     L1052
 ;
-; gluePointer->isActive = 0;
+; gluePointer->state = GLUE_STATE_INACTIVE;
 ;
 	lda     _gluePointer
 	sta     ptr1
 	lda     _gluePointer+1
 	sta     ptr1+1
 	lda     #$00
-	ldy     #$03
+	ldy     #$04
 	sta     (ptr1),y
 ;
 ; gluePointer->collisionIndex = 0;
@@ -8691,7 +8694,7 @@ L1047:	lda     _gluePointer
 	lda     _gluePointer+1
 	sta     ptr1+1
 	lda     #$00
-	ldy     #$05
+	iny
 ;
 ; } else {
 ;
