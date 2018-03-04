@@ -18,8 +18,8 @@
 #include "neslib.h"
 #include "maps/newmap.h"
 #include "maps/newmap_coll.h"
-#include "maps/map2.h"
-#include "maps/map2_coll.h"
+#include "maps/map3.h"
+#include "maps/map3_coll.h"
 
 
 void __fastcall__ memcpy(void *dst, void *src, unsigned int len);
@@ -1120,9 +1120,36 @@ void updateEnemyMovement(void) {
 		if ( ( verticalCollideCheck != TILE_ALLCOLLIDE ) && ( verticalCollideCheck != TILE_LADDER_TOP ) ) {
 			currentEnemy->y += 1;
 		} else {
+
+			// basic pathfind
+
+			if ( playerX < currentEnemy->x ) {
+				currentEnemy->direction == PAD_LEFT;
+				collideCheckHorizontal(currentEnemy->x, currentEnemy->y, PAD_LEFT);
+				if ( ( horizontalCollideCheck == TILE_ALLCOLLIDE ) || ( horizontalCollideCheck == TILE_ENEMYCOLLIDE ) ) {
+					currentEnemy->direction == PAD_RIGHT;
+					currentEnemy->x += 1;
+					flipSprite(enemySpriteData[i], 1);
+				} else {
+					currentEnemy->x -= 1;
+					flipSprite(enemySpriteData[i], 0);
+				}
+			} else {
+				currentEnemy->direction == PAD_RIGHT;
+				collideCheckHorizontal(currentEnemy->x, currentEnemy->y, PAD_RIGHT);
+				if ( ( horizontalCollideCheck == TILE_ALLCOLLIDE ) || ( horizontalCollideCheck == TILE_ENEMYCOLLIDE ) ) {
+					currentEnemy->direction == PAD_LEFT;
+					currentEnemy->x -= 1;
+					flipSprite(enemySpriteData[i], 0);
+				} else {
+					currentEnemy->x += 1;
+					flipSprite(enemySpriteData[i], 1);
+				}
+			}
+			/*
 			if ( currentEnemy->direction == PAD_RIGHT ) {
 				currentEnemy->x += 1;
-				 collideCheckHorizontal(currentEnemy->x, currentEnemy->y, PAD_RIGHT);
+				collideCheckHorizontal(currentEnemy->x, currentEnemy->y, PAD_RIGHT);
 				if ( ( horizontalCollideCheck == TILE_ALLCOLLIDE ) || ( horizontalCollideCheck == TILE_ENEMYCOLLIDE ) ) {
 					flipSprite(enemySpriteData[i], 0);
 					currentEnemy->direction = PAD_LEFT;
@@ -1134,7 +1161,8 @@ void updateEnemyMovement(void) {
 					flipSprite(enemySpriteData[i], 1);
 					currentEnemy->direction = PAD_RIGHT;
 				}
-			}			
+			}	
+			*/		
 		}
 	}
 }
@@ -1488,12 +1516,12 @@ void main(void)
 	int currentLevel = 0;
 
 	const u8 * levels[2] = {
-		map2,
+		map3,
 		newmap
 	};
 
 	const u8 * levelCollisions[2] = {
-		map2_coll,
+		map3_coll,
 		newmap_coll
 	};
 
@@ -1521,7 +1549,6 @@ void main(void)
 	playerLives = PLAYER_INIT_LIVES;
 
 	//vram_adr(NAMETABLE_A); //unpack nametable into VRAM
-	//vram_unrle(map2);	
 
 	while ( 1 ) {
 
