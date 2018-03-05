@@ -107,6 +107,8 @@ typedef uint16_t u16;
 #define SCORE_VALUE_FRUIT	8
 #define SCORE_VALUE_JEWEL	20
 
+#define NO_DIRECTION 		254
+
 // Macros
 
 #define collisionIndexFromGridCoords(x, y) ((y << 4) + x)
@@ -279,6 +281,7 @@ static u8 enemyBottom;
 static u8 enemyLeft;
 static u8 enemyRight;
 static u8 enemyCollidedIndex = 0;
+static u8 previousEnemyDirection = NO_DIRECTION;
 
 
 
@@ -370,6 +373,24 @@ static u8 scoreChanged = 0;
 /* Sprite maintenance */
 
 static u8 sSpriteIndex, sFrameIndex;
+
+
+/* A* graph search */
+
+struct nodeStruct {
+	u8 direction;
+	u8 distance;
+};
+
+typedef struct nodeStruct graphNode;
+
+graphNode nodeList[4] = {
+	{0, 0},
+	{0, 0},
+	{0, 0},
+	{0, 0}
+};
+
 
 /* Prototypes */
 
@@ -1127,8 +1148,9 @@ void __fastcall__ updateEnemyMovement(void) {
 		}
 		collideCheckVertical(currentEnemy->x, currentEnemy->y + 1, PAD_DOWN);
 		if ( ( verticalCollideCheck != TILE_ALLCOLLIDE ) && ( verticalCollideCheck != TILE_LADDER_TOP ) && ( verticalCollideCheck != TILE_LADDER ) ) {
-			//currentEnemy->y += 1;
-			//currentEnemy->y = ( currentEnemy->y & 0xF0) - 1;
+			currentEnemy->y += 1;
+			//currentEnemy->y = ( ( currentEnemy->y + 4 ) & 0xF0);
+			//updateEnemyPathfinding();
 		} else {
 
 
@@ -1138,36 +1160,40 @@ void __fastcall__ updateEnemyMovement(void) {
 				collideCheckHorizontal(currentEnemy->x, currentEnemy->y, currentEnemy->direction);
 			}*/
 		
+
+			
 			// movement resulting from pathfinding 
 
 			if ( currentEnemy->direction == PAD_LEFT ) {
 				collideCheckHorizontal(currentEnemy->x, currentEnemy->y, PAD_LEFT);
 				if ( ( horizontalCollideCheck == TILE_ALLCOLLIDE ) || ( horizontalCollideCheck == TILE_ENEMYCOLLIDE ) ) {
-					//currentEnemy->direction = PAD_RIGHT;
-					currentEnemy->x = ( ( currentEnemy->x + 4) & 0xF0);
+					currentEnemy->direction = PAD_RIGHT;
+					//currentEnemy->x = ( (currentEnemy->x + 4 ) & 0xF0 );
 					updateEnemyPathfinding();
 				} 
 			} else if ( currentEnemy->direction == PAD_RIGHT ) {
 				collideCheckHorizontal(currentEnemy->x, currentEnemy->y, PAD_RIGHT);
 				if ( ( horizontalCollideCheck == TILE_ALLCOLLIDE ) || ( horizontalCollideCheck == TILE_ENEMYCOLLIDE ) ) {
-					//currentEnemy->direction = PAD_LEFT;
-					currentEnemy->x = ( currentEnemy->x & 0xF0);
+					currentEnemy->direction = PAD_LEFT;
+					//currentEnemy->x = ( (currentEnemy->x + 4 ) & 0xF0 );
 					updateEnemyPathfinding();
 				} 
-			} else if  ( currentEnemy->direction == PAD_UP ) {
+			} else if ( currentEnemy->direction == PAD_UP ) {
 				collideCheckVertical(currentEnemy->x, currentEnemy->y + 6, PAD_UP);
 				if ( ( verticalCollideCheck != TILE_LADDER ) && ( verticalCollideCheck != TILE_LADDER_TOP ) ) {
-					currentEnemy->y = ( (currentEnemy->y + 1 ) & 0xF0 );
+					//currentEnemy->y = ( (currentEnemy->y + 4 ) & 0xF0 ) - 1;
 					updateEnemyPathfinding();
 				}
 			} else if  ( currentEnemy->direction == PAD_DOWN ) {
 				collideCheckVertical(currentEnemy->x, currentEnemy->y, PAD_DOWN);
 				if ( ( verticalCollideCheck == TILE_ALLCOLLIDE ) || ( verticalCollideCheck == TILE_ENEMYCOLLIDE ) ) {
-					currentEnemy->y &= 0xF0;
+					//currentEnemy->y = ( (currentEnemy->y + 4 ) & 0xF0 );
 					updateEnemyPathfinding();
 				}
 			}
+			
 		
+			
 		
 			// dumb case for testing
 
@@ -1184,10 +1210,14 @@ void __fastcall__ updateEnemyMovement(void) {
 				case PAD_DOWN: ++(currentEnemy->y); break;
 			}
 			
+			
+			
 		}	
 		
 	}
 }
+
+
 
 u8 __fastcall__ findTile(u8 startX, u8 startY, u8 direction, u8 goalTile) {
 	u8 gridX, gridY, checkTile;
@@ -1227,7 +1257,11 @@ void __fastcall__ tryDownLadderPathfind(void) {
 		if ( findTile(enemyX + 8, enemyY + 24, PAD_LEFT, TILE_LADDER_TOP ) ) {
 			currentEnemy->direction = PAD_LEFT;
 		} else {
-			currentEnemy->direction = PAD_RIGHT;
+			if ( playerX < enemyX ) {
+				currentEnemy->direction = PAD_LEFT;	
+			} else {
+				currentEnemy->direction = PAD_RIGHT;	
+			}			
 		}
 	}
 	
@@ -1241,18 +1275,24 @@ void __fastcall__ tryUpLadderPathfind(void) {
 		// check tile above for ladder						
 		// try to move up
 		currentEnemy->direction = PAD_UP;
-	} else if ( ( ( enemyY & 0xF0 ) == enemyY ) ) {
+	//} else if ( ( ( enemyY & 0xF0 ) == enemyY ) ) {
+	} else {
 		// try to get to a ladder
 		if ( findTile(enemyX + 8, enemyY + 8, PAD_LEFT, TILE_LADDER ) ) {
 			currentEnemy->direction = PAD_LEFT;
 		} else if ( findTile(enemyX + 8, enemyY + 8, PAD_RIGHT, TILE_LADDER ) ) {
 			currentEnemy->direction = PAD_RIGHT;
 		} else {
-			currentEnemy->direction = PAD_LEFT;
+			if ( playerX < enemyX ) {
+				currentEnemy->direction = PAD_LEFT;	
+			} else {
+				currentEnemy->direction = PAD_RIGHT;	
+			}			
 		}
 	}
 	
 }
+
 
 void __fastcall__ updateEnemyPathfinding(void) {
 	
@@ -1263,6 +1303,9 @@ void __fastcall__ updateEnemyPathfinding(void) {
 		currentEnemy = &(enemyData[enemyIndex]);
 
 		if ( currentEnemy->state == ENEMY_STATE_NORMAL ) {
+
+			currentEnemy->x = ( (currentEnemy->x + 4 ) & 0xF0 );
+			currentEnemy->y = ( (currentEnemy->y + 4 ) & 0xF0 ) - 1;
 
 			enemyX = currentEnemy->x;
 			enemyY = currentEnemy->y;
@@ -1303,6 +1346,111 @@ void __fastcall__ updateEnemyPathfinding(void) {
 		}
 	}
 }
+
+
+
+/*
+
+
+void __fastcall__ updateEnemyPathfinding(void) { 
+
+	u8 gridTile;
+	graphNode * newNode;
+	graphNode * ptr;
+	graphNode * closestNode = NULL;
+
+	for ( enemyIndex = 0; enemyIndex < MAX_ENEMY_COUNT; ++enemyIndex ) {
+		currentEnemy = &(enemyData[enemyIndex]);
+
+		if ( currentEnemy->state == ENEMY_STATE_NORMAL ) {
+			// walk through surrounding tiles, skipping the ones that are blocked
+			// determine which block is closest to the player
+
+			//enemyX = (currentEnemy->x & 0xF0) >> 4;
+			//enemyY = (currentEnemy->y & 0xF0) >> 4;
+
+			enemyX = currentEnemy->x;
+			enemyY = currentEnemy->y;
+
+
+
+			if ( ( enemyX == ( enemyX & 0xF0 ) ) && ( ( enemyY + 1 ) == ( ( enemyY + 1 ) & 0xF0 ) ) ) {
+
+
+				memfill(nodeList, 0, 8);
+
+				
+				// check left
+				getCollisionIndex(enemyX - 12, enemyY + 8);
+				gridTile = collisionMap[collisionIndex];
+
+				if ( ( gridTile != TILE_ALLCOLLIDE ) && ( gridTile != TILE_ENEMYCOLLIDE ) ) {
+					newNode = &(nodeList[0]);
+					newNode->direction = PAD_LEFT;
+					newNode->distance = abs(playerX - (enemyX - 16)) + abs(playerY - enemyY);
+				}
+
+				// check right 
+				getCollisionIndex(enemyX + 24, enemyY + 8);
+				gridTile = collisionMap[collisionIndex];
+
+				if ( ( gridTile != TILE_ALLCOLLIDE ) && ( gridTile != TILE_ENEMYCOLLIDE ) ) {
+					newNode = &(nodeList[1]);
+					newNode->direction = PAD_RIGHT;
+					newNode->distance = abs(playerX - (enemyX + 16)) + abs(playerY - enemyY);
+				}
+
+				
+
+				// check up
+				getCollisionIndex(enemyX + 8, enemyY - 8);
+				gridTile = collisionMap[collisionIndex];
+
+				if ( ( gridTile == TILE_LADDER ) || ( gridTile == TILE_LADDER_TOP ) ) {
+					newNode = &(nodeList[2]);
+					newNode->direction = PAD_UP;
+					newNode->distance = abs(playerX - enemyX) + abs(playerY - (enemyY - 16));
+				}
+
+
+				// check down 
+				getCollisionIndex(enemyX + 8, enemyY + 24);
+				gridTile = collisionMap[collisionIndex];
+
+				if ( ( gridTile == TILE_LADDER ) || ( gridTile == TILE_LADDER_TOP ) ) {
+					newNode = &(nodeList[3]);
+					newNode->direction = PAD_DOWN;
+					newNode->distance = abs(playerX - enemyX) + abs(playerY - (enemyY + 16));
+				}
+				
+
+				closestNode = NULL;
+			
+				for ( i = 0; i < 4; ++i ) {
+					ptr = &(nodeList[i]);
+
+					if ( ( ptr->direction != 0 ) && ( ptr->direction != previousEnemyDirection ) ) {
+						if ( closestNode == NULL ) {
+							closestNode = ptr;
+						} else if ( ptr->distance <= closestNode->distance ) {
+							closestNode = ptr;
+						}
+					}					
+				}
+
+				if ( closestNode != NULL ) {
+					previousEnemyDirection = currentEnemy->direction;
+					currentEnemy->direction = closestNode->direction;
+				}
+			}
+
+
+		}
+	}
+}
+
+*/
+
 
 void __fastcall__ updatePlatforms(void) {
 
