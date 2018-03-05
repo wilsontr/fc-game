@@ -43,7 +43,8 @@ typedef uint16_t u16;
 #define TILE_PLATFORM			13	
 
 // TODO Think about RLE-encoding collision maps again
-#define COLLISION_MAP_SIZE 	    240
+#define COLLISION_MAP_SIZE 	    240 // 
+#define COLLISION_MAP_WIDTH		16
 
 #define PLAYER_STATE_NORMAL		0
 #define PLAYER_STATE_DEAD		1
@@ -106,6 +107,10 @@ typedef uint16_t u16;
 #define SCORE_VALUE_FRUIT	8
 #define SCORE_VALUE_JEWEL	20
 
+// Macros
+
+#define collisionIndexFromGridCoords(x, y) ((y << 4) + x)
+
 
 #pragma bss-name (push, "ZEROPAGE")
 #pragma data-name (push, "ZEROPAGE")
@@ -126,6 +131,9 @@ static u8 enemyColliding;
 static u8 playerStartX;
 static u8 playerStartY;
 static u8 levelComplete;
+static u8 enemyPathfindCounter;
+static u8 enemyX;
+static u8 enemyY;
 
 
 #pragma data-name(pop)
@@ -371,6 +379,7 @@ void __fastcall__ setSpriteFrame(u8 *sprite, const u8 *frame);
 void __fastcall__ setSpritePalette(u8 *sprite, u8 palette);
 void __fastcall__ updateMapTile(u8 mapX, u8 mapY, const u8 * tileFrame);
 void __fastcall__ putMapTile(u8 mapX, u8 mapY, const u8 * tileFrame);
+void __fastcall__ updateEnemyPathfinding(void);
 
 
 /*********** Unused: utility function for decompressing RLE collision map data ***********/
@@ -444,7 +453,7 @@ void setupMap(void) {
 				enemyData[enemyIndex] = newEnemy;
 				enemyData[enemyIndex].x = mapX << 4;
 				enemyData[enemyIndex].y = (mapY << 4) - 1;
-				enemyData[enemyIndex].direction = ( collisionByte == TILE_ENEMY1START_RIGHT ) ? PAD_RIGHT : PAD_LEFT;
+				//enemyData[enemyIndex].direction = ( collisionByte == TILE_ENEMY1START_RIGHT ) ? PAD_RIGHT : PAD_LEFT;
 				enemyData[enemyIndex].state = ENEMY_STATE_NORMAL;
 
 				for ( i = 0; i < ENEMY_DATA_SIZE; ++i ) {
@@ -1015,7 +1024,7 @@ void playerEnemyCollideCheck(void) {
 	}
 }
 
-void genericEnemyCollideCheck(void) {
+void __fastcall__ genericEnemyCollideCheck(void) {
 
 	enemyIndex = 0;
 	enemyColliding = 0;
@@ -1046,7 +1055,7 @@ void genericEnemyCollideCheck(void) {
 	}
 }
 
-void glueEnemyCollideCheck(void) {
+void __fastcall__ glueEnemyCollideCheck(void) {
 	for ( i = 0; i < MAX_GLUE_COUNT; ++i ) {
 		gluePointer = &(glueData[i]);
 		if ( gluePointer->state != GLUE_STATE_INACTIVE ) {
@@ -1075,7 +1084,7 @@ void glueEnemyCollideCheck(void) {
 
 
 
-void glueCollideCheck(void) {
+void __fastcall__ glueCollideCheck(void) {
 
 	glueIndex = 0;
 	glueColliding = 0;
@@ -1105,7 +1114,7 @@ void glueCollideCheck(void) {
 
 /*********** State Management ***********/
 
-void updateEnemyMovement(void) {
+void __fastcall__ updateEnemyMovement(void) {
 
 	for ( i = 0; i < numEnemies; i++ ) {
 		currentEnemy = &(enemyData[i]);
@@ -1117,57 +1126,185 @@ void updateEnemyMovement(void) {
 			continue;
 		}
 		collideCheckVertical(currentEnemy->x, currentEnemy->y + 1, PAD_DOWN);
-		if ( ( verticalCollideCheck != TILE_ALLCOLLIDE ) && ( verticalCollideCheck != TILE_LADDER_TOP ) ) {
-			currentEnemy->y += 1;
+		if ( ( verticalCollideCheck != TILE_ALLCOLLIDE ) && ( verticalCollideCheck != TILE_LADDER_TOP ) && ( verticalCollideCheck != TILE_LADDER ) ) {
+			//currentEnemy->y += 1;
+			//currentEnemy->y = ( currentEnemy->y & 0xF0) - 1;
 		} else {
 
-			// basic pathfind
 
-			if ( playerX < currentEnemy->x ) {
-				currentEnemy->direction == PAD_LEFT;
+
+			/*
+			if ( ( currentEnemy->direction == PAD_LEFT ) || ( currentEnemy->direction == PAD_RIGHT ) ) {
+				collideCheckHorizontal(currentEnemy->x, currentEnemy->y, currentEnemy->direction);
+			}*/
+		
+			// movement resulting from pathfinding 
+
+			if ( currentEnemy->direction == PAD_LEFT ) {
 				collideCheckHorizontal(currentEnemy->x, currentEnemy->y, PAD_LEFT);
 				if ( ( horizontalCollideCheck == TILE_ALLCOLLIDE ) || ( horizontalCollideCheck == TILE_ENEMYCOLLIDE ) ) {
-					currentEnemy->direction == PAD_RIGHT;
-					currentEnemy->x += 1;
-					flipSprite(enemySpriteData[i], 1);
-				} else {
-					currentEnemy->x -= 1;
-					flipSprite(enemySpriteData[i], 0);
-				}
-			} else {
-				currentEnemy->direction == PAD_RIGHT;
+					//currentEnemy->direction = PAD_RIGHT;
+					currentEnemy->x = ( ( currentEnemy->x + 4) & 0xF0);
+					updateEnemyPathfinding();
+				} 
+			} else if ( currentEnemy->direction == PAD_RIGHT ) {
 				collideCheckHorizontal(currentEnemy->x, currentEnemy->y, PAD_RIGHT);
 				if ( ( horizontalCollideCheck == TILE_ALLCOLLIDE ) || ( horizontalCollideCheck == TILE_ENEMYCOLLIDE ) ) {
-					currentEnemy->direction == PAD_LEFT;
-					currentEnemy->x -= 1;
-					flipSprite(enemySpriteData[i], 0);
-				} else {
-					currentEnemy->x += 1;
-					flipSprite(enemySpriteData[i], 1);
+					//currentEnemy->direction = PAD_LEFT;
+					currentEnemy->x = ( currentEnemy->x & 0xF0);
+					updateEnemyPathfinding();
+				} 
+			} else if  ( currentEnemy->direction == PAD_UP ) {
+				collideCheckVertical(currentEnemy->x, currentEnemy->y + 6, PAD_UP);
+				if ( ( verticalCollideCheck != TILE_LADDER ) && ( verticalCollideCheck != TILE_LADDER_TOP ) ) {
+					currentEnemy->y = ( (currentEnemy->y + 1 ) & 0xF0 );
+					updateEnemyPathfinding();
+				}
+			} else if  ( currentEnemy->direction == PAD_DOWN ) {
+				collideCheckVertical(currentEnemy->x, currentEnemy->y, PAD_DOWN);
+				if ( ( verticalCollideCheck == TILE_ALLCOLLIDE ) || ( verticalCollideCheck == TILE_ENEMYCOLLIDE ) ) {
+					currentEnemy->y &= 0xF0;
+					updateEnemyPathfinding();
 				}
 			}
-			/*
-			if ( currentEnemy->direction == PAD_RIGHT ) {
-				currentEnemy->x += 1;
-				collideCheckHorizontal(currentEnemy->x, currentEnemy->y, PAD_RIGHT);
-				if ( ( horizontalCollideCheck == TILE_ALLCOLLIDE ) || ( horizontalCollideCheck == TILE_ENEMYCOLLIDE ) ) {
+		
+		
+			// dumb case for testing
+
+			switch ( currentEnemy->direction ) {
+				case PAD_LEFT: 
 					flipSprite(enemySpriteData[i], 0);
+					--(currentEnemy->x); 
+					break;
+				case PAD_RIGHT: 
+					flipSprite(enemySpriteData[i], 1);
+					++(currentEnemy->x); 
+				break;
+				case PAD_UP: --(currentEnemy->y); break;
+				case PAD_DOWN: ++(currentEnemy->y); break;
+			}
+			
+		}	
+		
+	}
+}
+
+u8 __fastcall__ findTile(u8 startX, u8 startY, u8 direction, u8 goalTile) {
+	u8 gridX, gridY, checkTile;
+	// find a tile on the map in a certain direction so an enemy can try to move to it
+
+	// first get the grid coordinates of the start position
+	gridX = ((startX & 0xf0) >> 4);
+	gridY = ((startY & 0xf0) >> 4);
+
+	checkTile = collisionMap[collisionIndexFromGridCoords(gridX, gridY)];
+	while ( 
+		( checkTile != goalTile ) && 
+		( checkTile != TILE_NOCOLLIDE ) && 
+		( gridX > 0 ) && 
+		( gridX < 16 ) ) {
+
+		if ( direction == PAD_LEFT ) {
+			--gridX;
+		} else {
+			++gridX;
+		}
+		checkTile = collisionMap[collisionIndexFromGridCoords(gridX, gridY)];
+	}
+	
+	return checkTile == goalTile;
+}
+
+void __fastcall__ tryDownLadderPathfind(void) {
+
+	// if we are above a ladder tile, try to move down
+	getCollisionIndex(enemyX + 8, enemyY + 24);
+	if ( ( collisionMap[collisionIndex] == TILE_LADDER ) || ( collisionMap[collisionIndex] == TILE_LADDER_TOP ) ) {
+		// try to move down
+		currentEnemy->direction = PAD_DOWN;
+	} else {
+		// try to get to a ladder
+		if ( findTile(enemyX + 8, enemyY + 24, PAD_LEFT, TILE_LADDER_TOP ) ) {
+			currentEnemy->direction = PAD_LEFT;
+		} else {
+			currentEnemy->direction = PAD_RIGHT;
+		}
+	}
+	
+}
+
+void __fastcall__ tryUpLadderPathfind(void) {
+	
+	// if we are aligned on a ladder tile, try to move up
+	getCollisionIndex(enemyX + 8, enemyY + 8);
+	if ( ( collisionMap[collisionIndex] == TILE_LADDER ) || ( collisionMap[collisionIndex] == TILE_LADDER_TOP ) ) {
+		// check tile above for ladder						
+		// try to move up
+		currentEnemy->direction = PAD_UP;
+	} else if ( ( ( enemyY & 0xF0 ) == enemyY ) ) {
+		// try to get to a ladder
+		if ( findTile(enemyX + 8, enemyY + 8, PAD_LEFT, TILE_LADDER ) ) {
+			currentEnemy->direction = PAD_LEFT;
+		} else if ( findTile(enemyX + 8, enemyY + 8, PAD_RIGHT, TILE_LADDER ) ) {
+			currentEnemy->direction = PAD_RIGHT;
+		} else {
+			currentEnemy->direction = PAD_LEFT;
+		}
+	}
+	
+}
+
+void __fastcall__ updateEnemyPathfinding(void) {
+	
+	// decide which way each enemy will head next
+	// i.e. set enemy->direction
+
+	for ( enemyIndex = 0; enemyIndex < MAX_ENEMY_COUNT; ++enemyIndex ) {
+		currentEnemy = &(enemyData[enemyIndex]);
+
+		if ( currentEnemy->state == ENEMY_STATE_NORMAL ) {
+
+			enemyX = currentEnemy->x;
+			enemyY = currentEnemy->y;
+			
+			if ( playerY < enemyY ) {
+				// player is above enemy
+				
+				if ( ( ( ( enemyX ) & 0xF0 ) == enemyX ) ) {
+					tryUpLadderPathfind();			
+				}
+
+			} else if ( playerY > enemyY ) {
+				// player is below enemy
+
+				if ( ( ( enemyX & 0xF0 ) == enemyX ) ) {
+					tryDownLadderPathfind();					
+				}
+					
+
+			} else if ( playerX < enemyX ) {
+				// try to move left
+				// check if there's a gap between us and the player 
+				if ( findTile(enemyX + 8, enemyY + 8, PAD_LEFT, TILE_ENEMYCOLLIDE ) ) {
+					// move toward a ladder
+					tryDownLadderPathfind();
+				} else {
 					currentEnemy->direction = PAD_LEFT;
 				}
-			} else {
-				currentEnemy->x -= 1;
-				collideCheckHorizontal(currentEnemy->x, currentEnemy->y, PAD_LEFT);
-				if ( ( horizontalCollideCheck == TILE_ALLCOLLIDE ) || ( horizontalCollideCheck == TILE_ENEMYCOLLIDE ) ) {
-					flipSprite(enemySpriteData[i], 1);
-					currentEnemy->direction = PAD_RIGHT;
+			} else if ( playerX > enemyX ) {
+				// try to move right
+				if ( findTile(enemyX + 8, enemyY + 8, PAD_RIGHT, TILE_ENEMYCOLLIDE ) ) {
+					tryUpLadderPathfind();					
+				} else {
+					currentEnemy->direction = PAD_RIGHT;	
 				}
-			}	
-			*/		
+				
+			}
 		}
 	}
 }
 
-void updatePlatforms(void) {
+void __fastcall__ updatePlatforms(void) {
 
 	for ( i = 0; i < MAX_PLATFORM_COUNT; i++ ) {
 		platformPointer = &(platformData[i]);
@@ -1198,7 +1335,7 @@ void updatePlatforms(void) {
 }
 
 
-void checkPlayerGetItems() {
+void __fastcall__ checkPlayerGetItems(void) {
 	
 	getCollisionIndex(playerX + 8, playerY + 8);
 	if ( collisionMap[collisionIndex] == TILE_FRUIT ) {
@@ -1220,7 +1357,7 @@ void checkPlayerGetItems() {
 	}
 }
 
-void updatePlayerJumpFall(void) {
+void __fastcall__ updatePlayerJumpFall(void) {
 
 	collideBottom = 0;
 
@@ -1315,7 +1452,7 @@ void updatePlayerJumpFall(void) {
 
 }
 
-void updatePlayerClimbing(void) {
+void __fastcall__ updatePlayerClimbing(void) {
 	checkPlayerLadderCollision();
 	
 	if ( pad & PAD_UP ) { 
@@ -1332,7 +1469,7 @@ void updatePlayerClimbing(void) {
 	}
 }
 
-void updatePlayerVerticalMovement(void) {
+void __fastcall__ updatePlayerVerticalMovement(void) {
 
 	if ( !( pad & PAD_A ) ) {
 		jumpButtonReset = 1;
@@ -1345,7 +1482,7 @@ void updatePlayerVerticalMovement(void) {
 	}
 }
 
-void updatePlayerHorizontalMovement(void) {	
+void __fastcall__ updatePlayerHorizontalMovement(void) {	
 	if ( ( playerState != PLAYER_STATE_NORMAL ) && ( playerState != PLAYER_STATE_JUMPING ) ) {
 		return;
 	}
@@ -1373,7 +1510,7 @@ void updatePlayerHorizontalMovement(void) {
 	}
 }
 
-void updatePlayerGlue(void) {
+void __fastcall__ updatePlayerGlue(void) {
 	u8 glueX, glueY;
 	u8 newGlueIndex = 255;
 	u8 duplicateFound = 0;
@@ -1435,14 +1572,14 @@ void updatePlayerGlue(void) {
 	}
 }
 
-void killPlayer(void) {
+void __fastcall__ killPlayer(void) {
 	// kill player
 	playerState = PLAYER_STATE_DEAD;
 	--playerLives;
 	playerAnimationCounter = 0;
 }
 
-void updatePlayerState(void) {
+void __fastcall__ updatePlayerState(void) {
 
 	if ( playerState == PLAYER_STATE_DEAD ) {
 		++playerAnimationCounter;
@@ -1460,7 +1597,7 @@ void updatePlayerState(void) {
 	}
 }
 
-void updateGlues(void) {
+void __fastcall__ updateGlues(void) {
 	for ( i = 0; i < MAX_GLUE_COUNT; ++i ) {
 		gluePointer = &(glueData[i]);
 		if ( gluePointer->state == GLUE_STATE_ACTIVE ) {
@@ -1566,6 +1703,7 @@ void main(void)
 		ppu_on_all();
 
 		levelComplete = 0;
+		enemyPathfindCounter = 0;
 
 		// now the main loop
 		
@@ -1595,21 +1733,25 @@ void main(void)
 			updatePlayerState();
 
 			if ( playerState != PLAYER_STATE_DEAD ) {
+				if ( enemyPathfindCounter == 16 ) {
+					enemyPathfindCounter = 0;
+					updateEnemyPathfinding();
+				}
 				checkPlayerGetItems();
 				updateEnemyMovement();	
 				updateGlues();
 				updatePlatforms();
 				enemyColliding = 0;
 				four_Sides(playerX, playerY);
-				playerEnemyCollideCheck();
+				//playerEnemyCollideCheck();
 				playerEnemyColliding = enemyColliding;
 				glueEnemyCollideCheck();			
 			}
 			
-			
 			oam_hide_rest(oamSpriteIndex);
 
 			++frameCount;
+			++enemyPathfindCounter;
 		}	
 
 		
